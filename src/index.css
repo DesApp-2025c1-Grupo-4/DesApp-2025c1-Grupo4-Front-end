@@ -1,11 +1,85 @@
-body {
-  font-family: 'Arial', sans-serif;
-  font-weight: bold;
-  color: black;
+.app {
+  font-family: Arial, sans-serif;
+  padding: 20px;
 }
 
-h1 {
-  font-family: 'Arial', sans-serif;
-  font-weight: bold;
-  color: black;
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  background-color: #f0f0f0;
+}
+
+nav button {
+  margin: 0 5px;
+}
+
+.filter-section {
+  margin: 20px 0;
+}
+
+.filters {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.filters label {
+  display: flex;
+  flex-direction: column;
+  margin: 10px 0;
+}
+
+.filters input,
+.filters select {
+  padding: 5px;
+  margin-top: 5px;
+}
+
+.filters button {
+  padding: 10px 20px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+.filters button:hover {
+  background-color: #0056b3;
+}
+
+.trip-table table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+.trip-table th,
+.trip-table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+}
+
+.trip-table th {
+  background-color: #f0f0f0;
+}
+
+.navigation {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+}
+
+.navigation button {
+  padding: 10px 20px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+.navigation button:hover {
+  background-color: #0056b3;
 }
