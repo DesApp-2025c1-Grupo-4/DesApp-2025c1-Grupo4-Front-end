@@ -2,13 +2,15 @@ import React, { useState } from 'react';
 import Header from './components/Header';
 import FilterSection from './components/FilterSection';
 import TripTable from './components/TripTable';
+import './index.css'; 
 
 const App = () => {
   const [filters, setFilters] = useState({
     desde: '',
     hasta: '',
     criterio: '',
-    buscar: ''
+    buscar: '',
+    cantidad: '10'
   });
 
   const handleFilterChange = (name, value) => {
@@ -19,10 +21,10 @@ const App = () => {
   };
 
   return (
-    <div>
+    <div className="app">
       <Header />
       <FilterSection filters={filters} onFilterChange={handleFilterChange} />
-      <TripTable filters={filters} />
+      <TripTable filters={filters} onFilterChange={handleFilterChange} />
     </div>
   );
 };

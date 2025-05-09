@@ -8,7 +8,6 @@ const FilterSection = ({ filters, onFilterChange }) => {
 
   return (
     <div className="filter-section">
-      <h2>Viajes</h2>
       <div className="filters">
         <label>
           Desde (Fecha):
@@ -39,4 +38,3 @@ const FilterSection = ({ filters, onFilterChange }) => {
 };
 
 export default FilterSection;
-
