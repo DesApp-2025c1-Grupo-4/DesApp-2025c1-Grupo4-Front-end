@@ -1,22 +1,30 @@
-import { Box, Stack } from "@mui/material";
-import { cyan } from "@mui/material/colors";
+import { Box } from "@mui/material";
+import { grey } from "@mui/material/colors";
 import { useLocation, useNavigate } from "react-router-dom";
 
 function MenuOption({ path, label }) {
   const navigate = useNavigate();
   const { pathname } = useLocation();
 
+  return <Box onClick={() => navigate(path)}>{label}</Box>;
+}
+
+function PageTitle() {
+  const { pathname } = useLocation();
+  var title;
+  if(pathname == '/') { title = 'Logística Acme SRL'}
+  else { title = 'Empresas transportistas'}
   return <Box 
-    sx={{ typography: pathname === path ? 'topMenuSelected' : 'topMenu', mr: 8 }} 
-    onClick={() => navigate(path)}
+    sx={{ typography: 'topMenu'}} 
   >
-    {label}
+    {title}
   </Box>;
 }
 
 export function TopMenu() {
-  return <Stack direction='row' alignItems='center' sx={{ width: '100%', height: '4rem', backgroundColor: cyan[700], pl: 4 }}>
-    <MenuOption path='/films' label='Películas' />
-    <MenuOption path='/actors' label='Actores' />
-  </Stack>;
+  return <Box sx={{ display: 'flex', flexDirection: 'row',  alignItems: 'center', justifyContent: 'space-between', width: '100%', height: '5rem', backgroundColor: grey[50], py: 4, px: 7 }}>
+    <MenuOption path='/films' label='logo' />
+    <PageTitle/>
+    <MenuOption path='/actors' label='logo' />
+  </Box>;
 }

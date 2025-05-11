@@ -1,5 +1,5 @@
 import { createTheme } from "@mui/material";
-import { blue, blueGrey, lightBlue } from "@mui/material/colors";
+import { blue, blueGrey, grey, lightBlue } from "@mui/material/colors";
 
 export const customMuiTheme = createTheme({
   typography: {
@@ -22,13 +22,8 @@ export const customMuiTheme = createTheme({
       textTransform: 'none',
     },
     topMenu: {
-      color: blueGrey[50],
-      fontSize: '1.5rem',
-      fontWeight: 'bold',
-    },
-    topMenuSelected: {
-      color: blueGrey[200],
-      fontSize: '1.5rem',
+      color: grey[900],
+      fontSize: '2rem',
       fontWeight: 'bold',
     }
   },
