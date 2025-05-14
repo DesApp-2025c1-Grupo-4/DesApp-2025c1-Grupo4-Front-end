@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import Header from './components/Header';
-import FilterSection from './components/FilterSection';
-import TripTable from './components/TripTable';
+import Header from './components/ListadoDeViajes/HeaderListadoDeViajes';
+import FilterSection from './components/ListadoDeViajes/FilterSection';
+import TripTable from './components/ListadoDeViajes/TripTable';
 import './index.css'; 
 
 const App = () => {

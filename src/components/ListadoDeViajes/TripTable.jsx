@@ -3,62 +3,33 @@ import React, { useState } from 'react';
 const TripTable = ({ filters, onFilterChange }) => {
   const trips = [
     {
-    numero: 'PV-124', empresa: 'Transporte Sur', chofer: 'M. López', vehiculo: 'DEF456',
-    fechaInicio: '2025-08-21', tipo: 'Internacional', origen: 'Mendoza', destino: 'Santiago', detalle: 'Perecederos'
+      numero: 'PV-124', empresa: 'Transporte Sur', chofer: 'M. López', vehiculo: 'DEF456',
+      fechaInicio: '2025-08-21', tipo: 'Internacional', origen: 'Mendoza', destino: 'Santiago'
     },
     {
-    numero: 'PV-125', empresa: 'Cargas Norte', chofer: 'C. Gómez', vehiculo: 'GHI789',
-    fechaInicio: '2025-08-22', tipo: 'Nacional', origen: 'Salta', destino: 'Rosario', detalle: 'Maquinaria'
+      numero: 'PV-125', empresa: 'Cargas Norte', chofer: 'C. Gómez', vehiculo: 'GHI789',
+      fechaInicio: '2025-08-22', tipo: 'Nacional', origen: 'Salta', destino: 'Rosario'
     },
     {
-    numero: 'PV-126', empresa: 'Logística Andina', chofer: 'S. Martínez', vehiculo: 'JKL321',
-    fechaInicio: '2025-08-23', tipo: 'Internacional', origen: 'San Juan', destino: 'Valparaíso', detalle: 'Vino'
+      numero: 'PV-126', empresa: 'Logística Andina', chofer: 'S. Martínez', vehiculo: 'JKL321',
+      fechaInicio: '2025-08-23', tipo: 'Internacional', origen: 'San Juan', destino: 'Valparaíso'
     },
     {
-    numero: 'PV-127', empresa: 'Ruta Federal', chofer: 'L. Fernández', vehiculo: 'MNO654',
-    fechaInicio: '2025-08-24', tipo: 'Nacional', origen: 'La Plata', destino: 'M. del Plata', detalle: 'Alimentos'
+      numero: 'PV-127', empresa: 'Ruta Federal', chofer: 'L. Fernández', vehiculo: 'MNO654',
+      fechaInicio: '2025-08-24', tipo: 'Nacional', origen: 'La Plata', destino: 'M. del Plata'
     },
     {
-    numero: 'PV-128', empresa: 'T. del Este', chofer: 'A. Ramírez', vehiculo: 'PQR987',
-    fechaInicio: '2025-08-25', tipo: 'Nacional', origen: 'Santa Fe', destino: 'Paraná', detalle: 'Repuestos'
+      numero: 'PV-128', empresa: 'T. del Este', chofer: 'A. Ramírez', vehiculo: 'PQR987',
+      fechaInicio: '2025-08-25', tipo: 'Nacional', origen: 'Santa Fe', destino: 'Paraná'
     },
     {
-    numero: 'PV-129', empresa: 'Express Norte', chofer: 'J. Díaz', vehiculo: 'STU159',
-    fechaInicio: '2025-08-26', tipo: 'Internacional', origen: 'Jujuy', destino: 'Tarija', detalle: 'Textiles'
+      numero: 'PV-129', empresa: 'Express Norte', chofer: 'J. Díaz', vehiculo: 'STU159',
+      fechaInicio: '2025-08-26', tipo: 'Internacional', origen: 'Jujuy', destino: 'Tarija'
     },
     {
-    numero: 'PV-130', empresa: 'Carga Patagónica', chofer: 'L. Torres', vehiculo: 'VWX753',
-    fechaInicio: '2025-08-27', tipo: 'Nacional', origen: 'Neuquén', destino: 'Comodoro', detalle: 'Materiales'
-    },
-    {
-    numero: 'PV-124', empresa: 'Transporte Sur', chofer: 'M. López', vehiculo: 'DEF456',
-    fechaInicio: '2025-08-21', tipo: 'Internacional', origen: 'Mendoza', destino: 'Santiago', detalle: 'Perecederos'
-    },
-    {
-    numero: 'PV-125', empresa: 'Cargas Norte', chofer: 'C. Gómez', vehiculo: 'GHI789',
-    fechaInicio: '2025-08-22', tipo: 'Nacional', origen: 'Salta', destino: 'Rosario', detalle: 'Maquinaria'
-    },
-    {
-    numero: 'PV-126', empresa: 'Logística Andina', chofer: 'S. Martínez', vehiculo: 'JKL321',
-    fechaInicio: '2025-08-23', tipo: 'Internacional', origen: 'San Juan', destino: 'Valparaíso', detalle: 'Vino'
-    },
-    {
-    numero: 'PV-127', empresa: 'Ruta Federal', chofer: 'L. Fernández', vehiculo: 'MNO654',
-    fechaInicio: '2025-08-24', tipo: 'Nacional', origen: 'La Plata', destino: 'M. del Plata', detalle: 'Alimentos'
-    },
-    {
-    numero: 'PV-128', empresa: 'T. del Este', chofer: 'A. Ramírez', vehiculo: 'PQR987',
-    fechaInicio: '2025-08-25', tipo: 'Nacional', origen: 'Santa Fe', destino: 'Paraná', detalle: 'Repuestos'
-    },
-    {
-    numero: 'PV-129', empresa: 'Express Norte', chofer: 'J. Díaz', vehiculo: 'STU159',
-    fechaInicio: '2025-08-26', tipo: 'Internacional', origen: 'Jujuy', destino: 'Tarija', detalle: 'Textiles'
-    },
-    {
-    numero: 'PV-130', empresa: 'Carga Patagónica', chofer: 'L. Torres', vehiculo: 'VWX753',
-    fechaInicio: '2025-08-27', tipo: 'Nacional', origen: 'Neuquén', destino: 'Comodoro', detalle: 'Materiales'
+      numero: 'PV-130', empresa: 'Carga Patagónica', chofer: 'L. Torres', vehiculo: 'VWX753',
+      fechaInicio: '2025-08-27', tipo: 'Nacional', origen: 'Neuquén', destino: 'Comodoro'
     }
-
   ];
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -114,7 +85,6 @@ const TripTable = ({ filters, onFilterChange }) => {
             <th>Tipo de viaje</th>
             <th>Origen</th>
             <th>Destino</th>
-            <th>Detalle</th>
           </tr>
         </thead>
         <tbody>
@@ -128,12 +98,11 @@ const TripTable = ({ filters, onFilterChange }) => {
               <td>{trip.tipo}</td>
               <td>{trip.origen}</td>
               <td>{trip.destino}</td>
-              <td>{trip.detalle}</td>
             </tr>
           ))}
           {displayedTrips.length < tripsPerPage && Array.from({ length: tripsPerPage - displayedTrips.length }).map((_, index) => (
             <tr key={`empty-${index}`}>
-              <td colSpan="9">&nbsp;</td>
+              <td colSpan="8">&nbsp;</td>
             </tr>
           ))}
         </tbody>
