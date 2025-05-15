@@ -1,28 +1,177 @@
-:root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-
-  color: #242424;
-  background-color: rgba(255, 255, 255, 0.87);
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
-}
-
 body {
+  font-family: 'Arial', sans-serif;
   margin: 0;
-  min-width: 320px;
-  min-height: 100vh;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #f9f9f9;
+}
+
+.app {
+  width: 100%;
+  height: 100%;
+  padding: 20px;
+  box-sizing: border-box;
+  background-color: #ffffff;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  border-radius: 8px;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  background-color: #f0f0f0;
+  border-radius: 8px 8px 0 0;
+}
+
+nav button {
+  margin: 0 5px;
+}
+
+.filter-section {
+  margin: 20px 0;
+  background-color: #D9D9D9;
+  padding: 20px;
+  border-radius: 8px;
+}
+
+.filter-title {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.filters {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.filter-label {
+  display: flex;
+  flex-direction: column;
+  margin: 10px 0;
+}
+
+.filter-input {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.filter-input input {
+  padding: 5px;
+  margin-top: 5px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+}
+
+.filter-input .calendar-icon {
+  position: absolute;
+  right: 10px;
+  pointer-events: none;
+  color: #b0b0b0;
+}
+
+.filters input::placeholder {
+  color: #b0b0b0;
+}
+
+.filters button {
+  padding: 10px 20px;
+  background-color: #000000;
+  color: white;
+  border: none;
+  cursor: pointer;
+  border-radius: 8px;
+}
+
+.filters button:hover {
+  background-color: #000000;
+}
+
+.trip-table {
+  flex-grow: 1;
+  overflow-y: auto;
+}
+
+.trip-table table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+  min-height: 300px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.trip-table th {
+  background-color: #BFBFBF;
+}
+
+.trip-table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: center;
+}
+
+.trip-table tr:nth-child(even) {
+  background-color: #E5E5E5;
+}
+
+.trip-table tr:nth-child(odd) {
+  background-color: #ffffff;
+}
+
+.data-quantity {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.data-quantity label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.navigation {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+}
+
+.navigation button {
+  padding: 10px 20px;
+  background-color: #000000;
+  color: white;
+  border: none;
+  cursor: pointer;
+  border-radius: 8px;
+}
+
+.navigation button:hover {
+  background-color: #000000;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 20px;
+  background-color: #f8f9fa;
+}
+
+.logo {
+  width: 50px;
+  height: 50px;
+  cursor: pointer;
+}
+
+.title {
+  margin: 0;
 }
