@@ -56,7 +56,7 @@ const TripTable = ({ filters, onFilterChange }) => {
     const hastaDate = filters.hasta ? new Date(filters.hasta) : null;
 
     if (hastaDate) {
-      hastaDate.setDate(hastaDate.getDate() + 1); // Incluir el día seleccionado
+      hastaDate.setDate(hastaDate.getDate() + 1);
     }
 
     const desdeMatch = desdeDate ? tripDate >= desdeDate : true;

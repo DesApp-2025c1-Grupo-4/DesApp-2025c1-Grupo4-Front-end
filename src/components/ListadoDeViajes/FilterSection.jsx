@@ -11,14 +11,14 @@ const FilterSection = ({ filters, onFilterChange }) => {
       <div className="filters">
         <label>
           Desde (Fecha):
-          <input type="date" name="desde" value={filters.desde} onChange={handleChange} />
+          <input type="date" name="desde" value={filters.desde} onChange={handleChange}/>
         </label>
         <label>
           Hasta (Fecha):
           <input type="date" name="hasta" value={filters.hasta} onChange={handleChange} />
         </label>
         <label>
-          Criterio de filtrado:
+          Buscar por:   
           <select name="criterio" value={filters.criterio} onChange={handleChange}>
             <option value="">Seleccionar</option>
             <option value="empresa">Empresa transportista</option>
@@ -28,7 +28,6 @@ const FilterSection = ({ filters, onFilterChange }) => {
           </select>
         </label>
         <label>
-          Buscar:
           <input type="text" name="buscar" value={filters.buscar} onChange={handleChange} placeholder="Buscar..." />
         </label>
         <button onClick={() => console.log(filters)}>BUSCAR</button>

@@ -1,4 +1,3 @@
-// ListadoDeViajes.jsx
 import React, { useState } from 'react';
 import Header from '../Header';
 import FilterSection from './FilterSection';
