@@ -2,9 +2,9 @@ import React, { useEffect, useState } from "react";
 import { Box, Grid, Stack } from "@mui/material";
 import { BrowserRouter } from "react-router-dom";
 import { TopMenu } from "./components/TopMenu";
+import { NavBar } from "./components/NavBar";
 import { AppRouter } from "./AppRouter";
-import { getCurrentWeather } from "./services/WeatherService";
-import { WeatherIndicator } from "./components/WeatherIndicator";
+
 
 export function App() {
   
@@ -12,7 +12,7 @@ export function App() {
     <BrowserRouter>
       <Stack direction='column'>
         <Grid container direction='row'>
-          <TopMenu />
+          <NavBar />
         </Grid>
         <Box sx={{mx: { xs: 1, md: 4 }, my: 4}}>
           <AppRouter />
