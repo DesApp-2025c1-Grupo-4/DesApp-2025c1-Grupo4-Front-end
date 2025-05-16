@@ -125,4 +125,5 @@ const TripTable = ({ filters, onFilterChange }) => {
   );
 };
 
+
 export default TripTable;

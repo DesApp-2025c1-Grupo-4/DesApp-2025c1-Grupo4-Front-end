@@ -1,18 +1,20 @@
 import React from 'react';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import App from './App';
-import NewPage from './components/Home/Home';
-import RegistroViajes from './components/RegistroViajes/RegistroViajes'; 
+import Home from './components/Home/Home.jsx';
+import RegistroViajes from './components/RegistroViajes/RegistroViajes.jsx';
+import ListadoDeViajes from './components/ListadoDeViajes/ListadoDeViajes.jsx';
 
 const AppRoutes = () => {
   return (
     <Router>
-      <Routes>
-        <Route path="/" element={<App />} />
-        <Route path="/newpage" element={<NewPage />} />
-        <Route path="/registro-viajes" element={<RegistroViajes />} /> 
-        {/* Añade la nueva ruta */}
-      </Routes>
+      <App>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/registro-viajes" element={<RegistroViajes />} />
+          <Route path="/listado-viajes" element={<ListadoDeViajes />} />
+        </Routes>
+      </App>
     </Router>
   );
 };

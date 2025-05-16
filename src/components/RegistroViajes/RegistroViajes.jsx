@@ -1,19 +1,12 @@
-import React from 'react';
+import Header from '../Header';
 
 const RegistroViajes = () => {
   return (
-    <div style={styles.container}>
-      <h1>Registro de viajes</h1>
-      <p>Próxima a ser desarrollada</p>
-    </div>
+    <>
+      <Header title="Registro de viajes" />
+      {/* Contenido de la página de inicio */}
+    </>
   );
-};
-
-const styles = {
-  container: {
-    textAlign: 'center',
-    marginTop: '50px',
-  },
 };
 
 export default RegistroViajes;
