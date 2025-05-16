@@ -127,17 +127,43 @@ nav button {
   background-color: #ffffff;
 }
 
-.data-quantity {
+
+.table-controls {
   display: flex;
   justify-content: center;
+  align-items: center;
+  gap: 20px;
   margin-top: 20px;
 }
 
-.data-quantity label {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+.table-controls button {
+  padding: 10px 20px;
+  background-color: #000;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
 }
+
+.table-controls button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.page-selector {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: bold;
+}
+
+.page-selector select {
+  padding: 5px 10px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+
+
 
 .navigation {
   display: flex;

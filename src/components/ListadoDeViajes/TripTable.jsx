@@ -29,15 +29,42 @@ const TripTable = ({ filters, onFilterChange }) => {
     {
       numero: 'PV-130', empresa: 'Carga Patagónica', chofer: 'L. Torres', vehiculo: 'VWX753',
       fechaInicio: '2025-08-27', tipo: 'Nacional', origen: 'Neuquén', destino: 'Comodoro'
+    },
+    {
+      numero: 'PV-127', empresa: 'Ruta Federal', chofer: 'L. Fernández', vehiculo: 'MNO654',
+      fechaInicio: '2025-08-24', tipo: 'Nacional', origen: 'La Plata', destino: 'M. del Plata'
+    },
+    {
+      numero: 'PV-128', empresa: 'T. del Este', chofer: 'A. Ramírez', vehiculo: 'PQR987',
+      fechaInicio: '2025-08-25', tipo: 'Nacional', origen: 'Santa Fe', destino: 'Paraná'
+    },
+    {
+      numero: 'PV-129', empresa: 'Express Norte', chofer: 'J. Díaz', vehiculo: 'STU159',
+      fechaInicio: '2025-08-26', tipo: 'Internacional', origen: 'Jujuy', destino: 'Tarija'
+    },
+    {
+      numero: 'PV-130', empresa: 'Carga Patagónica', chofer: 'L. Torres', vehiculo: 'VWX753',
+      fechaInicio: '2025-08-27', tipo: 'Nacional', origen: 'Neuquén', destino: 'Comodoro'
     }
   ];
 
   const [currentPage, setCurrentPage] = useState(1);
 
   const filteredTrips = trips.filter(trip => {
-    const desdeMatch = filters.desde ? new Date(trip.fechaInicio) >= new Date(filters.desde) : true;
-    const hastaMatch = filters.hasta ? new Date(trip.fechaInicio) <= new Date(filters.hasta) : true;
-    const criterioMatch = filters.criterio ? trip[filters.criterio].toLowerCase().includes(filters.buscar.toLowerCase()) : true;
+    const tripDate = new Date(trip.fechaInicio);
+    const desdeDate = filters.desde ? new Date(filters.desde) : null;
+    const hastaDate = filters.hasta ? new Date(filters.hasta) : null;
+
+    if (hastaDate) {
+      hastaDate.setDate(hastaDate.getDate() + 1); // Incluir el día seleccionado
+    }
+
+    const desdeMatch = desdeDate ? tripDate >= desdeDate : true;
+    const hastaMatch = hastaDate ? tripDate < hastaDate : true;
+    const criterioMatch = filters.criterio
+      ? trip[filters.criterio].toLowerCase().includes(filters.buscar.toLowerCase())
+      : true;
+
     return desdeMatch && hastaMatch && criterioMatch;
   });
 
@@ -76,7 +103,7 @@ const TripTable = ({ filters, onFilterChange }) => {
     <div className="trip-table">
       <table>
         <thead>
-          <tr>
+         <tr>
             <th>Numero de viaje</th>
             <th>Empresa transportista</th>
             <th>Chofer</th>
@@ -107,23 +134,29 @@ const TripTable = ({ filters, onFilterChange }) => {
           ))}
         </tbody>
       </table>
-      <div className="data-quantity">
-        <label>
-          Cantidad de datos:
-          <select name="cantidad" value={filters.cantidad} onChange={handleChange}>
-            <option value="10">10</option>
-            <option value="25">25</option>
-            <option value="50">50</option>
-          </select>
-        </label>
+
+      
+      <div className="table-controls">
+        <button onClick={handlePreviousPage} disabled={currentPage === 1}>&lt; ANTERIOR</button>
+        <div className="page-selector">
+          <label>
+            <select
+              value={currentPage}
+              onChange={(e) => setCurrentPage(Number(e.target.value))}
+            >
+              {Array.from({ length: totalPages }, (_, i) => (
+                <option key={i + 1} value={i + 1}>
+                  {i + 1}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+        <button onClick={handleNextPage} disabled={currentPage === totalPages}>SIGUIENTE &gt;</button>
       </div>
-      <div className="navigation">
-        <button onClick={handlePreviousPage} disabled={currentPage === 1}>&lt; ANTERIOR</button>
-        <button onClick={handleNextPage} disabled={currentPage === totalPages}>SIGUIENTE &gt;</button>
-      </div>
+
     </div>
   );
 };
-
 
 export default TripTable;
