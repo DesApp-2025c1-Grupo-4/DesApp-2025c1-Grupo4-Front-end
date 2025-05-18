@@ -33,34 +33,46 @@ export function NavBar() {
         setTitle('Empresas transportistas');
         setLogo1(<IconButton><LanguageOutlinedIcon/></IconButton>);
         setPath1('/empresas');
+        setLogo2(<IconButton><HomeOutlinedIcon/></IconButton>);
+        setPath2('/');
         break;
       case '/vehiculos':
         setTitle('Flota de vehículos');
         setLogo1(<IconButton><LocalShippingOutlinedIcon style={{ fontSize: 45  }}/></IconButton>);
         setPath1('/vehiculos');
+        setLogo2(<IconButton><HomeOutlinedIcon/></IconButton>);
+        setPath2('/');
         break;
       case '/choferes':
         setTitle('Choferes');
         setLogo1(<IconButton><PersonOutlinedIcon/></IconButton>);
         setPath1('/choferes');
+        setLogo2(<IconButton><HomeOutlinedIcon/></IconButton>);
+        setPath2('/');
         break;
       case '/depositos':
         setTitle('Red de depósitos');
         setLogo1(<IconButton><Inventory2OutlinedIcon/></IconButton>);
         setPath1('/depositos');
+        setLogo2(<IconButton><HomeOutlinedIcon/></IconButton>);
+        setPath2('/');
         break;
       case '/viajes':
         setTitle('Viajes');
         setLogo1(<IconButton><MapOutlinedIcon/></IconButton>);
         setPath1('/viajes');
+        setLogo2(<IconButton><HomeOutlinedIcon/></IconButton>);
+        setPath2('/');
         break;
       case '/reportes':
         setTitle('Reportes');
         setLogo1(<IconButton><SignalCellularAltOutlinedIcon/></IconButton>);
         setPath1('/reportes');
+        setLogo2(<IconButton><HomeOutlinedIcon/></IconButton>);
+        setPath2('/');
         break;
     }
-  }, [location]);
+  }, [location.key]);
 
   function PageTitle(){
     return <Box sx={{ typography: 'topMenu'}} >

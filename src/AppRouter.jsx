@@ -6,8 +6,6 @@ import { ChoferesPage } from "./pages/Choferes/ChoferesPage";
 import { DepositosPage } from "./pages/Depositos/DepositosPage";
 import { ViajesPage } from "./pages/Viajes/ViajesPage";
 import { ReportesPage } from "./pages/Reportes/ReportesPage";
-import { Box } from "@mui/material";
-import { grey } from "@mui/material/colors";
 
 export function AppRouter() {
   return (
