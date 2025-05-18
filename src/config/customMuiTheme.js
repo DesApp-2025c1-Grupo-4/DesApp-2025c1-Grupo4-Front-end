@@ -36,6 +36,41 @@ export const customMuiTheme = createTheme({
           color: lightBlue[900]
         }
       }
-    }
+    },
+    MuiIconButton: {
+      // Style overrides
+      styleOverrides: {
+        root: {
+          // Base styles
+          padding: '12px',
+          backgroundColor: grey[300],
+          color: grey[900],
+          transition: 'all 0.3s ease',
+          // Hover state
+          '&:hover': {
+            backgroundColor: '#e0e0e0', 
+            transform: 'scale(1.1)',
+            color: 'orange'
+          },
+        },
+      },
+      // Default props for all IconButtons
+      defaultProps: {
+        color: 'primary', // Default color (primary, secondary, etc.)
+        size: 'medium', // Default size (small, medium, large)
+        disableRipple: false, // Enable/disable ripple globally
+      },
+    },
+    MuiSvgIcon: {
+      styleOverrides: {
+        root: {
+          fontSize: '2,6em',   // Adjust icon size
+        },
+      },
+      // Optional: Set default props for all SVG icons
+      defaultProps: {
+        fontSize: 'large', // Default prop (e.g., 'small', 'medium', 'large')
+      },
+    },
   }
 });

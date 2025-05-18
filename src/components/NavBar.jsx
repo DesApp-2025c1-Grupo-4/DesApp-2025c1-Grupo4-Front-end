@@ -16,7 +16,7 @@ export function NavBar() {
   const [title, setTitle] = useState([])
   const [logo1, setLogo1] = useState([])
   const [path1, setPath1] = useState([])
-  const [logo2, setLogo2] = useState(<HomeOutlinedIcon/>)
+  const [logo2, setLogo2] = useState(<IconButton><HomeOutlinedIcon/></IconButton>)
   const [path2, setPath2] = useState('/')
 
   const location = useLocation();
@@ -31,7 +31,7 @@ export function NavBar() {
         break;
       case '/empresas':
         setTitle('Empresas transportistas');
-        setLogo1(<LanguageOutlinedIcon/>);
+        setLogo1(<IconButton><LanguageOutlinedIcon/></IconButton>);
         setPath1('/empresas');
         break;
       case '/vehiculos':
@@ -41,22 +41,22 @@ export function NavBar() {
         break;
       case '/choferes':
         setTitle('Choferes');
-        setLogo1(<PersonOutlinedIcon/>);
+        setLogo1(<IconButton><PersonOutlinedIcon/></IconButton>);
         setPath1('/choferes');
         break;
       case '/depositos':
         setTitle('Red de depósitos');
-        setLogo1(<Inventory2OutlinedIcon/>);
+        setLogo1(<IconButton><Inventory2OutlinedIcon/></IconButton>);
         setPath1('/depositos');
         break;
       case '/viajes':
-        setTitle('Registro de viajes');
-        setLogo1(<MapOutlinedIcon/>);
+        setTitle('Viajes');
+        setLogo1(<IconButton><MapOutlinedIcon/></IconButton>);
         setPath1('/viajes');
         break;
       case '/reportes':
         setTitle('Reportes');
-        setLogo1(<SignalCellularAltOutlinedIcon/>);
+        setLogo1(<IconButton><SignalCellularAltOutlinedIcon/></IconButton>);
         setPath1('/reportes');
         break;
     }
