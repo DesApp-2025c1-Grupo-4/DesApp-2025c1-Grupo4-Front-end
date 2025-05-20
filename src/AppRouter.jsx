@@ -7,6 +7,8 @@ import ListadoDeViajes from './pages/Viajes/ListadoDeViajes.jsx';
 import RegistrarViaje from './pages/Viajes/RegistrarViaje.jsx';
 import ModificarViaje from './pages/Viajes/ModificarViaje.jsx';
 import Seguimiento from './pages/Viajes/Seguimiento.jsx';
+import Footer from './components/Footer';
+
 
 
 const AppRoutes = () => {

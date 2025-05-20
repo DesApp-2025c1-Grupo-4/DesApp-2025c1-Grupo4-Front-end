@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import Header from '../../components/Header';
+import Footer from '../../components/Footer'
 
 
 const RegistroViajes = () => {
@@ -30,6 +31,8 @@ const RegistroViajes = () => {
           </button>
         </div>
       </div>
+        <Footer/>
+
     </>
   );
 };

@@ -13,7 +13,7 @@ const Header = ({ title, centerTitle }) => {
 
   return (
     <header className="header">
-      <img src={logo1} alt="Logo 1" className="logo" onClick={handleLogo1Click} />
+      <img src={logo1} alt="Logo 1" className="logo" onClick={location.pathname === '/listado-viajes' ? handleLogo1Click : undefined}/>
       <h1 className={`title ${centerTitle ? 'center-title' : ''}`}>{title}</h1>
       {location.pathname !== '/' && (
         <img src={logo2} alt="Logo 2" className="logo" onClick={handleLogo2Click} />

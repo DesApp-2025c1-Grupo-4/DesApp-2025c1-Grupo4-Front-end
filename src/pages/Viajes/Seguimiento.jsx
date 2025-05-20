@@ -1,4 +1,5 @@
 import Header from '../../components/Header';
+import Footer from '../../components/Footer';
 
 
 
@@ -10,6 +11,7 @@ const Seguimiento = () => {
         <h1>Seguimiento</h1>
 
       </div>
+      <Footer/>
     </>
   );
 };

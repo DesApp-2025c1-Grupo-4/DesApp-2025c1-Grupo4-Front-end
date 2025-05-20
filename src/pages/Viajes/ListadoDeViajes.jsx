@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import Header from '../../components/Header';
 import FilterSection from '../../helpers/ListadoDeViajes/FilterSection';
 import TripTable from '../../helpers/ListadoDeViajes/TripTable';
+import Footer from '../../components/Footer'
+
 
 const ListadoDeViajes = () => {
   const [filters, setFilters] = useState({
@@ -21,6 +23,7 @@ const ListadoDeViajes = () => {
       <Header title="Listado de Viajes" />
       <FilterSection filters={filters} onFilterChange={handleFilterChange} />
       <TripTable filters={filters} onFilterChange={handleFilterChange} />
+      <Footer/>
     </>
   );
 };

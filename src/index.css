@@ -84,7 +84,8 @@ nav button {
 }
 
 .filters button:hover {
-  background-color: #062B60; 
+  background-color: #062B60;
+  transform: scale(1.1);
 }
 
 .filter-input .calendar-icon {
@@ -153,6 +154,10 @@ nav button {
   cursor: pointer;
 }
 
+.table-controls button:hover{
+  background-color: #062B60;
+}
+
 .table-controls button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
@@ -203,7 +208,19 @@ nav button {
   width: 50px;
   height: 50px;
   cursor: pointer;
+  transition: transform 0.3s ease;
 }
+
+
+.logo:not([onClick]) {
+  cursor: default;
+}
+
+
+.logo:hover {
+  transform: scale(1.1);
+}
+
 
 .title {
   position: absolute;
@@ -254,15 +271,22 @@ nav button {
   margin-bottom: 1rem;
 }
 
+
 .icon-card button {
   margin-top: auto;
   padding: 0.5rem 1.2rem;
-  background-color: #F38F2B;
+  background-color: #062B60;
   color: white;
   border: none;
   border-radius: 8px;
   cursor: pointer;
 }
+
+.icon-card button:hover {
+  background-color: #F38F2B;
+  transform: scale(1.1);
+}
+
 
 .middle-image-container {
   display: flex;
@@ -310,6 +334,7 @@ nav button {
 
 .boton:hover {
   background-color: #062B60;
+  transform: scale(1.1);
 }
 
 .boton-atras-wrapper {
@@ -320,7 +345,7 @@ nav button {
 
 .boton-atras {
   padding: 10px 20px;
-  background-color: #062B60;
+  background-color: #F38F2B;
   color: white;
   border: none;
   border-radius: 8px;
@@ -330,5 +355,33 @@ nav button {
 }
 
 .boton-atras:hover {
-  background-color: #F38F2B;
+  background-color: #062B60;
+  transform: scale(1.1);
+}
+
+
+
+.footer {
+  background-color: #062B60;
+  color: white;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 10px 20px;
+  font-size: 12px;
+  flex-wrap: wrap;
+  text-align: center;
+}
+
+.footer p {
+  margin: 5px 10px;
+}
+
+.footer a {
+  color: #F38F2B;
+  text-decoration: none;
+}
+
+.footer a:hover {
+  text-decoration: underline;
 }

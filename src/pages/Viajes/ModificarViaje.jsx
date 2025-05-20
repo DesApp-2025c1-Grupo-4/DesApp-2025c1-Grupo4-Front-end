@@ -1,5 +1,5 @@
 import Header from '../../components/Header';
-import React from 'react';
+import Footer from '../../components/Footer'
 
 const ModificarViaje = () => {
   return (
@@ -9,6 +9,7 @@ const ModificarViaje = () => {
         <h1>Modificar Viaje</h1>
 
       </div>
+      <Footer/>
     </>
   );
 };

@@ -1,4 +1,5 @@
 import Header from "../../components/Header.jsx";
+import Footer from '../../components/Footer';
 import { useNavigate } from "react-router-dom";
 import logo3 from "../../assets/logo3.png";
 import icon1 from "../../assets/icon1.png";
@@ -37,6 +38,7 @@ const Home = () => {
           </div>
         ))}
       </div>
+      <Footer/>
     </>
   );
 };

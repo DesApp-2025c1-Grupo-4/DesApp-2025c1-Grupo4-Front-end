@@ -137,10 +137,10 @@ const TripTable = ({ filters, onFilterChange }) => {
 
       
       <div className="table-controls">
-        <button onClick={handlePreviousPage} disabled={currentPage === 1}>&lt; ANTERIOR</button>
-        <div className="page-selector">
-          <label>
-            <select
+        <button onClick={handlePreviousPage} disabled={currentPage === 1}>&lt; ANTERIOR</button>
+        <div className="page-selector">
+          <label>
+            <select
               value={currentPage}
               onChange={(e) => setCurrentPage(Number(e.target.value))}
             >
