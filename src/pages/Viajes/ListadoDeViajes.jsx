@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import Header from '../Header';
-import FilterSection from './FilterSection';
-import TripTable from './TripTable';
+import Header from '../../components/Header';
+import FilterSection from '../../helpers/ListadoDeViajes/FilterSection';
+import TripTable from '../../helpers/ListadoDeViajes/TripTable';
 
 const ListadoDeViajes = () => {
   const [filters, setFilters] = useState({
