@@ -1,9 +1,9 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import App from './App';
-import Home from './components/Home/Home.jsx';
-import RegistroViajes from './components/RegistroViajes/RegistroViajes.jsx';
-import ListadoDeViajes from './components/ListadoDeViajes/ListadoDeViajes.jsx';
+import Home from './pages/Home/Home.jsx';
+import RegistroViajes from './pages/Viajes/RegistroViajes.jsx';
+import ListadoDeViajes from './pages/Viajes/ListadoDeViajes.jsx';
 
 const AppRoutes = () => {
   return (

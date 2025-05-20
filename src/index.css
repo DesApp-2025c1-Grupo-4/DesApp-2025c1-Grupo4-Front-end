@@ -1,12 +1,11 @@
 body {
-font-family: 'Arial', sans-serif;
-margin: 0;
-height: 100vh;
-display: flex;
-justify-content: center;
-align-items: center;
-background-color: #f9f9f9;
+  font-family: 'Arial', sans-serif;
+  margin: 0;
+  height: 100vh;
+  background-color: #f9f9f9;
+  display: block; 
 }
+
 
 .app {
 width: 100%;
@@ -49,11 +48,13 @@ font-weight: bold;
 
 
 .filters {
-display: flex;
-flex-wrap: wrap;
-gap: 20px 30px; 
-align-items: flex-end;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px 30px; 
+  align-items: flex-end;
+  justify-content: center;
 }
+
 
 .filters label {
 display: flex;
@@ -196,13 +197,16 @@ border-radius: 8px;
 background-color: #000000;
 }
 
+
 .header {
 display: flex;
 justify-content: space-between;
 align-items: center;
 padding: 10px 20px;
 background-color: #f8f9fa;
+position: relative;
 }
+
 
 .logo {
 width: 50px;
@@ -210,8 +214,84 @@ height: 50px;
 cursor: pointer;
 }
 
+
 .title {
+position: absolute;
+left: 50%;
+transform: translateX(-50%);
 margin: 0;
+}
+
+.center-title {
+position: absolute;
+left: 50%;
+transform: translateX(-50%);
+}
+
+
+
+.icon-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 2rem;
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+
+
+
+.icon-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  height: 200px;
+  padding: 1rem;
+  text-align: center;
+  background-color: #fff;
+  border-radius: 12px;
+}
+
+
+.icon-card h3 {
+  font-size: 1rem;
+  margin: 0.5rem 0;
+}
+
+
+
+.icon-image {
+width: 80px;
+height: 80px;
+border-radius: 50%;
+object-fit: cover;
+margin-bottom: 1rem;
+}
+
+.icon-card button {
+  margin-top: auto;
+  padding: 0.5rem 1.2rem;
+  background-color: #333;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+
+.middle-image-container {
+  display: flex;
+  justify-content: center;
+  margin: 2rem 0;
+}
+
+
+.middle-image {
+max-width: 48%;
+height: auto;
+margin-bottom: 3rem;
 }
 
 
