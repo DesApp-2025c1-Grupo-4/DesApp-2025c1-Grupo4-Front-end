@@ -19,6 +19,10 @@ body {
   border-radius: 8px;
 }
 
+/* ========================= */
+/*         HEADER            */
+/* ========================= */
+
 header {
   display: flex;
   justify-content: space-between;
@@ -31,6 +35,10 @@ header {
 nav button {
   margin: 0 5px;
 }
+
+/* ========================= */
+/*         FILTERS           */
+/* ========================= */
 
 .filter-section {
   margin: 20px 0;
@@ -99,6 +107,10 @@ nav button {
   color: #b0b0b0;
 }
 
+/* ========================= */
+/*         TABLES            */
+/* ========================= */
+
 .trip-table {
   flex-grow: 1;
   overflow-y: auto;
@@ -136,6 +148,10 @@ nav button {
 .trip-table tr:nth-child(odd) {
   background-color: #ffffff;
 }
+
+/* ========================= */
+/*         CONTROLS          */
+/* ========================= */
 
 .table-controls {
   display: flex;
@@ -195,6 +211,10 @@ nav button {
   background-color: #062B60; 
 }
 
+/* ========================= */
+/*         LOGO              */
+/* ========================= */
+
 .header {
   display: flex;
   justify-content: space-between;
@@ -211,16 +231,13 @@ nav button {
   transition: transform 0.3s ease;
 }
 
-
 .logo:not([onClick]) {
   cursor: default;
 }
 
-
 .logo:hover {
   transform: scale(1.1);
 }
-
 
 .title {
   position: absolute;
@@ -235,6 +252,10 @@ nav button {
   left: 50%;
   transform: translateX(-50%);
 }
+
+/* ========================= */
+/*         ICONS             */
+/* ========================= */
 
 .icon-grid {
   display: grid;
@@ -271,7 +292,6 @@ nav button {
   margin-bottom: 1rem;
 }
 
-
 .icon-card button {
   margin-top: auto;
   padding: 0.5rem 1.2rem;
@@ -287,6 +307,9 @@ nav button {
   transform: scale(1.1);
 }
 
+/* ========================= */
+/*         IMAGES            */
+/* ========================= */
 
 .middle-image-container {
   display: flex;
@@ -299,6 +322,10 @@ nav button {
   height: auto;
   margin-bottom: 3rem;
 }
+
+/* ========================= */
+/*         REGISTRO          */
+/* ========================= */
 
 .registro-container {
   position: relative;
@@ -359,7 +386,9 @@ nav button {
   transform: scale(1.1);
 }
 
-
+/* ========================= */
+/*         FOOTER            */
+/* ========================= */
 
 .footer {
   background-color: #062B60;
