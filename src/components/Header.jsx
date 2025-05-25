@@ -1,5 +1,4 @@
-import { Box } from "@mui/material";
-import { IconButton } from '@mui/material';
+import { Box, IconButton } from "@mui/material";
 import { grey } from "@mui/material/colors";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
@@ -10,8 +9,10 @@ import PersonOutlinedIcon from '@mui/icons-material/PersonOutlined';
 import Inventory2OutlinedIcon from '@mui/icons-material/Inventory2Outlined';
 import MapOutlinedIcon from '@mui/icons-material/MapOutlined';
 import SignalCellularAltOutlinedIcon from '@mui/icons-material/SignalCellularAltOutlined';
+import acmeLogoDef from "../assets/img/acmeLogoDef.png";
 
-export function NavBar() {
+
+export function Header() {
 
   const [title, setTitle] = useState([])
   const [logo1, setLogo1] = useState([])
@@ -23,7 +24,7 @@ export function NavBar() {
    useEffect(() => {
     switch (location.pathname) {
       case '/':
-        setTitle('Logística Acme SRL');
+        setTitle( <img src={acmeLogoDef} alt="Logo empresa" height="600em"/>)
         setLogo1();
         setPath1();
         setLogo2();
@@ -90,10 +91,24 @@ export function NavBar() {
     return <Box onClick={() => navigate(path2)}>{logo2}</Box>;
   }
 
-  return <Box sx={{ display: 'flex', flexDirection: 'row',  alignItems: 'center', justifyContent: 'space-between', width: '100%', height: '5rem', backgroundColor: grey[50], py: 4, px: 7 }}>
+  return <Box sx={{ 
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    display: 'flex', 
+    flexDirection: 'row',  
+    alignItems: 'center', 
+    justifyContent: 'space-between', 
+    width: '100%', 
+    height: '1rem', 
+    zIndex: 1,
+    boxShadow: 3,
+    mb: 1,
+    backgroundColor: grey[50], py: 4, px: 7 
+  }}>
     <LeftOption/>
     <PageTitle/>
     <RightOption/>
-
   </Box>;
 }

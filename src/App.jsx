@@ -1,7 +1,6 @@
 import { Box, Grid, Stack } from "@mui/material";
 import { BrowserRouter } from "react-router-dom";
-import { NavBar } from "./components/NavBar";
-import { Footer } from "./components/Footer";
+import { Header } from "./components/Header";
 import { AppRouter } from "./AppRouter";
 
 
@@ -11,14 +10,11 @@ export function App() {
     <BrowserRouter>
       <Stack direction='column'>
         <Grid container direction='row'>
-          <NavBar />
+          <Header />
         </Grid>
         <Box sx={{mx: { xs: 1, md: 4 }, my: 4}}>
           <AppRouter />
         </Box>
-        <Grid container direction='row'>
-          <Footer />
-        </Grid>
       </Stack>
     </BrowserRouter>
   )
