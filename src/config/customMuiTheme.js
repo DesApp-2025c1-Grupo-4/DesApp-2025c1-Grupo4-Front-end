@@ -4,8 +4,11 @@ import { blue, blueGrey, grey, lightBlue } from "@mui/material/colors";
 export const customMuiTheme = createTheme({
   typography: {
     h3: {
+      fontSize: '1.17em',
       fontWeight: 'bold',
-      color: lightBlue[700],
+      unicodeBidi: 'isolate',
+      color: '#0F2F62',
+      display: 'block',
     },
     h4: {
       fontWeight: 'bold',
@@ -21,6 +24,9 @@ export const customMuiTheme = createTheme({
     },
     subtitle2: {
       fontSize: '1.2rem',
+    },
+    footer: {
+      fontSize: '0.9rem',
     },
     button: {
       textTransform: 'none',
@@ -41,6 +47,14 @@ export const customMuiTheme = createTheme({
         }
       }
     },
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          backgroundColor: '#062B60',
+          borderRadius: '10px',
+        }
+      }
+    },
     MuiIconButton: {
       // Style overrides
       styleOverrides: {
@@ -53,8 +67,8 @@ export const customMuiTheme = createTheme({
           // Hover state
           '&:hover': {
             backgroundColor: '#e0e0e0', 
-            transform: 'scale(1.1)',
-            color: 'orange'
+            // transform: 'scale(1.1)',
+            // color: 'orange'
           },
         },
       },

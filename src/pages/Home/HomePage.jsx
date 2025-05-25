@@ -1,5 +1,4 @@
-import { Box, Stack, IconButton, Card, CardActionArea, CardContent, CardMedia} from "@mui/material";
-import { Footer } from "../../components/Footer";
+import { Box, Stack, IconButton, Button} from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import image from "../../assets/img/image.jpg";
 import LanguageOutlinedIcon from '@mui/icons-material/LanguageOutlined';
@@ -20,20 +19,20 @@ export function HomePage(){
     { icon: <MapOutlinedIcon/>, title: "Registros de Viajes", path: "/registro-viajes" },
     { icon: <SignalCellularAltOutlinedIcon/>, title: "Reportes", path: "/reportes" }
   ];
+  
 
   return <Box sx={{ width:"100%" }}> 
     <Box sx={{ mx:-4, mt:-5}}>
       <img src={image} alt="background" width= "100%" height="auto"/>
     </Box>
-    <Stack direction="row" spacing={3} justifyContent={"space-around"} pt={6}> 
+    <Stack direction="row" spacing={5} justifyContent={"space-around"} pt={6}> 
       {items.map((item, index) => (
         <Box key={index}>
           <Box sx={{display: 'flex', justifyContent: 'center', py: 2 }}><IconButton >{item.icon}</IconButton></Box>
-          <Box sx={{display: 'flex', justifyContent: 'center', py: 2 }}><h3>{item.title}</h3></Box>
-          <Box sx={{display: 'flex', justifyContent: 'center', py: 2 }}><button onClick={() => navigate(item.path)}>Ir</button></Box>
+          <Box sx={{display: 'flex', justifyContent: 'center', py: 2, typography: 'h3' }}>{item.title}</Box>
+          <Box sx={{display: 'flex', justifyContent: 'center', py: 3 }}><Button variant="contained" onClick={() => navigate(item.path)}>Ir</Button></Box>
         </Box>
       ))}
     </Stack>
-   
   </Box>;
 };
