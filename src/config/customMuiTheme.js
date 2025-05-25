@@ -3,6 +3,10 @@ import { blue, blueGrey, grey, lightBlue } from "@mui/material/colors";
 
 export const customMuiTheme = createTheme({
   typography: {
+    h3: {
+      fontWeight: 'bold',
+      color: lightBlue[700],
+    },
     h4: {
       fontWeight: 'bold',
       color: lightBlue[700],

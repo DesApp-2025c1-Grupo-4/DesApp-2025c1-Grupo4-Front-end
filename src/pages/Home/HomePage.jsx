@@ -22,16 +22,16 @@ export function HomePage(){
   ];
 
   return <Box sx={{ width:"100%" }}> 
-    <Box sx={{ mx:-4, mt:6}}>
+    <Box sx={{ mx:-4, mt:-5}}>
       <img src={image} alt="background" width= "100%" height="auto"/>
     </Box>
     <Stack direction="row" spacing={3} justifyContent={"space-around"} pt={6}> 
       {items.map((item, index) => (
-        <CardActionArea key={index}>
+        <Box key={index}>
           <Box sx={{display: 'flex', justifyContent: 'center', py: 2 }}><IconButton >{item.icon}</IconButton></Box>
-          <Box sx={{display: 'flex', justifyContent: 'center', py: 2 }}>{item.title}</Box>
+          <Box sx={{display: 'flex', justifyContent: 'center', py: 2 }}><h3>{item.title}</h3></Box>
           <Box sx={{display: 'flex', justifyContent: 'center', py: 2 }}><button onClick={() => navigate(item.path)}>Ir</button></Box>
-        </CardActionArea>
+        </Box>
       ))}
     </Stack>
    
