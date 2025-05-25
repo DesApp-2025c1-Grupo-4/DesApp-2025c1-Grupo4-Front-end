@@ -28,7 +28,7 @@ export function HomePage(){
     <Stack direction="row" spacing={5} justifyContent={"space-around"} pt={6}> 
       {items.map((item, index) => (
         <Box key={index}>
-          <Box sx={{display: 'flex', justifyContent: 'center', py: 2 }}><IconButton >{item.icon}</IconButton></Box>
+          <Box sx={{display: 'flex', justifyContent: 'center', py: 2 }}><IconButton disableRipple>{item.icon}</IconButton></Box>
           <Box sx={{display: 'flex', justifyContent: 'center', py: 2, typography: 'h3' }}>{item.title}</Box>
           <Box sx={{display: 'flex', justifyContent: 'center', py: 3 }}><Button variant="contained" onClick={() => navigate(item.path)}>Ir</Button></Box>
         </Box>

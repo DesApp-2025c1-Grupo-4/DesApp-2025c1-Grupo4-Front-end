@@ -52,6 +52,11 @@ export const customMuiTheme = createTheme({
         root: {
           backgroundColor: '#062B60',
           borderRadius: '10px',
+          '&:hover': {
+            backgroundColor: '#ED7B30', 
+            transform: 'scale(1.1)',
+            color: 'white'
+          },
         }
       }
     },
@@ -63,7 +68,6 @@ export const customMuiTheme = createTheme({
           padding: '12px',
           backgroundColor: grey[300],
           color: grey[900],
-          transition: 'all 0.3s ease',
           // Hover state
           '&:hover': {
             backgroundColor: '#e0e0e0', 
