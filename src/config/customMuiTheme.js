@@ -32,7 +32,7 @@ export const customMuiTheme = createTheme({
       textTransform: 'none',
     },
     topMenu: {
-      color: grey[900],
+      color: '#0F2F62',
       fontSize: '2rem',
       fontWeight: 'bold',
     }
@@ -68,6 +68,8 @@ export const customMuiTheme = createTheme({
           padding: '12px',
           backgroundColor: grey[300],
           color: grey[900],
+          pointerEvents: "unset", // allow :hover styles to be triggered
+          cursor: "default",
           // Hover state
           '&:hover': {
             backgroundColor: '#e0e0e0', 

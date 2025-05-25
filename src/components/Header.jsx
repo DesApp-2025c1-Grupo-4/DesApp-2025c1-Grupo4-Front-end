@@ -59,7 +59,7 @@ export function Header() {
         setPath2('/');
         break;
       case '/viajes':
-        setTitle('Viajes');
+        setTitle('Registro de Viajes');
         setLogo1(<IconButton><MapOutlinedIcon/></IconButton>);
         setPath1('/viajes');
         setLogo2(<IconButton><HomeOutlinedIcon/></IconButton>);

@@ -13,10 +13,10 @@ export function HomePage(){
   const navigate = useNavigate();
   const items = [
     { icon: <LanguageOutlinedIcon/>, title: "Empresas Transportistas", path: "/empresas" },
-    { icon: <LocalShippingOutlinedIcon/>, title: "Flota de Vehículos", path: "/flota" },
+    { icon: <LocalShippingOutlinedIcon/>, title: "Flota de Vehículos", path: "/vehiculos" },
     { icon: <PersonOutlinedIcon/>, title: "Choferes", path: "/choferes" },
     { icon: <Inventory2OutlinedIcon/>, title: "Red de Depósitos", path: "/depositos" },
-    { icon: <MapOutlinedIcon/>, title: "Registros de Viajes", path: "/registro-viajes" },
+    { icon: <MapOutlinedIcon/>, title: "Registro de Viajes", path: "/viajes" },
     { icon: <SignalCellularAltOutlinedIcon/>, title: "Reportes", path: "/reportes" }
   ];
   
@@ -25,7 +25,7 @@ export function HomePage(){
     <Box sx={{ mx:-4, mt:-5}}>
       <img src={image} alt="background" width= "100%" height="auto"/>
     </Box>
-    <Stack direction="row" spacing={5} justifyContent={"space-around"} pt={6}> 
+    <Stack direction="row" spacing={5} justifyContent={"space-around"} pt={6} pb={4}> 
       {items.map((item, index) => (
         <Box key={index}>
           <Box sx={{display: 'flex', justifyContent: 'center', py: 2 }}><IconButton disableRipple>{item.icon}</IconButton></Box>
