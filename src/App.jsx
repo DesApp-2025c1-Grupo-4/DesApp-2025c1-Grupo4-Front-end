@@ -12,10 +12,10 @@ export function App() {
         <Grid container direction='row'>
           <Header />
         </Grid>
-        <Box sx={{mx: { xs: 1, md: 4 }, my: 4}}>
+        <Box sx={{display: "flex", flexDirection: "column", height:"100vh", mx: { xs: 1, md: 4 }}}>
           <AppRouter />
         </Box>
-         <Grid container direction='row'>
+        <Grid container direction='row' sx={{ top: 'auto', bottom: 0 }}>
           <Footer />
         </Grid>
       </Stack>

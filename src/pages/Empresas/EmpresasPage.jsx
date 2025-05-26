@@ -1,5 +1,9 @@
 import { useState } from 'react';
+import { Box } from '@mui/material';
 import  ReusableTable  from '../../components/ReusableTable';
+import CreateOutlinedIcon from '@mui/icons-material/CreateOutlined';
+import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
+import { render } from 'react-dom';
 
 export function EmpresasPage(){
 
@@ -11,8 +15,16 @@ export function EmpresasPage(){
 
   // Mock data
   const users = [
-    { id: 1, razon: 'Nombre empresa', cuit: '00-00000000-00', domicilio: 'Calle falsa 123', telefono: '00-00000000' },
-    { id: 2, razon: 'Nombre empresa', cuit: '00-00000000-00', domicilio: 'Calle falsa 123', telefono: '00-00000000' },
+    { id: 1, razon: 'Nombre empresa 1', cuit: '00-00000000-00', domicilio: 'Calle falsa 123', telefono: '00-00000000' },
+    { id: 2, razon: 'Nombre empresa 2', cuit: '00-00000000-00', domicilio: 'Calle falsa 123', telefono: '00-00000000' },
+    { id: 3, razon: 'Nombre empresa 3', cuit: '00-00000000-00', domicilio: 'Calle falsa 123', telefono: '00-00000000' },
+    { id: 4, razon: 'Nombre empresa 4', cuit: '00-00000000-00', domicilio: 'Calle falsa 123', telefono: '00-00000000' },
+    { id: 5, razon: 'Nombre empresa 5', cuit: '00-00000000-00', domicilio: 'Calle falsa 123', telefono: '00-00000000' },
+    { id: 6, razon: 'Nombre empresa 6', cuit: '00-00000000-00', domicilio: 'Calle falsa 123', telefono: '00-00000000' }, 
+    { id: 7, razon: 'Nombre empresa 7', cuit: '00-00000000-00', domicilio: 'Calle falsa 123', telefono: '00-00000000' },
+    { id: 8, razon: 'Nombre empresa 8', cuit: '00-00000000-00', domicilio: 'Calle falsa 123', telefono: '00-00000000' },
+    { id: 9, razon: 'Nombre empresa 9', cuit: '00-00000000-00', domicilio: 'Calle falsa 123', telefono: '00-00000000' },
+    { id: 10, razon: 'Nombre empresa 10', cuit: '00-00000000-00', domicilio: 'Calle falsa 123', telefono: '00-00000000' },
     // ... more data
   ];
 
@@ -89,16 +101,18 @@ export function EmpresasPage(){
     // Here you would typically call your API with new page size
   };
 
-  return <ReusableTable
-      columns={columns}
-      data={users}
-      page={page}
-      rowsPerPage={rowsPerPage}
-      totalRows={users.length}
-      handleChangePage={handleChangePage}
-      handleChangeRowsPerPage={handleChangeRowsPerPage}
-      sortDirection={sortDirection}
-      sortBy={sortBy}
-      onSort={handleSort}
+  return <Box sx={{py:4}}>
+    <ReusableTable
+    columns={columns}
+    data={users}
+    page={page}
+    rowsPerPage={rowsPerPage}
+    totalRows={users.length}
+    handleChangePage={handleChangePage}
+    handleChangeRowsPerPage={handleChangeRowsPerPage}
+    sortDirection={sortDirection}
+    sortBy={sortBy}
+    onSort={handleSort}
     />
+  </Box>   
 };

@@ -1,6 +1,6 @@
 import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
   Paper, TableSortLabel, TablePagination, Box} from '@mui/material';
-
+import { grey } from "@mui/material/colors";
 
 const ReusableTable = ({
   columns,
@@ -41,10 +41,16 @@ const ReusableTable = ({
               ))}
             </TableRow>
           </TableHead>
-          <TableBody>
+          <TableBody sx={{ 
+            borderCollapse: 'collapse',
+            '& td, & th': {
+              border: '1px solid',
+              borderColor: 'divider' 
+            }
+          }}>
             {data.length > 0 ? (
               data.map((row, rowIndex) => (
-                <TableRow hover role="checkbox" tabIndex={-1} key={rowIndex}>
+                <TableRow hover role="checkbox" tabIndex={-1} key={rowIndex} sx={rowIndex % 2? { background : grey[300] }:{ background : "white"}}>
                   {columns.map((column) => {
                     const value = row[column.id];
                     return (
@@ -58,7 +64,7 @@ const ReusableTable = ({
             ) : (
               <TableRow>
                 <TableCell colSpan={columns.length} align="center">
-                  <Box py={3}>No data available</Box>
+                  <Box py={3}>No hay informacion disponible</Box>
                 </TableCell>
               </TableRow>
             )}
@@ -70,6 +76,7 @@ const ReusableTable = ({
         component="div"
         count={totalRows}
         rowsPerPage={rowsPerPage}
+        labelRowsPerPage="Cantidad de registros por página"
         page={page}
         onPageChange={handleChangePage}
         onRowsPerPageChange={handleChangeRowsPerPage}

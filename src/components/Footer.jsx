@@ -7,7 +7,8 @@ export function Footer() {
     const { pathname } = useLocation();
     if (pathname != "/") return null;
 
-    return <Box sx={{ display: 'flex', 
+    return <Box component="footer" sx={{ 
+        display: 'flex', 
         flexDirection: 'row', 
         alignItems: 'center', 
         justifyContent: 'space-around', 

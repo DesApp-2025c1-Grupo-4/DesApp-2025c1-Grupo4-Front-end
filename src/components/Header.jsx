@@ -101,7 +101,7 @@ export function Header() {
     zIndex: 1,
     boxShadow: 3,
     mb: 1,
-    backgroundColor: grey[50], py: 4, px: 7 
+    backgroundColor: grey[100], py: 4, px: 7 
   }}>
     <LeftOption/>
     <PageTitle/>

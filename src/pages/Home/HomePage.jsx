@@ -22,17 +22,17 @@ export function HomePage(){
   
 
   return <Box sx={{ width:"100%" }}> 
-    <Box sx={{ mx:-4, mt:-5}}>
+    <Box sx={{ mx:-4, mt:-1}}>
       <img src={image} alt="background" width= "100%" height="auto"/>
     </Box>
-    <Stack direction="row" spacing={5} justifyContent={"space-around"} pt={6} pb={4}> 
+    <Stack direction="row" spacing={5} justifyContent={"space-between"} height={"auto"} pt={6} pb={4}> 
       {items.map((item, index) => (
-        <Box key={index}>
-          <Box sx={{display: 'flex', justifyContent: 'center', py: 2 }}><IconButton disableRipple>{item.icon}</IconButton></Box>
+        <Stack key={index} direction="column" justifyContent={"space-between"}>
+          <Box sx={{display: 'flex', justifyContent: 'center', py: 2}}><IconButton disableRipple>{item.icon}</IconButton></Box>
           <Box sx={{display: 'flex', justifyContent: 'center', py: 2, typography: 'h3' }}>{item.title}</Box>
-          <Box sx={{display: 'flex', justifyContent: 'center', py: 3 }}><Button variant="contained" onClick={() => navigate(item.path)}>Ir</Button></Box>
-        </Box>
+          <Box sx={{display: 'flex', justifyContent: 'center', py: 3, marginBottom: "0"}}><Button variant="contained" onClick={() => navigate(item.path)}>Ir</Button></Box>
+        </Stack>
       ))}
-    </Stack>
+    </Stack> 
   </Box>;
 };

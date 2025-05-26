@@ -1,5 +1,6 @@
+import { BorderAllOutlined, BorderColor } from "@mui/icons-material";
 import { createTheme } from "@mui/material";
-import { blue, blueGrey, grey, lightBlue } from "@mui/material/colors";
+import { blue, grey, lightBlue } from "@mui/material/colors";
 
 export const customMuiTheme = createTheme({
   typography: {
@@ -9,6 +10,7 @@ export const customMuiTheme = createTheme({
       unicodeBidi: 'isolate',
       color: '#0F2F62',
       display: 'block',
+      textAlign: 'center',
     },
     h4: {
       fontWeight: 'bold',
@@ -41,11 +43,17 @@ export const customMuiTheme = createTheme({
     MuiTableCell: {
       styleOverrides: {
         head: {
+          backgroundColor: '#062B60',
+          color: "white",
           fontWeight: 'bold',
-          fontSize: '1rem',
-          color: lightBlue[900]
-        }
-      }
+          textAlign: 'center',
+          border: 5,
+        },
+        body: {
+          textAlign: 'center',
+          fontWeight: 'semibold',
+        },
+      },
     },
     MuiButton: {
       styleOverrides: {
