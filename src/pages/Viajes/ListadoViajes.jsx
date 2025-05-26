@@ -1,10 +1,8 @@
 import { useState } from 'react';
 import { Box, IconButton } from '@mui/material';
 import  ReusableTable  from '../../components/ReusableTable';
-import CreateOutlinedIcon from '@mui/icons-material/CreateOutlined';
-import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
 
-export function EmpresasPage(){
+export function ListadoViajesPage(){
 
   // Table state
   const [page, setPage] = useState(0);
@@ -13,58 +11,71 @@ export function EmpresasPage(){
   const [sortBy, setSortBy] = useState('name');
 
   // Mock data
-  let companies = [
-    { razon: 'Nombre empresa 1', cuit: '00-00000000-00', domicilio: 'Calle falsa 123', telefono: '00-00000000' },
-    { razon: 'Nombre empresa 2', cuit: '00-00000000-00', domicilio: 'Calle falsa 123', telefono: '00-00000000' },
-    { razon: 'Nombre empresa 3', cuit: '00-00000000-00', domicilio: 'Calle falsa 123', telefono: '00-00000000' },
-    { razon: 'Nombre empresa 4', cuit: '00-00000000-00', domicilio: 'Calle falsa 123', telefono: '00-00000000' },
+  const trips = [
+    { numero: 'PV-124', empresa: 'Transporte Sur', chofer: 'M. López', vehiculo: 'DEF456',
+      fechaInicio: '2025-08-21', tipo: 'Internacional', origen: 'Mendoza', destino: 'Santiago' },
+    {
+      numero: 'PV-125', empresa: 'Cargas Norte', chofer: 'C. Gómez', vehiculo: 'GHI789',
+      fechaInicio: '2025-08-22', tipo: 'Nacional', origen: 'Salta', destino: 'Rosario'
+    },
+    {
+      numero: 'PV-126', empresa: 'Logística Andina', chofer: 'S. Martínez', vehiculo: 'JKL321',
+      fechaInicio: '2025-08-23', tipo: 'Internacional', origen: 'San Juan', destino: 'Valparaíso'
+    },
+    {
+      numero: 'PV-127', empresa: 'Ruta Federal', chofer: 'L. Fernández', vehiculo: 'MNO654',
+      fechaInicio: '2025-08-24', tipo: 'Nacional', origen: 'La Plata', destino: 'M. del Plata'
+    },
     // ... more data
   ];
-
-  //Adding icons
-  companies = companies.map(company => {
-    return {
-      ...company,
-      modificar: <IconButton variant="tableButtons"><CreateOutlinedIcon variant="tableButtons"/></IconButton>,
-      eliminar: <IconButton variant="tableButtons"><CloseOutlinedIcon variant="tableButtons"/></IconButton>
-    };
-  });
 
   // Columns configuration
   const columns = [
     { 
-      id: 'razon', 
-      label: 'Razón Social', 
+      id: 'numero', 
+      label: 'Número de Viaje', 
       sortable: false,
-      minWidth: 150 
+      minWidth: 140 
     },
     { 
-      id: 'cuit', 
-      label: 'CUIT/RUT', 
-      sortable: false,
-      minWidth: 200 
-    },
-    {
-      id: 'domicilio',
-      label: 'Domicilio Fiscal',
-      sortable: false,
-      minWidth: 200
-    },
-    {
-      id: 'telefono',
-      label: 'Teléfono',
-      sortable: false,
-      minWidth: 200
-    },
-    {
-      id: 'modificar',
-      label: 'Modificar',
+      id: 'empresa', 
+      label: 'Empresa', 
       sortable: false,
       minWidth: 150
     },
     {
-      id: 'eliminar',
-      label: 'Eliminar',
+      id: 'chofer',
+      label: 'Chofer',
+      sortable: false,
+      minWidth: 150
+    },
+    {
+      id: 'vehiculo',
+      label: 'Vehículo',
+      sortable: false,
+      minWidth: 150
+    },
+    {
+      id: 'fechaInicio',
+      label: 'Fecha inicio',
+      sortable: false,
+      minWidth: 150
+    },
+    {
+      id: 'tipo',
+      label: 'Tipo de Viaje',
+      sortable: false,
+      minWidth: 150
+    },
+    {
+      id: 'origen',
+      label: 'Origen',
+      sortable: false,
+      minWidth: 150
+    },
+    {
+      id: 'destino',
+      label: 'Destino',
       sortable: false,
       minWidth: 150
     },
@@ -93,10 +104,10 @@ export function EmpresasPage(){
   return <Box sx={{py:4}}>
     <ReusableTable
     columns={columns}
-    data={companies}
+    data={trips}
     page={page}
     rowsPerPage={rowsPerPage}
-    totalRows={companies.length}
+    totalRows={trips.length}
     handleChangePage={handleChangePage}
     handleChangeRowsPerPage={handleChangeRowsPerPage}
     sortDirection={sortDirection}

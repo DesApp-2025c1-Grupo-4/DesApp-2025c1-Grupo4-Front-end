@@ -17,7 +17,7 @@ export function Header() {
   const [title, setTitle] = useState([])
   const [logo1, setLogo1] = useState([])
   const [path1, setPath1] = useState([])
-  const [logo2, setLogo2] = useState(<IconButton><HomeOutlinedIcon/></IconButton>)
+  const [logo2, setLogo2] = useState(<IconButton variant= 'header'><HomeOutlinedIcon/></IconButton>)
   const [path2, setPath2] = useState('/')
 
   const location = useLocation();
@@ -32,44 +32,51 @@ export function Header() {
         break;
       case '/empresas':
         setTitle('Empresas transportistas');
-        setLogo1(<IconButton><LanguageOutlinedIcon/></IconButton>);
+        setLogo1(<IconButton variant= 'header'><LanguageOutlinedIcon/></IconButton>);
         setPath1('/empresas');
-        setLogo2(<IconButton><HomeOutlinedIcon/></IconButton>);
+        setLogo2(<IconButton variant= 'header'><HomeOutlinedIcon/></IconButton>);
         setPath2('/');
         break;
       case '/vehiculos':
         setTitle('Flota de vehículos');
-        setLogo1(<IconButton><LocalShippingOutlinedIcon style={{ fontSize: 45  }}/></IconButton>);
+        setLogo1(<IconButton variant= 'header'><LocalShippingOutlinedIcon style={{ fontSize: 45  }}/></IconButton>);
         setPath1('/vehiculos');
-        setLogo2(<IconButton><HomeOutlinedIcon/></IconButton>);
+        setLogo2(<IconButton variant= 'header'><HomeOutlinedIcon/></IconButton>);
         setPath2('/');
         break;
       case '/choferes':
         setTitle('Choferes');
-        setLogo1(<IconButton><PersonOutlinedIcon/></IconButton>);
+        setLogo1(<IconButton variant= 'header'><PersonOutlinedIcon/></IconButton>);
         setPath1('/choferes');
-        setLogo2(<IconButton><HomeOutlinedIcon/></IconButton>);
+        setLogo2(<IconButton variant= 'header'><HomeOutlinedIcon/></IconButton>);
         setPath2('/');
         break;
       case '/depositos':
         setTitle('Red de depósitos');
-        setLogo1(<IconButton><Inventory2OutlinedIcon/></IconButton>);
+        setLogo1(<IconButton variant= 'header'><Inventory2OutlinedIcon/></IconButton>);
         setPath1('/depositos');
-        setLogo2(<IconButton><HomeOutlinedIcon/></IconButton>);
+        setLogo2(<IconButton variant= 'header'><HomeOutlinedIcon/></IconButton>);
         setPath2('/');
         break;
       case '/viajes':
         setTitle('Registro de Viajes');
-        setLogo1(<IconButton><MapOutlinedIcon/></IconButton>);
+        setLogo1(<IconButton variant= 'header'><MapOutlinedIcon/></IconButton>);
         setPath1('/viajes');
-        setLogo2(<IconButton><HomeOutlinedIcon/></IconButton>);
+        setLogo2(<IconButton variant= 'header'><HomeOutlinedIcon/></IconButton>);
+        setPath2('/');
+        break;
+      case '/listado-viajes':
+        setTitle('Listado de Viajes');
+        setLogo1(<IconButton variant= 'header'><MapOutlinedIcon/></IconButton>);
+        setPath1('/viajes');
+        setLogo2(<IconButton variant= 'header'><HomeOutlinedIcon/></IconButton>);
         setPath2('/');
         break;
       case '/reportes':
         setTitle('Reportes');
-        setLogo1(<IconButton><SignalCellularAltOutlinedIcon/></IconButton>);
+        setLogo1(<IconButton variant= 'header'><SignalCellularAltOutlinedIcon/></IconButton>);
         setPath1('/reportes');
-        setLogo2(<IconButton><HomeOutlinedIcon/></IconButton>);
+        setLogo2(<IconButton variant= 'header'><HomeOutlinedIcon/></IconButton>);
         setPath2('/');
         break;
     }

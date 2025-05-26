@@ -69,6 +69,31 @@ export const customMuiTheme = createTheme({
       }
     },
     MuiIconButton: {
+      variants: [
+        {
+          props: { variant: 'tableButtons' },
+          style: {
+            background: 'transparent',
+            color: grey[900],
+            border: '2px solid',
+            borderColor: grey[900],
+            padding: '0.2em',
+            '&:hover': {
+              transform: 'scale(1.1)',
+              cursor: 'not-allowed',
+            },
+          },
+        },
+        {
+          props: { variant: 'header' },
+          style: {
+            '&:hover': {
+              transform: 'scale(1.1)',
+              cursor: 'pointer',
+            },
+          },
+        },
+      ],
       // Style overrides
       styleOverrides: {
         root: {
@@ -76,24 +101,25 @@ export const customMuiTheme = createTheme({
           padding: '12px',
           backgroundColor: grey[300],
           color: grey[900],
-          pointerEvents: "unset", // allow :hover styles to be triggered
+          pointerEvents: "unset",
           cursor: "default",
           // Hover state
           '&:hover': {
-            backgroundColor: '#e0e0e0', 
-            // transform: 'scale(1.1)',
-            // color: 'orange'
+            backgroundColor: '#e0e0e0',
           },
         },
       },
-      // Default props for all IconButtons
-      defaultProps: {
-        color: 'primary', // Default color (primary, secondary, etc.)
-        size: 'medium', // Default size (small, medium, large)
-        disableRipple: false, // Enable/disable ripple globally
-      },
     },
     MuiSvgIcon: {
+      variants: [
+        {
+          props: { variant: 'tableButtons' },
+          style: {
+            fontSize: '0.6em',
+            fontWeight: 'semibold'
+          }
+        }
+      ],
       styleOverrides: {
         root: {
           fontSize: '2,6em',   // Adjust icon size

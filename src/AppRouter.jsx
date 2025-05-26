@@ -6,6 +6,7 @@ import { ChoferesPage } from "./pages/Choferes/ChoferesPage";
 import { DepositosPage } from "./pages/Depositos/DepositosPage";
 import { ViajesPage } from "./pages/Viajes/ViajesPage";
 import { ReportesPage } from "./pages/Reportes/ReportesPage";
+import { ListadoViajesPage } from "./pages/Viajes/ListadoViajes";
 
 export function AppRouter() {
   return (
@@ -17,6 +18,7 @@ export function AppRouter() {
       <Route path='/depositos' element={<DepositosPage />} />
       <Route path='/viajes' element={<ViajesPage />} />
       <Route path='/reportes' element={<ReportesPage />} />
+      <Route path="/listado-viajes" element={<ListadoViajesPage />} />
     </Routes>
   );
 }
