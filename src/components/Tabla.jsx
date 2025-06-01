@@ -7,27 +7,31 @@ const Tabla = ({ viajes }) => {
       <Table>
         <TableHead>
           <TableRow sx={{ bgcolor: 'primary.main' }}>
-            <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Número de viaje</TableCell>
-            <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Empresa Transportista</TableCell>
+            <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Número</TableCell>
+            <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Transportista</TableCell>
             <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Conductor</TableCell>
             <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Patente</TableCell>
             <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Fecha</TableCell>
-            <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Tipo</TableCell>
+            <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Estado</TableCell>
             <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Origen</TableCell>
             <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Destino</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
-          {viajes.map((viaje, index) => (
-            <TableRow key={index} hover>
-              <TableCell>{viaje.numero}</TableCell>
-              <TableCell>{viaje.transporte}</TableCell>
-              <TableCell>{viaje.conductor}</TableCell>
-              <TableCell>{viaje.patente}</TableCell>
-              <TableCell>{viaje.fecha}</TableCell>
-              <TableCell>{viaje.tipo}</TableCell>
-              <TableCell>{viaje.origen}</TableCell>
-              <TableCell>{viaje.destino}</TableCell>
+          {viajes.map((viaje) => (
+            <TableRow key={viaje._id} hover>
+              <TableCell>{viaje.numeroViaje || `PV.${viaje._id}`}</TableCell>
+              <TableCell>{viaje.transportista?.nombre}</TableCell>
+              <TableCell>
+                {viaje.conductor ? `${viaje.conductor.nombre} ${viaje.conductor.apellido}` : 'No asignado'}
+              </TableCell>
+              <TableCell>{viaje.vehiculo?.patente || '----'}</TableCell>
+              <TableCell>
+                {new Date(viaje.inicioViaje).toLocaleDateString('es-AR')}
+              </TableCell>
+              <TableCell>{viaje.estado}</TableCell>
+              <TableCell>{viaje.depositoOrigen?.nombre}</TableCell>
+              <TableCell>{viaje.depositoDestino?.nombre}</TableCell>
             </TableRow>
           ))}
         </TableBody>
