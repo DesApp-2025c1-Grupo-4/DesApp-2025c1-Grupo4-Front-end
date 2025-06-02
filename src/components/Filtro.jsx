@@ -22,7 +22,7 @@ const Filtro = ({ filtros, setFiltros }) => {
     <LocalizationProvider dateAdapter={AdapterDateFns}>
       <Box sx={{ p: 3, borderRadius: 2, boxShadow: 1 }}>
         <Grid container spacing={3} alignItems="center">
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid item xs={12} sm={6} md={2}>
             <TextField 
               select 
               fullWidth 
@@ -37,7 +37,17 @@ const Filtro = ({ filtros, setFiltros }) => {
               ))}
             </TextField>
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid item xs={12} sm={6} md={2}>
+            <TextField
+              fullWidth
+              label="Buscar"
+              name="busqueda"
+              value={filtros.busqueda || ''}
+              onChange={(e) => setFiltros({ ...filtros, [e.target.name]: e.target.value })}
+              size="medium"
+            />
+          </Grid>
+          <Grid item xs={12} sm={6} md={2}>
             <DatePicker 
               label="Fecha Desde" 
               value={fechaDesdeValue} 
@@ -45,7 +55,7 @@ const Filtro = ({ filtros, setFiltros }) => {
               slotProps={{ textField: { fullWidth: true } }}
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid item xs={12} sm={6} md={2}>
             <DatePicker 
               label="Fecha Hasta" 
               value={fechaHastaValue} 
@@ -53,11 +63,11 @@ const Filtro = ({ filtros, setFiltros }) => {
               slotProps={{ textField: { fullWidth: true } }}
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid item xs={12} sm={6} md={2}>
             <Button 
               fullWidth 
               variant="contained" 
-              onClick={() => setFiltros({ criterio: '', fechaDesde: '', fechaHasta: '' })} 
+              onClick={() => setFiltros({ criterio: '', fechaDesde: '', fechaHasta: '', busqueda: '' })} 
               sx={{ height: '56px' }}
             >
               Limpiar

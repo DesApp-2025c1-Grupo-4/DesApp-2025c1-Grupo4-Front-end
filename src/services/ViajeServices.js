@@ -2,7 +2,7 @@ import api from './api';
 
 export const getViajes = async (filtros = {}) => {
   try {
-    const response = await api.get('/viajes', { 
+    const response = await api.get('/viajes/lista', { 
       params: {
         ...filtros,
         fechaDesde: filtros.fechaDesde || undefined,

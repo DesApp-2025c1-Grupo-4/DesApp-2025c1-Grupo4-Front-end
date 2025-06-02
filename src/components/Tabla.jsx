@@ -7,10 +7,10 @@ const Tabla = ({ viajes }) => {
       <Table>
         <TableHead>
           <TableRow sx={{ bgcolor: 'primary.main' }}>
-            <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Número</TableCell>
-            <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Transportista</TableCell>
-            <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Conductor</TableCell>
-            <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Patente</TableCell>
+            <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Numero</TableCell>
+            <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Empresa Transportista</TableCell>
+            <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Chofer</TableCell>
+            <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Vehiculo</TableCell>
             <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Fecha</TableCell>
             <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Estado</TableCell>
             <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Origen</TableCell>
@@ -20,7 +20,7 @@ const Tabla = ({ viajes }) => {
         <TableBody>
           {viajes.map((viaje) => (
             <TableRow key={viaje._id} hover>
-              <TableCell>{viaje.numeroViaje || `PV.${viaje._id}`}</TableCell>
+              <TableCell>{viaje.numeroViaje || `PV - ${viaje._id}`}</TableCell>
               <TableCell>{viaje.transportista?.nombre}</TableCell>
               <TableCell>
                 {viaje.conductor ? `${viaje.conductor.nombre} ${viaje.conductor.apellido}` : 'No asignado'}

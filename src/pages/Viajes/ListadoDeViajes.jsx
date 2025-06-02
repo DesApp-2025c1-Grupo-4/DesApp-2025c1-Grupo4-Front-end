@@ -3,7 +3,6 @@ import { Box, Container, CircularProgress, Alert } from '@mui/material';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 import Filtro from '../../components/Filtro';
-import Buscador from '../../components/Buscador';
 import Tabla from '../../components/Tabla';
 import Paginacion from '../../components/Paginacion';
 import { getViajes } from '../../services/ViajeServices';
@@ -27,10 +26,19 @@ const ListadoDeViajes = () => {
       try {
         setLoading(true);
         const data = await getViajes({});
-        setViajes(data);
-        setViajesFiltrados(data);
+        const viajesFormateados = data.map(viaje => ({
+          ...viaje,
+          numeroViaje: `PV - ${viaje._id}`,
+          conductor: viaje.asignacion?.chofer,
+          vehiculo: viaje.asignacion?.vehiculo,
+          transportista: viaje.asignacion?.transportista
+        }));
+        
+        setViajes(viajesFormateados);
+        setViajesFiltrados(viajesFormateados);
       } catch (err) {
         setError('Error al cargar viajes. Intenta nuevamente.');
+        console.error("Error detallado:", err);
       } finally {
         setLoading(false);
       }
@@ -81,13 +89,6 @@ const ListadoDeViajes = () => {
       <Container maxWidth="lg" sx={{ py: 4 }}>
         <Box mb={4}>
           <Filtro filtros={filtros} setFiltros={setFiltros} />
-        </Box>
-        
-        <Box mb={4}>
-          <Buscador 
-            busqueda={filtros.busqueda} 
-            setBusqueda={(value) => setFiltros({...filtros, busqueda: value})} 
-          />
         </Box>
         
         <Box mb={4}>
