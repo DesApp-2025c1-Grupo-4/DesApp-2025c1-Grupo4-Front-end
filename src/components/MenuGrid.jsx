@@ -23,7 +23,7 @@ const MenuGrid = () => {
   return (
     <Box sx={{ width: '100%', maxWidth: '1400px', mx: 'auto', p: 4 }}>
       <Box sx={{ display: 'flex', justifyContent: 'center', mb: 6 }}>
-        <img src={logo3} alt="Logotipo principal" style={{ width: '100%', maxWidth: '300px', height: 'auto' }}/>
+        <img src={logo3} alt="Logotipo principal" style={{ width: '800%', maxWidth: '3000px', height: 'auto' }}/>
       </Box>
       <Grid container spacing={4} justifyContent="center">
         {menuItems.map((item, index) => (

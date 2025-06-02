@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Container, CircularProgress, Alert } from '@mui/material';
 import Header from '../../components/Header';
-import Footer from '../../components/Footer';
 import Filtro from '../../components/Filtro';
 import Tabla from '../../components/Tabla';
 import Paginacion from '../../components/Paginacion';
@@ -101,7 +100,6 @@ const ListadoDeViajes = () => {
           totalItems={viajesFiltrados.length}
         />
       </Container>
-      <Footer />
     </>
   );
 };
