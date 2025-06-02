@@ -37,7 +37,7 @@ const Filtro = ({ filtros, setFiltros }) => {
               ))}
             </TextField>
           </Grid>
-          <Grid item xs={12} sm={6} md={2}>
+          <Grid item xs={12} sm={6} md={4}>
             <TextField
               fullWidth
               label="Buscar"

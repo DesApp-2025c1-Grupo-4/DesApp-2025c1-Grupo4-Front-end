@@ -12,7 +12,7 @@ const Tabla = ({ viajes }) => {
             <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Chofer</TableCell>
             <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Vehiculo</TableCell>
             <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Fecha</TableCell>
-            <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Estado</TableCell>
+            <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Tipo</TableCell>
             <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Origen</TableCell>
             <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Destino</TableCell>
           </TableRow>
@@ -20,18 +20,14 @@ const Tabla = ({ viajes }) => {
         <TableBody>
           {viajes.map((viaje) => (
             <TableRow key={viaje._id} hover>
-              <TableCell>{viaje.numeroViaje || `PV - ${viaje._id}`}</TableCell>
-              <TableCell>{viaje.transportista?.nombre}</TableCell>
-              <TableCell>
-                {viaje.conductor ? `${viaje.conductor.nombre} ${viaje.conductor.apellido}` : 'No asignado'}
-              </TableCell>
-              <TableCell>{viaje.vehiculo?.patente || '----'}</TableCell>
-              <TableCell>
-                {new Date(viaje.inicioViaje).toLocaleDateString('es-AR')}
-              </TableCell>
-              <TableCell>{viaje.estado}</TableCell>
-              <TableCell>{viaje.depositoOrigen?.nombre}</TableCell>
-              <TableCell>{viaje.depositoDestino?.nombre}</TableCell>
+              <TableCell>{viaje.numeroViaje}</TableCell>
+              <TableCell>{viaje.empresaTransportista}</TableCell>
+              <TableCell>{viaje.nombreChofer}</TableCell>
+              <TableCell>{viaje.patenteVehiculo}</TableCell>
+              <TableCell>{viaje.fechaFormateada}</TableCell>
+              <TableCell>{viaje.tipoViaje}</TableCell>
+              <TableCell>{viaje.origen}</TableCell>
+              <TableCell>{viaje.destino}</TableCell>
             </TableRow>
           ))}
         </TableBody>

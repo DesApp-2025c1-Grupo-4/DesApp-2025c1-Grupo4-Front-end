@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Box, Container, CircularProgress, Alert } from '@mui/material';
 import Header from '../../components/Header';
 import Filtro from '../../components/Filtro';
 import Tabla from '../../components/Tabla';
 import Paginacion from '../../components/Paginacion';
-import { getViajes } from '../../services/ViajeServices';
+import { useViajesData } from '../../hooks/useViajesData';
+import { useViajesFiltrados } from '../../hooks/useViajesFiltrados';
 
 const ListadoDeViajes = () => {
   const [filtros, setFiltros] = useState({
@@ -14,73 +15,12 @@ const ListadoDeViajes = () => {
     busqueda: ''
   });
   const [pagina, setPagina] = useState(1);
-  const [viajes, setViajes] = useState([]);
-  const [viajesFiltrados, setViajesFiltrados] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  
+  const { viajes, loading, error } = useViajesData();
+  const { viajesFiltrados, viajesPaginaActual, itemsPorPagina } = useViajesFiltrados(viajes, filtros);
 
-  // Obtener datos del backend
-  useEffect(() => {
-    const fetchViajes = async () => {
-      try {
-        setLoading(true);
-        const data = await getViajes({});
-        const viajesFormateados = data.map(viaje => ({
-          ...viaje,
-          numeroViaje: `PV - ${viaje._id}`,
-          conductor: viaje.asignacion?.chofer,
-          vehiculo: viaje.asignacion?.vehiculo,
-          transportista: viaje.asignacion?.transportista
-        }));
-        
-        setViajes(viajesFormateados);
-        setViajesFiltrados(viajesFormateados);
-      } catch (err) {
-        setError('Error al cargar viajes. Intenta nuevamente.');
-        console.error("Error detallado:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchViajes();
-  }, []);
-
-  // Aplicar filtros localmente
-  useEffect(() => {
-    if (viajes.length > 0) {
-      const resultados = viajes.filter(viaje => {
-        // Filtro por fechas
-        if (filtros.fechaDesde && new Date(viaje.inicioViaje) < new Date(filtros.fechaDesde)) return false;
-        if (filtros.fechaHasta && new Date(viaje.inicioViaje) > new Date(filtros.fechaHasta)) return false;
-        
-        // Filtro por búsqueda
-        if (filtros.busqueda) {
-          const term = filtros.busqueda.toLowerCase();
-          return (
-            viaje._id.toString().includes(term) ||
-            (viaje.asignacion?.toString() || '').includes(term) ||
-            (viaje.estado || '').toLowerCase().includes(term)
-          );
-        }
-        
-        return true;
-      });
-      setViajesFiltrados(resultados);
-      setPagina(1); // Resetear a primera página al cambiar filtros
-    }
-  }, [filtros, viajes]);
-
-  if (loading) {
-    return (
-      <Box display="flex" justifyContent="center" mt={4}>
-        <CircularProgress />
-      </Box>
-    );
-  }
-
-  if (error) {
-    return <Alert severity="error">{error}</Alert>;
-  }
+  if (loading) return <Box display="flex" justifyContent="center" mt={4}><CircularProgress /></Box>;
+  if (error) return <Alert severity="error">{error}</Alert>;
 
   return (
     <>
@@ -91,13 +31,14 @@ const ListadoDeViajes = () => {
         </Box>
         
         <Box mb={4}>
-          <Tabla viajes={viajesFiltrados} />
+          <Tabla viajes={viajesPaginaActual(pagina)} />
         </Box>
         
         <Paginacion
           pagina={pagina}
           setPagina={setPagina}
           totalItems={viajesFiltrados.length}
+          itemsPorPagina={itemsPorPagina}
         />
       </Container>
     </>
