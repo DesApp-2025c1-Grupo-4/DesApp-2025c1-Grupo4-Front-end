@@ -67,11 +67,17 @@ const Filtro = ({ filtros, setFiltros }) => {
             <Button 
               fullWidth 
               variant="contained" 
-              onClick={() => setFiltros({ criterio: '', fechaDesde: '', fechaHasta: '', busqueda: '' })} 
-              sx={{ height: '56px' }}
+              onClick={() => setFiltros({ criterio: '', fechaDesde: '', fechaHasta: '', busqueda: '' })}
+              sx={{ 
+                height: '56px',
+                '&:hover': {
+                  backgroundColor: 'secondary.main', 
+                  color: 'secondary.contrastText', 
+                }
+              }}
             >
               Limpiar
-            </Button>
+          </Button>
           </Grid>
         </Grid>
       </Box>

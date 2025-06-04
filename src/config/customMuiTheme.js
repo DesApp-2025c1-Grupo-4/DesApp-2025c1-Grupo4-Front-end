@@ -85,9 +85,11 @@ const customMuiTheme = createTheme({
         root: {
           borderRadius: '8px',
           transition: 'all 0.3s ease',
+          border: 'none', 
+          boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)', 
           '&:hover': {
             transform: 'translateY(-5px)',
-            boxShadow: 3,
+            boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.15)',
           },
         },
       },
@@ -107,6 +109,8 @@ const customMuiTheme = createTheme({
       styleOverrides: {
         root: {
           boxShadow: 'none',
+          marginTop: 0,
+          paddingTop: 0,
         },
       },
     },

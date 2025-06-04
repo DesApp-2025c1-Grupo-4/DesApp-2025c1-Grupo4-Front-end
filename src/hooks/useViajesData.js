@@ -10,9 +10,7 @@ export const useViajesData = () => {
     if (!origen || !destino) return 'No especificado';
     const paisOrigen = origen.split(',').pop()?.trim().toLowerCase();
     const paisDestino = destino.split(',').pop()?.trim().toLowerCase();
-    return paisOrigen === 'argentina' && paisDestino === 'argentina' 
-      ? 'Nacional' 
-      : 'Internacional';
+    return paisOrigen === 'argentina' && paisDestino === 'argentina' ? 'Nacional' : 'Internacional';
   };
 
   useEffect(() => {
