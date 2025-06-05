@@ -31,7 +31,7 @@ const ListadoDeViajes = () => {
         </Box>
         
         <Box mb={4}>
-          <Tabla viajes={viajesPaginaActual(pagina)} />
+          <Tabla data={viajesPaginaActual(pagina)} />
         </Box>
         
         <Paginacion

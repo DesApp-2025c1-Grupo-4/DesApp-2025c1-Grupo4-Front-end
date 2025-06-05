@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pagination, Box, Typography } from '@mui/material';
+import { Box, Pagination, Typography } from '@mui/material';
 
 const Paginacion = ({ pagina, setPagina, totalItems, itemsPorPagina }) => {
   const totalPaginas = Math.ceil(totalItems / itemsPorPagina);

@@ -8,6 +8,7 @@ const customMuiTheme = createTheme({
     },
     secondary: {
       main: '#F38F2B',
+      contrastText: '#FFFFFF',
     },
     background: {
       paper: '#FFFFFF',
@@ -15,37 +16,70 @@ const customMuiTheme = createTheme({
   },
   typography: {
     fontFamily: 'Arial, sans-serif',
+    h5: {
+      fontSize: '1.5rem',
+      fontWeight: 'bold',
+    },
     h6: {
       fontWeight: 'bold',
+    },
+    subtitle1: {
+      fontWeight: 500,
     },
     body2: {
       fontWeight: 500,
     },
   },
   components: {
-    // Estilos para Botones (usados en MenuBotones.jsx, Filtro.jsx, etc.)
+    // Estilos para Botones (usados en MenuBotones.jsx, Filtro.jsx, MenuGrid.jsx)
     MuiButton: {
       styleOverrides: {
         root: {
           borderRadius: '8px',
           textTransform: 'none',
           fontWeight: 'bold',
+          transition: 'all 0.3s ease',
           '&:hover': {
             transform: 'scale(1.05)',
+            backgroundColor: '#F38F2B',
+            color: '#FFFFFF',
           },
         },
         contained: {
           padding: '8px 16px',
           fontSize: '1.1rem',
+          '&:hover': {
+            backgroundColor: '#F38F2B',
+            color: '#FFFFFF',
+          },
         },
         outlined: {
           borderWidth: '2px',
           '&:hover': {
             borderWidth: '2px',
+            backgroundColor: '#F38F2B',
+            color: '#FFFFFF',
           },
         },
+        sizeLarge: {
+          height: '50px',
+          fontSize: '1rem',
+        },
+        sizeMedium: {
+          height: '56px',
+        },
       },
+      variants: [
+        {
+          props: { variant: 'contained', size: 'large' },
+          style: {
+            height: '40px',
+            fontSize: '1rem',
+          },
+        },
+      ],
     },
+
     // Estilos para Tablas (Tabla.jsx)
     MuiTable: {
       styleOverrides: {
@@ -79,14 +113,26 @@ const customMuiTheme = createTheme({
         },
       },
     },
+    MuiTableContainer: {
+      styleOverrides: {
+        root: {
+          borderRadius: '8px',
+          boxShadow: '0px 3px 1px -2px rgba(0,0,0,0.2), 0px 2px 2px 0px rgba(0,0,0,0.14), 0px 1px 5px 0px rgba(0,0,0,0.12)',
+        },
+      },
+    },
+
     // Estilos para Cards (MenuGrid.jsx)
     MuiCard: {
       styleOverrides: {
         root: {
           borderRadius: '8px',
           transition: 'all 0.3s ease',
-          border: 'none', 
-          boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)', 
+          border: 'none',
+          boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
+          display: 'flex',
+          flexDirection: 'column',
+          flex: 1,
           '&:hover': {
             transform: 'translateY(-5px)',
             boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.15)',
@@ -94,6 +140,18 @@ const customMuiTheme = createTheme({
         },
       },
     },
+    MuiCardContent: {
+      styleOverrides: {
+        root: {
+          textAlign: 'center',
+          padding: '16px',
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+        },
+      },
+    },
+
     // Estilos para TextField (Buscador.jsx, Filtro.jsx)
     MuiTextField: {
       styleOverrides: {
@@ -104,37 +162,155 @@ const customMuiTheme = createTheme({
         },
       },
     },
+
     // Estilos para AppBar (Header.jsx)
     MuiAppBar: {
       styleOverrides: {
         root: {
-          boxShadow: 'none',
-          marginTop: 0,
-          paddingTop: 0,
+          boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+          backgroundColor: '#FFFFFF',
+          color: '#062B60',
+          margin: 0,
+        },
+      },
+    },
+    MuiToolbar: {
+      styleOverrides: {
+        root: {
+          justifyContent: 'space-between',
+          minHeight: '72.8px !important',
+          paddingLeft: '0 !important',
+          paddingRight: '0 !important',
+          '@media (min-width: 600px)': {
+            paddingLeft: '0 !important',
+            paddingRight: '0 !important',
+          },
+        },
+      },
+    },
+
+    // Estilos para IconButton (Header.jsx)
+    MuiIconButton: {
+      styleOverrides: {
+        root: {
+          padding: '8px',
+          color: '#062B60',
+          '&:hover img': {
+            transform: 'scale(1.5)',
+            transition: 'transform 0.3s ease',
+          },
+        },
+      },
+    },
+
+    // Estilos para Paginación (Paginacion.jsx)
+    MuiPagination: {
+      styleOverrides: {
+        root: {
+          '& .MuiPaginationItem-root': {
+            fontWeight: 'bold',
+          },
+        },
+      },
+    },
+
+    // Estilos para Box (general)
+    MuiBox: {
+      styleOverrides: {
+        root: {
+          // Estilo para el contenedor principal de páginas
+          '&.pageContainer': {
+            display: 'flex',
+            flexDirection: 'column',
+            minHeight: '100vh',
+          },
+          // Estilo para el contenido principal
+          '&.pageContent': {
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+          },
+          // Estilo para el footer
+          '&.footer': {
+            backgroundColor: '#062B60',
+            color: '#FFFFFF',
+            paddingTop: '16px',
+            paddingBottom: '16px',
+            marginTop: 'auto',
+            overflowX: 'auto',
+          },
+          // Estilo para el contenedor del grid de menú
+          '&.menuGridContainer': {
+            width: '100%',
+            maxWidth: '1400px',
+            marginLeft: 'auto',
+            marginRight: 'auto',
+            padding: '32px',
+          },
+          // Estilo para el contenedor del logo
+          '&.logoContainer': {
+            display: 'flex',
+            justifyContent: 'center',
+            marginBottom: '48px',
+          },
+          // Estilo para el contenedor de items del footer
+          '&.footerItems': {
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            flexWrap: 'nowrap',
+            whiteSpace: 'nowrap',
+          },
+        },
+      },
+    },
+
+    // Estilos para Stack (MenuBotones.jsx)
+    MuiStack: {
+      styleOverrides: {
+        root: {
+          '&.buttonStack': {
+            width: '100%',
+            maxWidth: '800px',
+            margin: '0 auto',
+            gap: '24px',
+            alignItems: 'center',
+          },
+        },
+      },
+    },
+
+    // Estilos para Grid (MenuGrid.jsx, Filtro.jsx)
+    MuiGrid: {
+      styleOverrides: {
+        root: {
+          '&.filterGrid': {
+            padding: '24px',
+            borderRadius: '8px',
+            boxShadow: '0px 2px 1px -1px rgba(0,0,0,0.2), 0px 1px 1px 0px rgba(0,0,0,0.14), 0px 1px 3px 0px rgba(0,0,0,0.12)',
+          },
+          '&.menuGrid': {
+            justifyContent: 'center',
+          },
+        },
+        item: {
+          '&.menuGridItem': {
+            display: 'flex',
+          },
+        },
+      },
+    },
+
+    // Estilos para CircularProgress
+    MuiCircularProgress: {
+      styleOverrides: {
+        root: {
+          marginRight: '16px',
         },
       },
     },
   },
-  components: {
-  MuiBox: {
-    styleOverrides: {
-      root: {
-        // Estilo para el contenedor principal de páginas
-        pageContainer: {
-          display: 'flex',
-          flexDirection: 'column',
-          minHeight: '100vh'
-        },
-        // Estilo para el contenido principal
-        pageContent: {
-          flex: 1,
-          display: 'flex',
-          flexDirection: 'column'
-        }
-      }
-    }
-  }
-}
 });
 
 export default customMuiTheme;

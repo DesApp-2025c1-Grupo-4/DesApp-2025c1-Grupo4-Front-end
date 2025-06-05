@@ -18,7 +18,7 @@ const MenuBotones = ({ items, showBackButton = true }) => {
   };
 
   return (
-    <Stack spacing={3} alignItems="center" sx={{ width: '100%', maxWidth: '800px', margin: '0 auto' }}>
+    <Stack spacing={3} className="buttonStack">
       {items.map((item, index) => (
         <Button 
           key={index} 
@@ -28,18 +28,10 @@ const MenuBotones = ({ items, showBackButton = true }) => {
           onClick={() => handleButtonClick(item.path, index)} 
           disabled={loadingIndex === index}
           color={loadingIndex === index ? 'secondary' : 'primary'}
-          sx={{
-            height: '40px', 
-            fontSize: '1rem',
-            '&:hover': {
-              backgroundColor: 'secondary.main', 
-              color: 'secondary.contrastText',
-            },
-          }}
         >
           {loadingIndex === index ? (
             <>
-              <CircularProgress size={30} color="inherit" sx={{ mr: 2 }}/> 
+              <CircularProgress size={30} color="inherit" /> 
               Redirigiendo...
             </>
           ) : (
@@ -52,21 +44,11 @@ const MenuBotones = ({ items, showBackButton = true }) => {
           variant="outlined" 
           size="large" 
           onClick={handleBackClick} 
-          disabled={backLoading} 
-          sx={{ 
-            px: 6, 
-            mt: 4, 
-            height: '50px', 
-            fontSize: '1rem',
-            '&:hover': {
-              backgroundColor: 'secondary.main',
-              color: 'secondary.contrastText',
-            },
-          }}
+          disabled={backLoading}
         >
           {backLoading ? (
             <>
-              <CircularProgress size={30} color="inherit" sx={{ mr: 2 }}/> 
+              <CircularProgress size={30} color="inherit" /> 
               Volviendo...
             </>
           ) : (
