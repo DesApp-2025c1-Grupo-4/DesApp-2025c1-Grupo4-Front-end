@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Box, Grid, Card, CardContent, Typography, Button, CircularProgress } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import logo3 from '../assets/logo3.png';
+import homeBackground from '../assets/img/homeBackground.jpg';
 import icon1 from '../assets/icon1.png';
 import icon2 from '../assets/icon2.png';
 import icon3 from '../assets/icon3.png';
@@ -33,7 +33,7 @@ const MenuGrid = () => {
   return (
     <Box sx={{ width: '100%', maxWidth: '1400px', mx: 'auto', p: 4 }}>
       <Box sx={{ display: 'flex', justifyContent: 'center', mb: 6 }}>
-        <img src={logo3} alt="Logotipo principal" style={{ width: '800%', maxWidth: '3000px', height: 'auto' }}/>
+        <img src={homeBackground} alt="imagen de fondo" style={{ width: '800%', maxWidth: '3000px', height: 'auto' }}/>
       </Box>
       <Grid container spacing={4} justifyContent="center">
         {menuItems.map((item, index) => (

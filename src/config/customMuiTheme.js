@@ -1,4 +1,5 @@
 import { createTheme } from '@mui/material/styles';
+import { grey } from "@mui/material/colors";
 
 const customMuiTheme = createTheme({
   palette: {
@@ -190,14 +191,57 @@ const customMuiTheme = createTheme({
     },
 
     // Estilos para IconButton (Header.jsx)
+    // MuiIconButton: {
+    //   styleOverrides: {
+    //     root: {
+    //       padding: '8px',
+    //       color: '#062B60',
+    //       '&:hover img': {
+    //         transform: 'scale(1.5)',
+    //         transition: 'transform 0.3s ease',
+    //       },
+    //     },
+    //   },
+    // },
+
     MuiIconButton: {
+      variants: [
+        {
+          props: { variant: 'tableButtons' },
+          style: {
+            background: 'transparent',
+            color: grey[900],
+            border: '2px solid',
+            borderColor: grey[900],
+            padding: '0.2em',
+            '&:hover': {
+              transform: 'scale(1.1)',
+              cursor: 'not-allowed',
+            },
+          },
+        },
+        {
+          props: { variant: 'header' },
+          style: {
+            '&:hover': {
+              transform: 'scale(1.1)',
+              cursor: 'pointer',
+            },
+          },
+        },
+      ],
+      // Style overrides
       styleOverrides: {
         root: {
-          padding: '8px',
-          color: '#062B60',
-          '&:hover img': {
-            transform: 'scale(1.5)',
-            transition: 'transform 0.3s ease',
+          // Base styles
+          padding: '12px',
+          backgroundColor: grey[300],
+          color: grey[900],
+          pointerEvents: "unset",
+          cursor: "default",
+          // Hover state
+          '&:hover': {
+            backgroundColor: '#e0e0e0',
           },
         },
       },
@@ -211,6 +255,27 @@ const customMuiTheme = createTheme({
             fontWeight: 'bold',
           },
         },
+      },
+    },
+
+    MuiSvgIcon: {
+      variants: [
+        {
+          props: { variant: 'tableButtons' },
+          style: {
+            fontSize: '0.6em',
+            fontWeight: 'semibold'
+          }
+        }
+      ],
+      styleOverrides: {
+        root: {
+          fontSize: '2,6em',   // Adjust icon size
+        },
+      },
+      // Optional: Set default props for all SVG icons
+      defaultProps: {
+        fontSize: 'large', // Default prop (e.g., 'small', 'medium', 'large')
       },
     },
 
