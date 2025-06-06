@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Header from "../../components/Header.jsx";
-import Footer from "../../components/Footer";
+import Header from "../../commonComponents/Header.jsx";
+import Footer from "../../commonComponents/Footer";
 import { Box, Grid, Card, CardContent, Typography, IconButton, Button, CircularProgress} from "@mui/material";
 import homeBackground from "../../assets/img/homeBackground.jpg";
 import LanguageOutlinedIcon from '@mui/icons-material/LanguageOutlined';

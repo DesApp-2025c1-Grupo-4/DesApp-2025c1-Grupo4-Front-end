@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { Box, Container, CircularProgress, Alert } from '@mui/material';
-import Header from '../../components/Header';
-import Filtro from '../../components/Filtro';
-import Tabla from '../../components/Tabla';
-import Paginacion from '../../components/Paginacion';
+import Header from '../../commonComponents/Header';
+import Filtro from '../../commonComponents/Filtro';
+import Tabla from '../../commonComponents/Tabla';
+import Paginacion from '../../commonComponents/Paginacion';
 import { useViajesData } from '../../hooks/useViajesData';
 import { useViajesFiltrados } from '../../hooks/useViajesFiltrados';
 
