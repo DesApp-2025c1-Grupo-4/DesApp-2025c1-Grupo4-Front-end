@@ -10,6 +10,7 @@ import PersonOutlinedIcon from '@mui/icons-material/PersonOutlined';
 import Inventory2OutlinedIcon from '@mui/icons-material/Inventory2Outlined';
 import MapOutlinedIcon from '@mui/icons-material/MapOutlined';
 import SignalCellularAltOutlinedIcon from '@mui/icons-material/SignalCellularAltOutlined';
+import { Margin } from '@mui/icons-material';
 
 const Home = () => {
 
@@ -76,7 +77,7 @@ const Home = () => {
           </Grid>
         </Box>
       </Box>
-      <Footer />
+      <Footer/>
     </Box>
   );
 };
