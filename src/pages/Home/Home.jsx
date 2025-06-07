@@ -10,7 +10,6 @@ import PersonOutlinedIcon from '@mui/icons-material/PersonOutlined';
 import Inventory2OutlinedIcon from '@mui/icons-material/Inventory2Outlined';
 import MapOutlinedIcon from '@mui/icons-material/MapOutlined';
 import SignalCellularAltOutlinedIcon from '@mui/icons-material/SignalCellularAltOutlined';
-import { Margin } from '@mui/icons-material';
 
 const Home = () => {
 
@@ -22,7 +21,7 @@ const Home = () => {
     { icon: <LocalShippingOutlinedIcon/>, title: "Flota de Vehículos", path: "/vehiculos" },
     { icon: <PersonOutlinedIcon/>, title: "Choferes", path: "/choferes" },
     { icon: <Inventory2OutlinedIcon/>, title: "Red de Depósitos", path: "/depositos" },
-    { icon: <MapOutlinedIcon/>, title: "Registro de Viajes", path: "/viajes" },
+    { icon: <MapOutlinedIcon/>, title: "Registro de Viajes", path: "/registro-viajes" },
     { icon: <SignalCellularAltOutlinedIcon/>, title: "Reportes", path: "/reportes" }
   ];
   

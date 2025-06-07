@@ -1,4 +1,3 @@
-import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AppBar, Toolbar, Typography, IconButton } from '@mui/material';
 import logo1 from '../assets/logo1.png';
@@ -11,7 +10,7 @@ const Header = () => {
     '/': 'Logística Acme SRL',
     '/registro-viajes': 'Registro de Viajes',
     '/modificar-viaje': 'Modificar Viaje',
-    '/segumiento': 'Seguimiento',
+    '/seguimiento': 'Seguimiento',
     '/listado-viajes': 'Listado de Viajes',
     '/empresa': 'Empresa Transportista',
   };

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Box, Container, CircularProgress, Alert } from '@mui/material';
 import Header from '../../commonComponents/Header';
 import Filtro from '../../commonComponents/Filtro';
@@ -39,6 +39,7 @@ const ListadoDeViajes = () => {
           setPagina={setPagina}
           totalItems={viajesFiltrados.length}
           itemsPorPagina={itemsPorPagina}
+          elemento="viajes"
         />
       </Container>
     </>

@@ -82,46 +82,22 @@ const customMuiTheme = createTheme({
     },
 
     // Estilos para Tablas (Tabla.jsx)
-    MuiTable: {
-      styleOverrides: {
-        root: {
-          width: '100%',
-          borderCollapse: 'collapse',
-          marginTop: '20px',
-          minHeight: '300px',
-          borderRadius: '8px',
-          overflow: 'hidden',
-        },
-      },
-    },
     MuiTableCell: {
       styleOverrides: {
-        root: {
-          padding: '12px 16px',
-          fontSize: '16px',
-          textAlign: 'center',
-          border: '1px solid #ddd',
-        },
         head: {
           backgroundColor: '#062B60',
-          color: 'white',
+          color: "white",
           fontWeight: 'bold',
+          textAlign: 'center',
+          border: 5,
         },
         body: {
-          '&:nth-of-type(even)': {
-            backgroundColor: '#f5f5f5',
-          },
+          textAlign: 'center',
+          fontWeight: 'semibold',
         },
       },
     },
-    MuiTableContainer: {
-      styleOverrides: {
-        root: {
-          borderRadius: '8px',
-          boxShadow: '0px 3px 1px -2px rgba(0,0,0,0.2), 0px 2px 2px 0px rgba(0,0,0,0.14), 0px 1px 5px 0px rgba(0,0,0,0.12)',
-        },
-      },
-    },
+    
 
     // Estilos para Cards (MenuGrid.jsx)
     MuiCard: {
