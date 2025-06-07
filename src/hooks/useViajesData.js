@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getViajes } from '../services/ViajeServices';
+import { getViajes } from '../services/Viajes/ViajeServices';
 
 export const useViajesData = () => {
   const [viajes, setViajes] = useState([]);

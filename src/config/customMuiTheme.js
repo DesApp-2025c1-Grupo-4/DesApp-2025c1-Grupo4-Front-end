@@ -84,6 +84,11 @@ const customMuiTheme = createTheme({
     // Estilos para Tablas (Tabla.jsx)
     MuiTableCell: {
       styleOverrides: {
+        root: {
+          padding: '12px 16px',
+          fontSize: '16px',
+          textAlign: 'center',
+        },
         head: {
           backgroundColor: '#062B60',
           color: "white",
@@ -97,6 +102,7 @@ const customMuiTheme = createTheme({
         },
       },
     },
+   
     
 
     // Estilos para Cards (MenuGrid.jsx)

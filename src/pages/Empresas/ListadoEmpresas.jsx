@@ -5,17 +5,20 @@ import CreateOutlinedIcon from '@mui/icons-material/CreateOutlined';
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
 import { getAllEmpresas } from '../../services/Empresas/EmpresaService';
 import Header from '../../commonComponents/Header';
+import Paginacion from '../../commonComponents/Paginacion';
 
-export function Empresas(){
+export function ListadoEmpresas(){
 
   // Table state
   const [sortDirection, setSortDirection] = useState('asc');
   const [sortBy, setSortBy] = useState('name');
+  const [pagina, setPagina] = useState(1);
+  const itemsPorPagina = 10;
 
   //Content state
   const [empresas, setEmpresas] = useState([]);
   //const [newEmpresa, setNewEmpresa] = useState(faldr);
-
+  
   //API Call
   useEffect(() => {
     async function fetchEmpresas() {
@@ -29,7 +32,6 @@ export function Empresas(){
     fetchEmpresas();
   }, []);
   
-  console.log(empresas)
   //Adding icons
   let listaCompleta = empresas;
   listaCompleta = listaCompleta.map(empresa => {
@@ -40,43 +42,51 @@ export function Empresas(){
     };
   });
 
+  //Parametros para paginado
+  const PaginaActual = (pagina) => {
+    return listaCompleta.slice(
+      (pagina - 1) * itemsPorPagina,
+      pagina * itemsPorPagina
+    );
+  };
+
   // Columns configuration
   const columns = [
     { 
       id: 'razonSocial', 
       label: 'Razón Social', 
       sortable: false,
-      minWidth: 150 
+      minWidth: 80 
     },
     { 
       id: 'cuit', 
       label: 'CUIT/RUT', 
       sortable: false,
-      minWidth: 200 
+      minWidth: 80
     },
     {
       id: 'domicilio',
       label: 'Domicilio Fiscal',
       sortable: false,
-      minWidth: 200
+      minWidth: 80
     },
     {
       id: 'contacto',
       label: 'Teléfono',
       sortable: false,
-      minWidth: 200
+      minWidth: 80
     },
     {
       id: 'modificar',
       label: 'Modificar',
       sortable: false,
-      minWidth: 150
+      minWidth: 50
     },
     {
       id: 'eliminar',
       label: 'Eliminar',
       sortable: false,
-      minWidth: 150
+      minWidth: 50
     },
   ];
 
@@ -90,14 +100,20 @@ export function Empresas(){
 
   return <>
     <Header/>
-    <Box sx={{py:4}}>
+    <Box sx={{py:4, px:10}}>
       <Tabla2
-      columns={columns}
-      data={listaCompleta}
-      totalRows={empresas.length-2}
-      sortDirection={sortDirection}
-      sortBy={sortBy}
-      onSort={handleSort}
+        columns={columns}
+        data={PaginaActual(pagina)}
+        sortDirection={sortDirection}
+        sortBy={sortBy}
+        onSort={handleSort}
+      />
+      <Paginacion
+        pagina={pagina}
+        setPagina={setPagina}
+        totalItems={listaCompleta.length}
+        itemsPorPagina={itemsPorPagina}
+        elemento="empresas"
       />
     </Box>   
   </>

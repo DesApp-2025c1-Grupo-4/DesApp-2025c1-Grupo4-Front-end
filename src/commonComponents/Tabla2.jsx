@@ -12,7 +12,7 @@ const Tabla2 = ({
   return (
     <Paper sx={{ width: '100%', overflow: 'hidden' }}>
       <TableContainer sx={{ maxHeight: 600 }}>
-        <Table stickyHeader aria-label="sticky table">
+        <Table>
           <TableHead>
             <TableRow>
               {columns.map((column) => (
@@ -59,7 +59,7 @@ const Tabla2 = ({
             ) : (
               <TableRow>
                 <TableCell colSpan={columns.length} align="center">
-                  <Box py={3}>No hay informacion disponible</Box>
+                  {/* <Box py={3}>No hay informacion disponible</Box> */}
                 </TableCell>
               </TableRow>
             )}
