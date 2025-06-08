@@ -18,7 +18,7 @@ export function Header() {
     <AppBar position="static" >
       <Toolbar sx={{ justifyContent: isHomePage ? 'center' : 'space-between' }}>
         {!isHomePage && (
-          <IconButton variant= 'header' edge="start" onClick={() => navigate(currentRoute.returnPath)}>
+          <IconButton variant= 'header' edge="start" onClick={ () => navigate(currentRoute.returnPath)}>
             {currentRoute.logo}
           </IconButton>
         )}

@@ -10,9 +10,9 @@ import { ListadoChoferes } from './pages/Choferes/ListadoChoferes.jsx';
 import { ListadoDepositos } from './pages/Depositos/ListadoDepositos.jsx';
 import { ListadoVehiculos } from './pages/Vehiculos/ListadoVehiculos.jsx';
 import { ListadoReportes } from './pages/Reportes/ListadoReportes.jsx';
-//import RegistrarViaje from './pages/Viajes/RegistrarViaje.jsx';
-//import ModificarViaje from './pages/Viajes/ModificarViaje.jsx';
-//import Seguimiento from './pages/Viajes/Seguimiento.jsx';
+import { RegistrarViaje } from './pages/Viajes/RegistrarViaje.jsx';
+import { ModificarViaje } from './pages/Viajes/ModificarViaje.jsx';
+import { Seguimiento } from './pages/Viajes/Seguimiento.jsx';
 
 
 const AppRoutes = () => {
@@ -30,9 +30,9 @@ const AppRoutes = () => {
           <Route path="/vehiculos" element={<ListadoVehiculos /> }/>
           <Route path="/reportes" element={<ListadoReportes /> }/>
           <Route path="/listado-viajes" element={<ListadoViajes /> }/>
-           {/*<Route path="/registrar-viaje" element={<RegistrarViaje />} />
+          <Route path="/registrar-viaje" element={<RegistrarViaje />} />
           <Route path="/modificar-viaje" element={<ModificarViaje />} />
-          <Route path="/seguimiento" element={<Seguimiento />} />*/}
+          <Route path="/seguimiento" element={<Seguimiento />} />
         </Routes>
       </App>
     </Router>

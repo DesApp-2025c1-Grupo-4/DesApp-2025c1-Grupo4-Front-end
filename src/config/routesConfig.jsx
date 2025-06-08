@@ -15,7 +15,12 @@ export const ROUTE_CONFIG = {
   '/registro-viajes': {
     title: 'Registro de Viajes',
     logo: <MapOutlinedIcon />,
-    returnPath: ''
+    returnPath: '/registro-viajes'
+  },
+  '/registrar-viaje': {
+    title: 'Registrar Viajes',
+    logo: <MapOutlinedIcon />,
+    returnPath: '/registro-viajes'
   },
   '/modificar-viaje': {
     title: 'Modificar Viaje',
@@ -35,26 +40,26 @@ export const ROUTE_CONFIG = {
   '/empresas': {
     title: 'Empresa Transportista',
     logo: <LanguageOutlinedIcon />,
-    returnPath: ''
+    returnPath: '/empresas'
   },
   '/vehiculos': {
     title: 'Flota de Vehículos',
     logo: <LocalShippingOutlinedIcon />,
-    returnPath: ''
+    returnPath: '/vehiculos'
   },
   '/choferes': {
     title: 'Choferes',
     logo: <PersonOutlinedIcon />,
-    returnPath: ''
+    returnPath: '/choferes'
   },
   '/depositos': {
     title: 'Red de Depósitos',
     logo: <Inventory2OutlinedIcon />,
-    returnPath: ''
+    returnPath: '/depositos'
   },
   '/reportes': {
     title: 'Reportes',
     logo: <SignalCellularAltOutlinedIcon />,
-    returnPath: ''
+    returnPath: '/reportes'
   }
 };
