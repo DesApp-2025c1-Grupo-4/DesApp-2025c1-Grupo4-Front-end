@@ -40,26 +40,26 @@ export const ROUTE_CONFIG = {
   '/empresas': {
     title: 'Empresa Transportista',
     logo: <LanguageOutlinedIcon variant='biggerIcons'/>,
-    returnPath: '/empresas'
+    returnPath: ''
   },
   '/vehiculos': {
     title: 'Flota de Vehículos',
     logo: <LocalShippingOutlinedIcon variant='biggerIcons'/>,
-    returnPath: '/vehiculos'
+    returnPath: ''
   },
   '/choferes': {
     title: 'Choferes',
     logo: <PersonOutlinedIcon variant='biggerIcons'/>,
-    returnPath: '/choferes'
+    returnPath: ''
   },
   '/depositos': {
     title: 'Red de Depósitos',
     logo: <Inventory2OutlinedIcon variant='biggerIcons'/>,
-    returnPath: '/depositos'
+    returnPath: ''
   },
   '/reportes': {
     title: 'Reportes',
     logo: <SignalCellularAltOutlinedIcon variant='biggerIcons'/>,
-    returnPath: '/reportes'
+    returnPath: ''
   }
 };
