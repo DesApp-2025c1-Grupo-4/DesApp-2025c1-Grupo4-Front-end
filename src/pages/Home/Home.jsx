@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Header from "../../commonComponents/Header.jsx";
 import Footer from "../../commonComponents/Footer";
 import { Box, Grid, Card, CardContent, Typography, IconButton, Button, CircularProgress} from "@mui/material";
 import homeBackground from "../../assets/img/homeBackground.jpg";
@@ -35,7 +34,6 @@ const Home = () => {
 
   return (
     <Box sx={{ '&.MuiBox-root': theme => theme.components.MuiBox.styleOverrides.root.pageContainer  }}>
-      <Header />
       <Box sx={{  '&.MuiBox-root': theme => theme.components.MuiBox.styleOverrides.root.pageContent }}>
         <Box sx={{ width: '100%', maxWidth: '1400px', mx: 'auto', p: 4 }}>
           <Box sx={{ display: 'flex', justifyContent: 'center', mb: 6 }}>

@@ -103,8 +103,6 @@ const customMuiTheme = createTheme({
       },
     },
    
-    
-
     // Estilos para Cards (MenuGrid.jsx)
     MuiCard: {
       styleOverrides: {
@@ -150,9 +148,9 @@ const customMuiTheme = createTheme({
     MuiAppBar: {
       styleOverrides: {
         root: {
+          display: 'flex', 
           boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
-          backgroundColor: '#FFFFFF',
-          color: '#062B60',
+          backgroundColor:  grey[100],
           margin: 0,
         },
       },
@@ -161,13 +159,11 @@ const customMuiTheme = createTheme({
       styleOverrides: {
         root: {
           justifyContent: 'space-between',
-          minHeight: '72.8px !important',
-          paddingLeft: '0 !important',
-          paddingRight: '0 !important',
-          '@media (min-width: 600px)': {
-            paddingLeft: '0 !important',
-            paddingRight: '0 !important',
-          },
+          alignItems: 'center', 
+          paddingTop: '0.5rem',
+          paddingBottom: '0.5rem',
+          paddingLeft: '0.5rem',
+          paddingRight: '0.5rem',
         },
       },
     },

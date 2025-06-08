@@ -4,7 +4,6 @@ import Tabla2 from '../../commonComponents/Tabla2';
 import CreateOutlinedIcon from '@mui/icons-material/CreateOutlined';
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
 import { getAllVehiculos } from '../../services/Vehiculos/VehiculoService';
-import Header from '../../commonComponents/Header';
 import Paginacion from '../../commonComponents/Paginacion';
 
 export function ListadoVehiculos(){
@@ -124,7 +123,6 @@ export function ListadoVehiculos(){
   };
 
   return <>
-    <Header/>
     <Box sx={{py:4, px:10}}>
       <Tabla2
         columns={columns}

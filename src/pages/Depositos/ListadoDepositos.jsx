@@ -4,7 +4,6 @@ import Tabla2 from '../../commonComponents/Tabla2';
 import CreateOutlinedIcon from '@mui/icons-material/CreateOutlined';
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
 import { getAllDepositos } from '../../services/Depositos/DepositoService';
-import Header from '../../commonComponents/Header';
 import Paginacion from '../../commonComponents/Paginacion';
 
 export function ListadoDepositos(){
@@ -105,7 +104,6 @@ export function ListadoDepositos(){
   };
 
   return <>
-    <Header/>
     <Box sx={{py:4, px:10}}>
       <Tabla2
         columns={columns}

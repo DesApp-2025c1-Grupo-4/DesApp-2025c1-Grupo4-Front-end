@@ -4,7 +4,6 @@ import Tabla2 from '../../commonComponents/Tabla2';
 import CreateOutlinedIcon from '@mui/icons-material/CreateOutlined';
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
 import { getAllEmpresas } from '../../services/Empresas/EmpresaService';
-import Header from '../../commonComponents/Header';
 import Paginacion from '../../commonComponents/Paginacion';
 
 export function ListadoEmpresas(){
@@ -99,7 +98,6 @@ export function ListadoEmpresas(){
   };
 
   return <>
-    <Header/>
     <Box sx={{py:4, px:10}}>
       <Tabla2
         columns={columns}

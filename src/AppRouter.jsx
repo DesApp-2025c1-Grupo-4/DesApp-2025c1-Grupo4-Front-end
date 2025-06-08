@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import App from './App';
 
+import { Header } from './commonComponents/Header.jsx';
 import Home from './pages/Home/Home.jsx';
 import RegistroViajes from './pages/Viajes/RegistroViajes.jsx';
 import ListadoViajes from './pages/Viajes/ListadoViajes.jsx';
@@ -18,6 +19,7 @@ const AppRoutes = () => {
   return (
     <Router>
       <App>
+        <Header/>
         <Routes>
           {/* Rutas declarativas para cada vista */}
           <Route path="/" element={<Home />} />

@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Box, Container, CircularProgress, Alert } from '@mui/material';
-import Header from '../../commonComponents/Header';
 import Filtro from '../../commonComponents/Filtro';
 import Tabla from '../../commonComponents/Tabla';
 import Paginacion from '../../commonComponents/Paginacion';
@@ -24,7 +23,6 @@ const ListadoDeViajes = () => {
 
   return (
     <>
-      <Header />
       <Container maxWidth="lg" sx={{ py: 4 }}>
         <Box mb={4}>
           <Filtro filtros={filtros} setFiltros={setFiltros} />

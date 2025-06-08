@@ -1,11 +1,11 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AppBar, Toolbar, Typography, IconButton } from '@mui/material';
-import logo1 from '../assets/logo1.png';
-import logo2 from '../assets/logo2.png';
+import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined';
 
-const Header = () => {
+export function Header() {
   const navigate = useNavigate();
   const location = useLocation();
+  
   const titles = {
     '/': 'Logística Acme SRL',
     '/registro-viajes': 'Registro de Viajes',
@@ -13,11 +13,15 @@ const Header = () => {
     '/seguimiento': 'Seguimiento',
     '/listado-viajes': 'Listado de Viajes',
     '/empresa': 'Empresa Transportista',
+    '/vehiculos': 'Flota de Vehículos',
+    '/chofer': 'Choferes',
+    '/depositos': 'Red de Depósitos',
+    '/reportes': 'Reportes',
   };
-  const isHomePage = location.pathname === '/';
 
-  const scaleFactor = 1.3;
-  const logoHeight = 40 * scaleFactor;
+
+
+  const isHomePage = location.pathname === '/';
 
   const handleLogo1Click = () => {
     const currentPath = location.pathname;
@@ -35,15 +39,11 @@ const Header = () => {
   };
 
   return (
-    <AppBar position="static">
+    <AppBar position="static" >
       <Toolbar sx={{ justifyContent: isHomePage ? 'center' : 'space-between' }}>
         {!isHomePage && (
-          <IconButton edge="start" onClick={handleLogo1Click}>
-            <img
-              src={logo1}
-              alt="Logo 1"
-              style={{ height: `${logoHeight}px` }}
-            />
+          <IconButton variant= 'header' edge="start" onClick={handleLogo1Click}>
+            <HomeOutlinedIcon/>
           </IconButton>
         )}
 
@@ -52,17 +52,11 @@ const Header = () => {
         </Typography>
 
         {!isHomePage && (
-          <IconButton edge="end" onClick={() => navigate('/')}>
-            <img
-              src={logo2}
-              alt="Logo 2"
-              style={{ height: `${logoHeight}px` }}
-            />
+          <IconButton variant= 'header' edge="end" onClick={() => navigate('/')}>
+            <HomeOutlinedIcon/>
           </IconButton>
         )}
       </Toolbar>
     </AppBar>
   );
 };
-
-export default Header;

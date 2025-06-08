@@ -1,6 +1,5 @@
 import React from 'react';
 import { Container } from '@mui/material';
-import Header from '../../commonComponents/Header';
 import MenuBotones from '../../commonComponents/MenuBotones';
 
 const RegistroViajes = () => {
@@ -13,7 +12,6 @@ const RegistroViajes = () => {
 
   return (
     <>
-      <Header/>
       <Container maxWidth="sm" sx={{ py: 4 }}>
         <MenuBotones items={menuItems} />
       </Container>
