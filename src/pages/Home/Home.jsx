@@ -16,12 +16,12 @@ const Home = () => {
   const [loadingIndex, setLoadingIndex] = useState(null);
 
   const menuItems = [
-    { icon: <LanguageOutlinedIcon/>, title: "Empresas Transportistas", path: "/empresas" },
-    { icon: <LocalShippingOutlinedIcon/>, title: "Flota de Vehículos", path: "/vehiculos" },
-    { icon: <PersonOutlinedIcon/>, title: "Choferes", path: "/choferes" },
-    { icon: <Inventory2OutlinedIcon/>, title: "Red de Depósitos", path: "/depositos" },
-    { icon: <MapOutlinedIcon/>, title: "Registro de Viajes", path: "/registro-viajes" },
-    { icon: <SignalCellularAltOutlinedIcon/>, title: "Reportes", path: "/reportes" }
+    { icon: <LanguageOutlinedIcon variant='biggerIcons'/>, title: "Empresas Transportistas", path: "/empresas" },
+    { icon: <LocalShippingOutlinedIcon variant='biggerIcons'/>, title: "Flota de Vehículos", path: "/vehiculos" },
+    { icon: <PersonOutlinedIcon variant='biggerIcons'/>, title: "Choferes", path: "/choferes" },
+    { icon: <Inventory2OutlinedIcon variant='biggerIcons'/>, title: "Red de Depósitos", path: "/depositos" },
+    { icon: <MapOutlinedIcon variant='biggerIcons'/>, title: "Registro de Viajes", path: "/registro-viajes" },
+    { icon: <SignalCellularAltOutlinedIcon variant='biggerIcons'/>, title: "Reportes", path: "/reportes" }
   ];
   
     const handleButtonClick = (path, index) => {
@@ -44,7 +44,7 @@ const Home = () => {
               <Grid item xs={6} sm={4} md={3} lg={2} key={index} sx={{ display: 'flex' }}>
                 <Card sx={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
                   <CardContent sx={{ textAlign: 'center', p: 2, flex: 1, display: 'flex', flexDirection: 'column' }}>
-                    <Box alt={item.title} sx={{display: 'flex', justifyContent: 'center', py: 2}}><IconButton disableRipple>{item.icon}</IconButton></Box>
+                    <Box alt={item.title} sx={{display: 'flex', justifyContent: 'center', py: 2}}><IconButton variant='home' disableRipple>{item.icon}</IconButton></Box>
                       <Typography variant="subtitle1" gutterBottom sx={{ flex: 1 }}>{item.title}</Typography>
                         <Button 
                           variant="contained"

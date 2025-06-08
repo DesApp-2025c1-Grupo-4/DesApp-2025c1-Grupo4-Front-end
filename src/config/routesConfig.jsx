@@ -14,52 +14,52 @@ export const ROUTE_CONFIG = {
   },
   '/registro-viajes': {
     title: 'Registro de Viajes',
-    logo: <MapOutlinedIcon />,
+    logo: <MapOutlinedIcon variant='biggerIcons'/>,
     returnPath: '/registro-viajes'
   },
   '/registrar-viaje': {
     title: 'Registrar Viajes',
-    logo: <MapOutlinedIcon />,
+    logo: <MapOutlinedIcon variant='biggerIcons'/>,
     returnPath: '/registro-viajes'
   },
   '/modificar-viaje': {
     title: 'Modificar Viaje',
-    logo: <MapOutlinedIcon />,
+    logo: <MapOutlinedIcon variant='biggerIcons'/>,
     returnPath: '/registro-viajes'
   },
   '/seguimiento': {
     title: 'Seguimiento',
-    logo: <MapOutlinedIcon />,
+    logo: <MapOutlinedIcon variant='biggerIcons'/>,
     returnPath: '/registro-viajes'
   },
   '/listado-viajes': {
     title: 'Listado de Viajes',
-    logo: <MapOutlinedIcon />,
+    logo: <MapOutlinedIcon variant='biggerIcons'/>,
     returnPath: '/registro-viajes'
   },
   '/empresas': {
     title: 'Empresa Transportista',
-    logo: <LanguageOutlinedIcon />,
+    logo: <LanguageOutlinedIcon variant='biggerIcons'/>,
     returnPath: '/empresas'
   },
   '/vehiculos': {
     title: 'Flota de Vehículos',
-    logo: <LocalShippingOutlinedIcon />,
+    logo: <LocalShippingOutlinedIcon variant='biggerIcons'/>,
     returnPath: '/vehiculos'
   },
   '/choferes': {
     title: 'Choferes',
-    logo: <PersonOutlinedIcon />,
+    logo: <PersonOutlinedIcon variant='biggerIcons'/>,
     returnPath: '/choferes'
   },
   '/depositos': {
     title: 'Red de Depósitos',
-    logo: <Inventory2OutlinedIcon />,
+    logo: <Inventory2OutlinedIcon variant='biggerIcons'/>,
     returnPath: '/depositos'
   },
   '/reportes': {
     title: 'Reportes',
-    logo: <SignalCellularAltOutlinedIcon />,
+    logo: <SignalCellularAltOutlinedIcon variant='biggerIcons'/>,
     returnPath: '/reportes'
   }
 };

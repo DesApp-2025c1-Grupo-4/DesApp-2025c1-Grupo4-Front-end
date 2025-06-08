@@ -206,28 +206,29 @@ const customMuiTheme = createTheme({
         {
           props: { variant: 'header' },
           style: {
+            padding: '10px',
+            backgroundColor: grey[300],
+            color: grey[900],
+            pointerEvents: "unset",
+            cursor: "default",
+            // Hover state
             '&:hover': {
               transform: 'scale(1.1)',
               cursor: 'pointer',
             },
           },
         },
-      ],
-      // Style overrides
-      styleOverrides: {
-        root: {
-          // Base styles
-          padding: '10px',
-          backgroundColor: grey[300],
-          color: grey[900],
-          pointerEvents: "unset",
-          cursor: "default",
-          // Hover state
-          '&:hover': {
-            backgroundColor: '#e0e0e0',
+        {
+          props: { variant: 'home' },
+          style: {
+            padding: '10px',
+            backgroundColor: grey[300],
+            color: grey[900],
+            pointerEvents: "unset",
+            cursor: "default",
           },
         },
-      },
+      ],
     },
 
     // Estilos para Paginación (Paginacion.jsx)
@@ -247,18 +248,22 @@ const customMuiTheme = createTheme({
           props: { variant: 'tableButtons' },
           style: {
             fontSize: '0.6em',
-            fontWeight: 'semibold'
+            fontWeight: 'semibold',
+            color: grey[900]
+          }
+        },
+        {
+          props: { variant: 'biggerIcons' },
+          style: {
+            fontSize: '2.2rem',
+            color: grey[900]
           }
         }
       ],
       styleOverrides: {
         root: {
-          fontSize: '1,1em',   // Adjust icon size
+          color: '#062B60'
         },
-      },
-      // Optional: Set default props for all SVG icons
-      defaultProps: {
-        fontSize: 'large', // Default prop (e.g., 'small', 'medium', 'large')
       },
     },
 

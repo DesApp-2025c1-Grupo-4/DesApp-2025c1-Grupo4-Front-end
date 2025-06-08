@@ -29,7 +29,7 @@ export function Header() {
 
         {!isHomePage && (
           <IconButton variant= 'header' edge="end" onClick={() => navigate('/')}>
-            <HomeOutlinedIcon/>
+            <HomeOutlinedIcon variant='biggerIcons'/>
           </IconButton>
         )}
       </Toolbar>
