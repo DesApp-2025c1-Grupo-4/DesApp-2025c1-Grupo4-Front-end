@@ -30,6 +30,11 @@ const customMuiTheme = createTheme({
     body2: {
       fontWeight: 500,
     },
+    topMenu: {
+      color: '#0F2F62',
+      fontSize: '1.7em',
+      fontWeight: 'bold',
+    },
   },
   components: {
     // Estilos para Botones (usados en MenuBotones.jsx, Filtro.jsx, MenuGrid.jsx)
@@ -160,10 +165,10 @@ const customMuiTheme = createTheme({
         root: {
           justifyContent: 'space-between',
           alignItems: 'center', 
-          paddingTop: '0.5rem',
-          paddingBottom: '0.5rem',
-          paddingLeft: '0.5rem',
-          paddingRight: '0.5rem',
+          paddingTop: '0.4em',
+          paddingBottom: '0.4em',
+          paddingLeft: '3em',
+          paddingRight: '3em',
         },
       },
     },
@@ -212,7 +217,7 @@ const customMuiTheme = createTheme({
       styleOverrides: {
         root: {
           // Base styles
-          padding: '12px',
+          padding: '10px',
           backgroundColor: grey[300],
           color: grey[900],
           pointerEvents: "unset",
@@ -248,7 +253,7 @@ const customMuiTheme = createTheme({
       ],
       styleOverrides: {
         root: {
-          fontSize: '2,6em',   // Adjust icon size
+          fontSize: '1,1em',   // Adjust icon size
         },
       },
       // Optional: Set default props for all SVG icons
