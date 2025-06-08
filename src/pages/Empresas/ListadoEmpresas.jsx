@@ -5,6 +5,7 @@ import CreateOutlinedIcon from '@mui/icons-material/CreateOutlined';
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
 import { getAllEmpresas } from '../../services/Empresas/EmpresaService';
 import Paginacion from '../../commonComponents/Paginacion';
+import Filtro from '../../commonComponents/Filtro';
 
 export function ListadoEmpresas(){
 
@@ -17,6 +18,14 @@ export function ListadoEmpresas(){
   //Content state
   const [empresas, setEmpresas] = useState([]);
   //const [newEmpresa, setNewEmpresa] = useState(faldr);
+
+  //Componente filtro
+  const [filtros, setFiltros] = useState({
+    criterio: '',
+    fechaDesde: '',
+    fechaHasta: '',
+    busqueda: '',
+  });
   
   //API Call
   useEffect(() => {
@@ -98,8 +107,11 @@ export function ListadoEmpresas(){
   };
 
   return <>
-    <Box sx={{py:4, px:10}}>
-      <Tabla2
+    <Box sx={{py:4, px:15}}>
+      <Box mb={4}>
+          <Filtro filtros={filtros} setFiltros={setFiltros} mode={'empresas'}/>
+      </Box>
+      <Tabla2 mb={4}
         columns={columns}
         data={PaginaActual(pagina)}
         sortDirection={sortDirection}
@@ -113,6 +125,7 @@ export function ListadoEmpresas(){
         itemsPorPagina={itemsPorPagina}
         elemento="empresas"
       />
+      
     </Box>   
   </>
 };

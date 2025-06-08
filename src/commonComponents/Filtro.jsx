@@ -5,7 +5,7 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 const Filtro = ({ 
   filtros, 
   setFiltros, 
-  mode = 'viajes', // 'viajes', 'empresas', 'choferes', 'depositos'
+  mode, // 'viajes', 'empresas', 'choferes', 'depositos', 'vehiculos'
   onRegister,
   onSearch 
 }) => {
@@ -35,7 +35,14 @@ const Filtro = ({
       showDates: false,
       searchLabel: 'Buscar por Provincia/País',
       registerButton: 'Registrar Deposito'
+    },
+    vehiculos: {
+      showCriterio: false,
+      showDates: false,
+      searchLabel: 'Buscar por Patente',
+      registerButton: 'Registrar Vehiculo'
     }
+
   };
 
   const currentConfig = config[mode] || config.viajes;

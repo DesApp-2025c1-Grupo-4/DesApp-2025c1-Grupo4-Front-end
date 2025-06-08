@@ -5,6 +5,7 @@ import CreateOutlinedIcon from '@mui/icons-material/CreateOutlined';
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
 import { getAllVehiculos } from '../../services/Vehiculos/VehiculoService';
 import Paginacion from '../../commonComponents/Paginacion';
+import Filtro from '../../commonComponents/Filtro';
 
 export function ListadoVehiculos(){
 
@@ -16,7 +17,14 @@ export function ListadoVehiculos(){
 
   //Content state
   const [vehiculos, setVehiculos] = useState([]);
-  //const [newEmpresa, setNewEmpresa] = useState(faldr);
+
+  //Componente filtro
+  const [filtros, setFiltros] = useState({
+    criterio: '',
+    fechaDesde: '',
+    fechaHasta: '',
+    busqueda: '',
+  });
   
   //API Call
   useEffect(() => {
@@ -123,7 +131,10 @@ export function ListadoVehiculos(){
   };
 
   return <>
-    <Box sx={{py:4, px:10}}>
+    <Box sx={{py:4, px:15}}>
+      <Box mb={4}>
+          <Filtro filtros={filtros} setFiltros={setFiltros} mode={'vehiculos'}/>
+      </Box>
       <Tabla2
         columns={columns}
         data={PaginaActual(pagina)}

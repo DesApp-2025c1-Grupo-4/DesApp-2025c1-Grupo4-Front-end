@@ -25,7 +25,7 @@ const ListadoDeViajes = () => {
     <>
       <Container maxWidth="lg" sx={{ py: 4 }}>
         <Box mb={4}>
-          <Filtro filtros={filtros} setFiltros={setFiltros} />
+          <Filtro filtros={filtros} setFiltros={setFiltros} mode={"viajes"}/>
         </Box>
         
         <Box mb={4}>

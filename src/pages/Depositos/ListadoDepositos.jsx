@@ -5,6 +5,7 @@ import CreateOutlinedIcon from '@mui/icons-material/CreateOutlined';
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
 import { getAllDepositos } from '../../services/Depositos/DepositoService';
 import Paginacion from '../../commonComponents/Paginacion';
+import Filtro from '../../commonComponents/Filtro';
 
 export function ListadoDepositos(){
 
@@ -16,7 +17,14 @@ export function ListadoDepositos(){
 
   //Content state
   const [depositos, setDepositos] = useState([]);
-  //const [newEmpresa, setNewEmpresa] = useState(faldr);
+
+  //Componente filtro
+    const [filtros, setFiltros] = useState({
+      criterio: '',
+      fechaDesde: '',
+      fechaHasta: '',
+      busqueda: '',
+    });
   
   //API Call
   useEffect(() => {
@@ -104,7 +112,10 @@ export function ListadoDepositos(){
   };
 
   return <>
-    <Box sx={{py:4, px:10}}>
+    <Box sx={{py:4, px:15}}>
+      <Box mb={4}>
+          <Filtro filtros={filtros} setFiltros={setFiltros} mode={'depositos'}/>
+      </Box>
       <Tabla2
         columns={columns}
         data={PaginaActual(pagina)}

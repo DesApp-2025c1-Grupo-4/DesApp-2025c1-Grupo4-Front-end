@@ -5,6 +5,7 @@ import CreateOutlinedIcon from '@mui/icons-material/CreateOutlined';
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
 import { getAllChoferes } from '../../services/Choferes/ChoferService'
 import Paginacion from '../../commonComponents/Paginacion';
+import Filtro from '../../commonComponents/Filtro';
 
 export function ListadoChoferes(){
 
@@ -16,7 +17,14 @@ export function ListadoChoferes(){
 
   //Content state
   const [choferes, setChoferes] = useState([]);
-  //const [newEmpresa, setNewEmpresa] = useState(faldr);
+
+  //Componente filtro
+  const [filtros, setFiltros] = useState({
+    criterio: '',
+    fechaDesde: '',
+    fechaHasta: '',
+    busqueda: '',
+  });
   
   //API Call
   useEffect(() => {
@@ -110,7 +118,10 @@ export function ListadoChoferes(){
   };
 
   return <>
-    <Box sx={{py:4, px:10}}>
+    <Box sx={{py:4, px:15}}>
+      <Box mb={4}>
+          <Filtro filtros={filtros} setFiltros={setFiltros} mode={'choferes'}/>
+      </Box>
       <Tabla2
         columns={columns}
         data={PaginaActual(pagina)}
