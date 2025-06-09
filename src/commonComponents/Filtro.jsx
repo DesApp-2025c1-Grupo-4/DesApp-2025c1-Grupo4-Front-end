@@ -1,12 +1,12 @@
 import { Box, Grid, TextField, MenuItem, Button, Typography } from '@mui/material';
 import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import Popup from './Popup';
 
 const Filtro = ({ 
   filtros, 
   setFiltros, 
   mode, // 'viajes', 'empresas', 'choferes', 'depositos', 'vehiculos'
-  onRegister,
   onSearch 
 }) => {
   // Configuración por modo
@@ -27,7 +27,7 @@ const Filtro = ({
     choferes: {
       showCriterio: false,
       showDates: false,
-      searchLabel: 'Buscar por DNI',
+      searchLabel: 'Buscar por CUIL',
       registerButton: 'Registrar Chofer'
     },
     depositos: {
@@ -70,14 +70,7 @@ const Filtro = ({
           {/* Botón de Registrar (solo en algunos modos) */}
           {currentConfig.registerButton && (
             <Grid item xs={12} sm={6} md={2}>
-              <Button
-                fullWidth
-                variant="contained"
-                color="primary"
-                onClick={onRegister}
-              >
-                {currentConfig.registerButton}
-              </Button>
+              <Popup buttonName={currentConfig.registerButton} page={mode}/>
             </Grid>
           )}
 

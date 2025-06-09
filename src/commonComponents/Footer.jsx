@@ -40,7 +40,7 @@ const Footer = () => {
           <Typography variant="body2">Repositorio</Typography>
           
         </Link>
-        <GitHubIcon fontSize="small"/>
+        <GitHubIcon variant="footer"/>
       </Stack>
     </Box>);
 }

@@ -258,6 +258,13 @@ const customMuiTheme = createTheme({
             fontSize: '2.2rem',
             color: grey[900]
           }
+        },
+        {
+          props: { variant: 'footer' },
+          style: {
+            fontSize: '1.3em',
+            color: grey[50]
+          }
         }
       ],
       styleOverrides: {

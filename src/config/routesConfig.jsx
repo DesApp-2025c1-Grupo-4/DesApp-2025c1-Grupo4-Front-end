@@ -40,7 +40,8 @@ export const ROUTE_CONFIG = {
   '/empresas': {
     title: 'Empresa Transportista',
     logo: <LanguageOutlinedIcon variant='biggerIcons'/>,
-    returnPath: ''
+    returnPath: '',
+    newButton: 'Registrar nueva Empresa'
   },
   '/vehiculos': {
     title: 'Flota de Vehículos',
