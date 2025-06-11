@@ -44,6 +44,7 @@ export function ListadoDepositos(){
   listaCompleta = listaCompleta.map(deposito => {
     return {
       ...deposito,
+      localizacion: `${deposito.localizacion.calle} ${deposito.localizacion.número}`,
       modificar: <IconButton variant="tableButtons"><CreateOutlinedIcon variant="tableButtons"/></IconButton>,
       eliminar: <IconButton variant="tableButtons"><CloseOutlinedIcon variant="tableButtons"/></IconButton>
     };
