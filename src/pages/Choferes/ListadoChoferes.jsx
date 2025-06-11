@@ -6,6 +6,7 @@ import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
 import { getAllChoferes } from '../../services/Choferes/ChoferService'
 import Paginacion from '../../commonComponents/Paginacion';
 import Filtro from '../../commonComponents/Filtro';
+import { dateFormat } from '../../helpers/dateFormat';
 
 export function ListadoChoferes(){
 
@@ -44,6 +45,7 @@ export function ListadoChoferes(){
   listaCompleta = listaCompleta.map(chofer => {
     return {
       ...chofer,
+      fechaNacimiento: dateFormat(chofer.fechaNacimiento),
       modificar: <IconButton variant="tableButtons"><CreateOutlinedIcon variant="tableButtons"/></IconButton>,
       eliminar: <IconButton variant="tableButtons"><CloseOutlinedIcon variant="tableButtons"/></IconButton>
     };
