@@ -2,11 +2,13 @@
 
 Este proyecto forma parte del curso **Desarrollo de Aplicaciones** de la Universidad Nacional de Hurlingham. Es una aplicación **front-end** construida con **React + Vite**, que presenta una pantalla de **listado de viajes** con filtros.
 
+
 ## 🚀 Tecnologías Utilizadas
 
 - [React](https://reactjs.org/)
 - [Vite](https://vitejs.dev/)
 - [Axios](https://axios-http.com/) *(si se usa para peticiones HTTP)* //Pendiente aplicacion con bdd
+
 
 ## 📦 Instalación
 

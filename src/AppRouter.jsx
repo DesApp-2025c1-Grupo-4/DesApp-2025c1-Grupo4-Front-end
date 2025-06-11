@@ -1,18 +1,40 @@
-import React from 'react';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import App from './App';
-import NewPage from './components/Home/Home';
-import RegistroViajes from './components/RegistroViajes/RegistroViajes'; 
+
+import { Header } from './commonComponents/Header.jsx';
+import Home from './pages/Home/Home.jsx';
+import RegistroViajes from './pages/Viajes/RegistroViajes.jsx';
+import ListadoViajes from './pages/Viajes/ListadoViajes.jsx';
+import { ListadoEmpresas } from './pages/Empresas/ListadoEmpresas.jsx';
+import { ListadoChoferes } from './pages/Choferes/ListadoChoferes.jsx';
+import { ListadoDepositos } from './pages/Depositos/ListadoDepositos.jsx';
+import { ListadoVehiculos } from './pages/Vehiculos/ListadoVehiculos.jsx';
+import { ListadoReportes } from './pages/Reportes/ListadoReportes.jsx';
+import { RegistrarViaje } from './pages/Viajes/RegistrarViaje.jsx';
+import { ModificarViaje } from './pages/Viajes/ModificarViaje.jsx';
+import { Seguimiento } from './pages/Viajes/Seguimiento.jsx';
+
 
 const AppRoutes = () => {
   return (
     <Router>
-      <Routes>
-        <Route path="/" element={<App />} />
-        <Route path="/newpage" element={<NewPage />} />
-        <Route path="/registro-viajes" element={<RegistroViajes />} /> 
-        {/* Añade la nueva ruta */}
-      </Routes>
+      <App>
+        <Header/>
+        <Routes>
+          {/* Rutas declarativas para cada vista */}
+          <Route path="/" element={<Home />} />
+          <Route path="/registro-viajes" element={<RegistroViajes />} />
+          <Route path="/empresas" element={<ListadoEmpresas /> }/>
+          <Route path="/choferes" element={<ListadoChoferes /> }/>
+          <Route path="/depositos" element={<ListadoDepositos /> }/>
+          <Route path="/vehiculos" element={<ListadoVehiculos /> }/>
+          <Route path="/reportes" element={<ListadoReportes /> }/>
+          <Route path="/listado-viajes" element={<ListadoViajes /> }/>
+          <Route path="/registrar-viaje" element={<RegistrarViaje />} />
+          <Route path="/modificar-viaje" element={<ModificarViaje />} />
+          <Route path="/seguimiento" element={<Seguimiento />} />
+        </Routes>
+      </App>
     </Router>
   );
 };
