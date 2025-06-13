@@ -28,7 +28,7 @@ export const useViajesData = () => {
             
           return {
             ...viaje,
-            numeroViaje: `PV - ${viaje._id}`,
+            numeroViaje: `${viaje._id}`,
             empresaTransportista: viaje.asignacion?.chofer?.empresa?.razonSocial || 'No especificada',
             nombreChofer: viaje.asignacion?.chofer 
               ? `${viaje.asignacion.chofer.nombre} ${viaje.asignacion.chofer.apellido}`

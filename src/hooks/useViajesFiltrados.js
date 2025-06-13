@@ -6,7 +6,11 @@ export const useViajesFiltrados = (viajes, filtros) => {
 
   useEffect(() => {
     if (viajes.length > 0) {
-      const resultados = viajes.filter(viaje => {
+      const viajesOrdenados = [...viajes].sort((a, b) => {
+        return new Date(a.inicioViaje) - new Date(b.inicioViaje);
+      });
+
+      const resultados = viajesOrdenados.filter(viaje => {
         if (filtros.fechaDesde && new Date(viaje.inicioViaje) < new Date(filtros.fechaDesde)) return false;
         if (filtros.fechaHasta && new Date(viaje.inicioViaje) > new Date(filtros.fechaHasta)) return false;
         
@@ -27,6 +31,7 @@ export const useViajesFiltrados = (viajes, filtros) => {
         }
         return true;
       });
+
       setViajesFiltrados(resultados);
     }
   }, [viajes, filtros]);
