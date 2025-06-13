@@ -12,10 +12,10 @@ export const ROUTE_CONFIG = {
     logo: '',
     returnPath: ''
   },
-  '/registro-viajes': {
+  '/listado-viajes': {
     title: 'Registro de Viajes',
     logo: <MapOutlinedIcon variant='biggerIcons'/>,
-    returnPath: '/registro-viajes'
+    returnPath: '/listado-viajes'
   },
   '/registrar-viaje': {
     title: 'Registrar Viajes',
@@ -29,11 +29,6 @@ export const ROUTE_CONFIG = {
   },
   '/seguimiento': {
     title: 'Seguimiento',
-    logo: <MapOutlinedIcon variant='biggerIcons'/>,
-    returnPath: '/registro-viajes'
-  },
-  '/listado-viajes': {
-    title: 'Listado de Viajes',
     logo: <MapOutlinedIcon variant='biggerIcons'/>,
     returnPath: '/registro-viajes'
   },

@@ -3,7 +3,6 @@ import App from './App';
 
 import { Header } from './commonComponents/Header.jsx';
 import Home from './pages/Home/Home.jsx';
-import RegistroViajes from './pages/Viajes/RegistroViajes.jsx';
 import ListadoViajes from './pages/Viajes/ListadoViajes.jsx';
 import { ListadoEmpresas } from './pages/Empresas/ListadoEmpresas.jsx';
 import { ListadoChoferes } from './pages/Choferes/ListadoChoferes.jsx';
@@ -23,7 +22,6 @@ const AppRoutes = () => {
         <Routes>
           {/* Rutas declarativas para cada vista */}
           <Route path="/" element={<Home />} />
-          <Route path="/registro-viajes" element={<RegistroViajes />} />
           <Route path="/empresas" element={<ListadoEmpresas /> }/>
           <Route path="/choferes" element={<ListadoChoferes /> }/>
           <Route path="/depositos" element={<ListadoDepositos /> }/>

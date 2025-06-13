@@ -20,7 +20,7 @@ const Home = () => {
     { icon: <LocalShippingOutlinedIcon variant='biggerIcons'/>, title: "Flota de Vehículos", path: "/vehiculos" },
     { icon: <PersonOutlinedIcon variant='biggerIcons'/>, title: "Choferes", path: "/choferes" },
     { icon: <Inventory2OutlinedIcon variant='biggerIcons'/>, title: "Red de Depósitos", path: "/depositos" },
-    { icon: <MapOutlinedIcon variant='biggerIcons'/>, title: "Registro de Viajes", path: "/registro-viajes" },
+    { icon: <MapOutlinedIcon variant='biggerIcons'/>, title: "Registro de Viajes", path: "/listado-viajes" },
     { icon: <SignalCellularAltOutlinedIcon variant='biggerIcons'/>, title: "Reportes", path: "/reportes" }
   ];
   
