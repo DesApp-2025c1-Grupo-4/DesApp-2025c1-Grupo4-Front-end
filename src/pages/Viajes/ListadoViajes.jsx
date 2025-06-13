@@ -5,7 +5,7 @@ import Tabla from '../../commonComponents/Tabla';
 import Paginacion from '../../commonComponents/Paginacion';
 import { useViajesData } from '../../hooks/useViajesData';
 import { useViajesFiltrados } from '../../hooks/useViajesFiltrados';
-import { useNavigate } from 'react-router-dom';
+import Popup from '../../commonComponents/Popup';
 
 const ListadoDeViajes = () => {
   const [filtros, setFiltros] = useState({
@@ -15,10 +15,16 @@ const ListadoDeViajes = () => {
     busqueda: ''
   });
   const [pagina, setPagina] = useState(1);
-  const navigate = useNavigate();
+  const [popupOpen, setPopupOpen] = useState(false);
+  const [popupType, setPopupType] = useState('');
   
   const { viajes, loading, error } = useViajesData();
   const { viajesFiltrados, viajesPaginaActual, itemsPorPagina } = useViajesFiltrados(viajes, filtros);
+
+  const handleOpenPopup = (type) => {
+    setPopupType(type);
+    setPopupOpen(true);
+  };
 
   if (loading) return <Box display="flex" justifyContent="center" mt={4}><CircularProgress /></Box>;
   if (error) return <Alert severity="error">{error}</Alert>;
@@ -29,26 +35,38 @@ const ListadoDeViajes = () => {
       <Stack direction="row" spacing={16} sx={{ mb: 4 }}>
         <Button 
           variant="contained" 
-          onClick={() => navigate('/registrar-viaje')}
+          onClick={() => handleOpenPopup('registrar-viaje')}
           sx={{ minWidth: 300 }}  
         >
           Registrar Viaje
         </Button>
         <Button 
           variant="contained" 
-          onClick={() => navigate('/modificar-viaje')}
+          onClick={() => handleOpenPopup('modificar-viaje')}
           sx={{ minWidth: 300 }} 
         >
           Modificar Viaje
         </Button>
         <Button 
           variant="contained" 
-          onClick={() => navigate('/seguimiento')}
+          onClick={() => handleOpenPopup('seguimiento')}
           sx={{ minWidth: 300 }}  
         >
           Seguimiento
         </Button>
       </Stack>
+
+      {/* Popup */}
+      <Popup
+        open={popupOpen}
+        onClose={() => setPopupOpen(false)}
+        page={popupType}
+        buttonName={
+          popupType === 'registrar-viaje' ? 'Registrar Viaje' :
+          popupType === 'modificar-viaje' ? 'Modificar Viaje' :
+          'Seguimiento'
+        }
+      />
 
       {/* Contenido existente del listado */}
       <Box mb={4}>

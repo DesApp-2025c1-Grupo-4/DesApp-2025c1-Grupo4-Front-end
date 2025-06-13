@@ -20,17 +20,20 @@ export const ROUTE_CONFIG = {
   '/registrar-viaje': {
     title: 'Registrar Viajes',
     logo: <MapOutlinedIcon variant='biggerIcons'/>,
-    returnPath: '/registro-viajes'
-  },
+    returnPath: '/registro-viajes',
+    newButton: 'Registrar Nuevo Viaje'
+  },  
   '/modificar-viaje': {
     title: 'Modificar Viaje',
     logo: <MapOutlinedIcon variant='biggerIcons'/>,
-    returnPath: '/registro-viajes'
+    returnPath: '/registro-viajes',
+    newButton: 'Modificar Viaje Existente'
   },
   '/seguimiento': {
     title: 'Seguimiento',
     logo: <MapOutlinedIcon variant='biggerIcons'/>,
-    returnPath: '/registro-viajes'
+    returnPath: '/registro-viajes',
+    newButton: 'Nuevo Seguimiento'
   },
   '/empresas': {
     title: 'Empresa Transportista',
