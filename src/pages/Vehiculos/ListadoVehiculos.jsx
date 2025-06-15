@@ -44,7 +44,8 @@ export function ListadoVehiculos(){
   listaCompleta = listaCompleta.map(vehiculo => {
     return {
       ...vehiculo,
-      capacidad: `${vehiculo.volumen}m³ - ${vehiculo.peso}kg`,
+      empresa: `${vehiculo.empresa.nombre_empresa}`,
+      capacidad: `${vehiculo.capacidad_carga.volumen}m³ - ${vehiculo.capacidad_carga.peso}kg`,
       modificar: <IconButton variant="tableButtons"><CreateOutlinedIcon variant="tableButtons"/></IconButton>,
       eliminar: <IconButton variant="tableButtons"><CloseOutlinedIcon variant="tableButtons"/></IconButton>,
     };
@@ -79,7 +80,7 @@ export function ListadoVehiculos(){
       minWidth: 80
     },
     {
-      id: 'año',
+      id: 'anio',
       label: 'Año',
       sortable: false,
       minWidth: 80
@@ -91,7 +92,7 @@ export function ListadoVehiculos(){
       minWidth: 50
     },
      {
-      id: 'tipoVehiculo',
+      id: 'tipo_vehiculo',
       label: 'Tipo de vehiculo',
       sortable: false,
       minWidth: 50

@@ -44,7 +44,9 @@ export function ListadoDepositos(){
   listaCompleta = listaCompleta.map(deposito => {
     return {
       ...deposito,
-      localizacion: `${deposito.localizacion.calle} ${deposito.localizacion.número}`,
+      localizacion: `${deposito.localizacion.direccion}, ${deposito.localizacion.provincia_estado}, ${deposito.localizacion.pais}`,
+      contacto: `${deposito.personal_contacto.nombre} ${deposito.personal_contacto.apellido}`,
+      horarios: `${deposito.horarios.desde} - ${deposito.horarios.hasta}`,
       modificar: <IconButton variant="tableButtons"><CreateOutlinedIcon variant="tableButtons"/></IconButton>,
       eliminar: <IconButton variant="tableButtons"><CloseOutlinedIcon variant="tableButtons"/></IconButton>
     };
@@ -60,12 +62,6 @@ export function ListadoDepositos(){
 
   // Columns configuration
   const columns = [
-    { 
-      id: '_id', 
-      label: 'ID', 
-      sortable: false,
-      minWidth: 80 
-    },
     { 
       id: 'tipo', 
       label: 'Tipo', 

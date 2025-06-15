@@ -45,6 +45,8 @@ export function ListadoEmpresas(){
   listaCompleta = listaCompleta.map(empresa => {
     return {
       ...empresa,
+      contacto: `${empresa.datos_contacto.telefono}`,
+      domicilio: `${empresa.domicilio_fiscal.calle}, ${empresa.domicilio_fiscal.provincia}, ${empresa.domicilio_fiscal.pais}`,
       modificar: <IconButton variant="tableButtons"><CreateOutlinedIcon variant="tableButtons"/></IconButton>,
       eliminar: <IconButton variant="tableButtons"><CloseOutlinedIcon variant="tableButtons"/></IconButton>
     };
@@ -61,13 +63,13 @@ export function ListadoEmpresas(){
   // Columns configuration
   const columns = [
     { 
-      id: 'razonSocial', 
+      id: 'nombre_empresa', 
       label: 'Razón Social', 
       sortable: false,
       minWidth: 80 
     },
     { 
-      id: 'cuit', 
+      id: 'cuit_rut', 
       label: 'CUIT/RUT', 
       sortable: false,
       minWidth: 80

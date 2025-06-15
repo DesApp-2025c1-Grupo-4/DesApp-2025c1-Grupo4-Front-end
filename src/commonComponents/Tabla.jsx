@@ -13,7 +13,7 @@ const Tabla = ({ data }) => {
           <TableCell>Empresa Transportista</TableCell>
           <TableCell>Chofer</TableCell>
           <TableCell>Vehículo</TableCell>
-          <TableCell>Fecha</TableCell>
+          <TableCell>Fecha inicio</TableCell>
           <TableCell>Tipo</TableCell>
           <TableCell>Origen</TableCell>
           <TableCell>Destino</TableCell>

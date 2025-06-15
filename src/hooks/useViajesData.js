@@ -18,25 +18,23 @@ export const useViajesData = () => {
       try {
         const data = await getViajes({});
         const viajesFormateados = data.map(viaje => {
-          const origen = viaje.depositoOrigen?.localizacion 
-            ? `${viaje.depositoOrigen.localizacion.provinciaOestado}, ${viaje.depositoOrigen.localizacion.país}`
+          const origen = viaje.deposito_origen?.localizacion 
+            ? `${viaje.deposito_origen.localizacion.provincia_estado}, ${viaje.deposito_origen.localizacion.pais}`
             : 'No especificado';
             
-          const destino = viaje.depositoDestino?.localizacion
-            ? `${viaje.depositoDestino.localizacion.provinciaOestado}, ${viaje.depositoDestino.localizacion.país}`
+          const destino = viaje.deposito_destino?.localizacion
+            ? `${viaje.deposito_destino.localizacion.provincia_estado}, ${viaje.deposito_destino.localizacion.pais}`
             : 'No especificado';
             
           return {
             ...viaje,
-            numeroViaje: `PV - ${viaje._id}`,
-            empresaTransportista: viaje.asignacion?.chofer?.empresa?.razonSocial || 'No especificada',
-            nombreChofer: viaje.asignacion?.chofer 
-              ? `${viaje.asignacion.chofer.nombre} ${viaje.asignacion.chofer.apellido}`
+            numeroViaje: `${viaje._id}`,
+            empresaTransportista: viaje.empresa_asignada?.nombre_empresa || 'No especificada',
+            nombreChofer: viaje.chofer_asignado
+              ? `${viaje.chofer_asignado.nombre} ${viaje.chofer_asignado.apellido}`
               : 'No asignado',
-            patenteVehiculo: viaje.asignacion?.vehiculo?.patente || '----',
-            fechaFormateada: viaje.inicioViaje 
-              ? new Date(viaje.inicioViaje).toLocaleDateString('es-AR')
-              : '----',
+            patenteVehiculo: viaje.vehiculo_asignado?.patente || '----',
+            fechaFormateada: viaje.inicio_viaje,
             origen,
             destino,
             tipoViaje: getTipoViaje(origen, destino)

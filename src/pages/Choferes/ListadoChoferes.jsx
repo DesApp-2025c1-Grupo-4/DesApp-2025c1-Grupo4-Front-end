@@ -45,7 +45,9 @@ export function ListadoChoferes(){
   listaCompleta = listaCompleta.map(chofer => {
     return {
       ...chofer,
-      fechaNacimiento: dateFormat(chofer.fechaNacimiento),
+      empresa: `${chofer.empresa.nombre_empresa}`,
+      vehiculo: `${chofer.vehiculo_defecto.patente}`,
+      fechaNacimiento: dateFormat(chofer.fecha_nacimiento),
       modificar: <IconButton variant="tableButtons"><CreateOutlinedIcon variant="tableButtons"/></IconButton>,
       eliminar: <IconButton variant="tableButtons"><CloseOutlinedIcon variant="tableButtons"/></IconButton>
     };
@@ -74,8 +76,8 @@ export function ListadoChoferes(){
       minWidth: 80
     },
     {
-      id: 'cuil',
-      label: 'CUIL',
+      id: 'dni_identificacion',
+      label: 'DNI/Identificación',
       sortable: false,
       minWidth: 80
     },
@@ -92,8 +94,8 @@ export function ListadoChoferes(){
       minWidth: 80
     },
     {
-      id: 'asignaciones',
-      label: 'Vehículo asignado',
+      id: 'vehiculo',
+      label: 'Vehiculo',
       sortable: false,
       minWidth: 80
     },
