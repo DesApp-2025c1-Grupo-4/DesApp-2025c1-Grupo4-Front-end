@@ -1,20 +1,24 @@
 import { useState, useEffect } from 'react';
-import { Box, IconButton } from '@mui/material';
+import { Box, IconButton, Grid, InputLabel, TextField } from '@mui/material';
 import Tabla2 from '../../commonComponents/Tabla2';
 import CreateOutlinedIcon from '@mui/icons-material/CreateOutlined';
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
-import { getAllChoferes } from '../../services/Choferes/ChoferService'
+import { getAllChoferes } from '../../services/Choferes/ChoferService';
 import Paginacion from '../../commonComponents/Paginacion';
 import Filtro from '../../commonComponents/Filtro';
 import { dateFormat } from '../../helpers/dateFormat';
+import Popup from '../../commonComponents/Popup';
 
 export function ListadoChoferes(){
-
   // Table state
   const [sortDirection, setSortDirection] = useState('asc');
   const [sortBy, setSortBy] = useState('name');
   const [pagina, setPagina] = useState(1);
   const itemsPorPagina = 10;
+
+  // Popup state
+  const [openPopup, setOpenPopup] = useState(false);
+  const [selectedChofer, setSelectedChofer] = useState(null);
 
   //Content state
   const [choferes, setChoferes] = useState([]);
@@ -40,14 +44,38 @@ export function ListadoChoferes(){
     fetchChoferes();
   }, []);
   
+  // Handle modificar click
+  const handleModificar = (chofer) => {
+    setSelectedChofer(chofer);
+    setOpenPopup(true);
+  };
+
+  // Handle eliminar click
+  const handleEliminar = () => {
+    console.log('Eliminar chofer');
+  };
+
   //Adding icons
-  let listaCompleta = choferes;
-  listaCompleta = listaCompleta.map(chofer => {
+  let listaCompleta = choferes.map(chofer => {
     return {
       ...chofer,
       fechaNacimiento: dateFormat(chofer.fechaNacimiento),
-      modificar: <IconButton variant="tableButtons"><CreateOutlinedIcon variant="tableButtons"/></IconButton>,
-      eliminar: <IconButton variant="tableButtons"><CloseOutlinedIcon variant="tableButtons"/></IconButton>
+      modificar: (
+        <IconButton 
+          onClick={() => handleModificar(chofer)}
+          variant="tableButtons"
+        >
+          <CreateOutlinedIcon variant="tableButtons"/>
+        </IconButton>
+      ),
+      eliminar: (
+        <IconButton 
+          onClick={handleEliminar}
+          variant="tableButtons"
+        >
+          <CloseOutlinedIcon variant="tableButtons"/>
+        </IconButton>
+      )
     };
   });
 
@@ -116,8 +144,66 @@ export function ListadoChoferes(){
     const isAsc = sortBy === columnId && sortDirection === 'asc';
     setSortDirection(isAsc ? 'desc' : 'asc');
     setSortBy(columnId);
-    // Here you would typically call your API with new sort parameters
   };
+
+  // Custom form for choferes
+  const renderChoferForm = () => (
+    <Grid container spacing={2}>
+      <Grid item xs={6}>
+        <InputLabel required sx={{color: 'grey.900', fontWeight: 'bold'}}>Nombre</InputLabel>
+        <TextField
+          fullWidth
+          margin="dense"
+          value={selectedChofer?.nombre || ''}
+          sx={{backgroundColor: 'grey.50'}}
+        />
+
+        <InputLabel required sx={{color: 'grey.900', fontWeight: 'bold', mt: 2}}>Apellido</InputLabel>
+        <TextField
+          fullWidth
+          margin="dense"
+          value={selectedChofer?.apellido || ''}
+          sx={{backgroundColor: 'grey.50'}}
+        />
+
+        <InputLabel required sx={{color: 'grey.900', fontWeight: 'bold', mt: 2}}>CUIL</InputLabel>
+        <TextField
+          fullWidth
+          margin="dense"
+          value={selectedChofer?.cuil || ''}
+          sx={{backgroundColor: 'grey.50'}}
+        />
+      </Grid>
+
+      <Grid item xs={6}>
+        <InputLabel required sx={{color: 'grey.900', fontWeight: 'bold'}}>Fecha de Nacimiento</InputLabel>
+        <TextField
+          fullWidth
+          margin="dense"
+          type="date"
+          InputLabelProps={{ shrink: true }}
+          value={selectedChofer?.fechaNacimiento || ''}
+          sx={{backgroundColor: 'grey.50'}}
+        />
+
+        <InputLabel required sx={{color: 'grey.900', fontWeight: 'bold', mt: 2}}>Empresa</InputLabel>
+        <TextField
+          fullWidth
+          margin="dense"
+          value={selectedChofer?.empresa || ''}
+          sx={{backgroundColor: 'grey.50'}}
+        />
+
+        <InputLabel sx={{color: 'grey.900', fontWeight: 'bold', mt: 2}}>Vehículo Asignado</InputLabel>
+        <TextField
+          fullWidth
+          margin="dense"
+          value={selectedChofer?.vehiculoAsignado || ''}
+          sx={{backgroundColor: 'grey.50'}}
+        />
+      </Grid>
+    </Grid>
+  );
 
   return <>
     <Box sx={{py:4, px:15}}>
@@ -138,6 +224,16 @@ export function ListadoChoferes(){
         itemsPorPagina={itemsPorPagina}
         elemento="choferes"
       />
-    </Box>   
+    </Box>
+
+    {/* Popup para modificar chofer */}
+    <Popup
+      open={openPopup}
+      onClose={() => setOpenPopup(false)}
+      page="modificar-chofer"
+      buttonName="Modificar chofer"
+    >
+      {renderChoferForm()}
+    </Popup>
   </>
 };

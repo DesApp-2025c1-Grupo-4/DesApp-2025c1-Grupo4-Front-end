@@ -15,7 +15,8 @@ const Filtro = ({
       showCriterio: true,
       showDates: true,
       searchLabel: 'Buscar',
-      registerButton: null,
+      registerButton: 'Registrar Viaje',
+      seguimientoButton: 'Seguimiento',
       criterios: ['Empresa transportista', 'Chofer', 'Vehículo', 'Tipo de viaje']
     },
     empresas: {
@@ -42,7 +43,6 @@ const Filtro = ({
       searchLabel: 'Buscar por Patente',
       registerButton: 'Registrar Vehiculo'
     }
-
   };
 
   const currentConfig = config[mode] || config.viajes;
@@ -67,8 +67,27 @@ const Filtro = ({
     <LocalizationProvider dateAdapter={AdapterDateFns}>
       <Box className="filterGrid">
         <Grid container spacing={3} alignItems="center">
-          {/* Botón de Registrar (solo en algunos modos) */}
-          {currentConfig.registerButton && (
+          {/* Botones de Registrar Viaje y Seguimiento (solo en modo viajes) */}
+          {mode === 'viajes' && (
+            <>
+              <Grid item xs={12} sm={6} md={2}>
+                <Popup buttonName={currentConfig.registerButton} page={mode}/>
+              </Grid>
+              <Grid item xs={12} sm={6} md={2}>
+                <Button 
+                  fullWidth 
+                  variant="contained" 
+                  color="primary"
+                  onClick={() => console.log('Ir a Seguimiento')}
+                >
+                  {currentConfig.seguimientoButton}
+                </Button>
+              </Grid>
+            </>
+          )}
+
+          {/* Botón de Registrar (para otros modos) */}
+          {mode !== 'viajes' && currentConfig.registerButton && (
             <Grid item xs={12} sm={6} md={2}>
               <Popup buttonName={currentConfig.registerButton} page={mode}/>
             </Grid>
@@ -76,7 +95,7 @@ const Filtro = ({
 
           {/* Selector de Criterio (solo en modo viajes) */}
           {currentConfig.showCriterio && (
-            <Grid item xs={12} sm={6} md={2}>
+            <Grid item xs={12} sm={6} md={1.5}>
               <TextField 
                 select 
                 fullWidth 
@@ -94,7 +113,7 @@ const Filtro = ({
           )}
 
           {/* Campo de Búsqueda */}
-          <Grid item xs={12} sm={6} md={currentConfig.showCriterio ? 4 : 6}>
+          <Grid item xs={12} sm={6} md={currentConfig.showCriterio ? 2.5 : 3  }>
             <TextField
               fullWidth
               label={currentConfig.searchLabel}
@@ -107,7 +126,7 @@ const Filtro = ({
 
           {/* Fecha Desde (solo en modo viajes) */}
           {currentConfig.showDates && (
-            <Grid item xs={12} sm={6} md={2}>
+            <Grid item xs={12} sm={6} md={1}>
               <DatePicker 
                 label="Fecha Desde" 
                 value={fechaDesdeValue} 
@@ -119,7 +138,7 @@ const Filtro = ({
 
           {/* Fecha Hasta (solo en modo viajes) */}
           {currentConfig.showDates && (
-            <Grid item xs={12} sm={6} md={2}>
+            <Grid item xs={12} sm={6} md={1}>
               <DatePicker 
                 label="Fecha Hasta" 
                 value={fechaHastaValue} 
