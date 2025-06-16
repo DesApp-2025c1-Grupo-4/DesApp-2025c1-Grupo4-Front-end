@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Box, IconButton } from '@mui/material';
+import { Box, IconButton, Grid, InputLabel, TextField } from '@mui/material';
 import Tabla2 from '../../commonComponents/Tabla2';
 import CreateOutlinedIcon from '@mui/icons-material/CreateOutlined';
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
@@ -7,7 +7,6 @@ import { getAllEmpresas } from '../../services/Empresas/EmpresaService';
 import Paginacion from '../../commonComponents/Paginacion';
 import Filtro from '../../commonComponents/Filtro';
 import Popup from '../../commonComponents/Popup';
-import { Grid, InputLabel, TextField } from '@mui/material';
 
 export function ListadoEmpresas(){
   // Table state
@@ -16,8 +15,9 @@ export function ListadoEmpresas(){
   const [pagina, setPagina] = useState(1);
   const itemsPorPagina = 10;
 
-  // Popup state
-  const [openPopup, setOpenPopup] = useState(false);
+  // Popup state (unificado como en ListadoViajes)
+  const [popupOpen, setPopupOpen] = useState(false);
+  const [popupType, setPopupType] = useState('');
   const [selectedEmpresa, setSelectedEmpresa] = useState(null);
 
   //Content state
@@ -44,15 +44,11 @@ export function ListadoEmpresas(){
     fetchEmpresas();
   }, []);
   
-  // Handle modificar click
-  const handleModificar = (empresa) => {
+  // Handle popup open
+  const handleOpenPopup = (type, empresa = null) => {
+    setPopupType(type);
     setSelectedEmpresa(empresa);
-    setOpenPopup(true);
-  };
-
-  // Handle eliminar click
-  const handleEliminar = () => {
-    console.log('Eliminar empresa');
+    setPopupOpen(true);
   };
 
   //Adding icons
@@ -61,18 +57,23 @@ export function ListadoEmpresas(){
       ...empresa,
       modificar: (
         <IconButton 
-          onClick={() => handleModificar(empresa)}
-          variant="tableButtons"
+          onClick={() => handleOpenPopup('modificar-empresa', empresa)}
+          size="small"
         >
-          <CreateOutlinedIcon variant="tableButtons"/>
+          <CreateOutlinedIcon fontSize="small"/>
         </IconButton>
       ),
       eliminar: (
         <IconButton 
-          onClick={handleEliminar}
-          variant="tableButtons"
+          onClick={() => handleOpenPopup('confirmar-eliminar', empresa)}
+          size="small"
+          sx={{
+            '&:hover': {
+              backgroundColor: 'rgba(0, 0, 0, 0.04)'
+            }
+          }}
         >
-          <CloseOutlinedIcon variant="tableButtons"/>
+          <CloseOutlinedIcon fontSize="small"/>
         </IconButton>
       )
     };
@@ -116,14 +117,14 @@ export function ListadoEmpresas(){
       id: 'modificar',
       label: 'Modificar',
       sortable: false,
-      minWidth: 50
+      width: '5%'
     },
     {
       id: 'eliminar',
       label: 'Eliminar',
       sortable: false,
-      minWidth: 50
-    },
+      width: '5%'
+    }
   ];
 
   // Sort handler
@@ -132,43 +133,6 @@ export function ListadoEmpresas(){
     setSortDirection(isAsc ? 'desc' : 'asc');
     setSortBy(columnId);
   };
-
-  // Custom form for empresas
-  const renderEmpresaForm = () => (
-    <>
-      <InputLabel required sx={{color: 'grey.900', fontWeight: 'bold'}}>Razon Social</InputLabel>
-      <TextField
-        fullWidth
-        margin="dense"
-        value={selectedEmpresa?.razonSocial || ''}
-        sx={{backgroundColor: 'grey.50'}}
-      />
-
-      <InputLabel required sx={{color: 'grey.900', fontWeight: 'bold', pt: 2}}>CUIT/RUT</InputLabel>
-      <TextField
-        fullWidth
-        margin="dense"
-        value={selectedEmpresa?.cuit || ''}
-        sx={{backgroundColor: 'grey.50'}}
-      />
-
-      <InputLabel required sx={{color: 'grey.900', fontWeight: 'bold', pt: 2}}>Domicilio Fiscal</InputLabel>
-      <TextField
-        fullWidth
-        margin="dense"
-        value={selectedEmpresa?.domicilioFiscal || ''}
-        sx={{backgroundColor: 'grey.50'}}
-      />
-
-      <InputLabel required sx={{color: 'grey.900', fontWeight: 'bold', pt: 2}}>Telefono</InputLabel>
-      <TextField
-        fullWidth
-        margin="dense"
-        value={selectedEmpresa?.telefono || ''}
-        sx={{backgroundColor: 'grey.50'}}
-      />
-    </>
-  );
 
   return <>
     <Box sx={{py:4, px:15}}>
@@ -191,14 +155,17 @@ export function ListadoEmpresas(){
       />
     </Box>
 
-    {/* Popup para modificar empresa */}
+    {/* Popup */}
     <Popup
-      open={openPopup}
-      onClose={() => setOpenPopup(false)}
-      page="modificar-empresa"
-      buttonName="Modificar empresa"
-    >
-      {renderEmpresaForm()}
-    </Popup>
+      open={popupOpen}
+      onClose={() => setPopupOpen(false)}
+      page={popupType}
+      selectedItem={selectedEmpresa}
+      buttonName={
+        popupType === 'modificar-empresa' ? 'Modificar Empresa' :
+        popupType === 'confirmar-eliminar' ? 'Eliminar Empresa' :
+        'Aceptar'
+      }
+    />
   </>
 };

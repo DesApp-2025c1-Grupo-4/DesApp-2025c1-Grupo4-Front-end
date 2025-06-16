@@ -100,8 +100,16 @@ const ListadoDeViajes = () => {
       label: 'Eliminar',
       sortable: false,
       width: '5%',
-      render: () => (
-        <IconButton size="small">
+      render: (_, row) => (
+        <IconButton 
+          onClick={() => handleOpenPopup('confirmar-eliminar', row)}
+          size="small"
+          sx={{
+            '&:hover': {
+              backgroundColor: 'rgba(0, 0, 0, 0.04)'
+            }
+          }}
+        >
           <CloseOutlinedIcon fontSize="small"/>
         </IconButton>
       )
@@ -159,7 +167,7 @@ const ListadoDeViajes = () => {
           sortDirection="asc"
           sortBy=""
           onSort={() => {}}
-          sx={{ tableLayout: 'fixed' }} // Fuerza el ancho fijo
+          sx={{ tableLayout: 'fixed' }}
         />
       </Box>
       

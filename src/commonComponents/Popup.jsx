@@ -120,7 +120,6 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem }) => {
   const currentOpen = isControlled ? open : internalOpen;
   
   const handleClose = () => {
-    // Resetear todos los estados cuando se cierra el popup
     setFormData(getInitialFormData());
     setErrors({});
     setTouched({});
@@ -162,6 +161,14 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem }) => {
   };
 
   const handleSubmit = async () => {
+    if (page.includes('confirmar-eliminar')) {
+      console.log('Eliminando elemento:', selectedItem);
+      // Aqui deberias llamar a tu API para eliminar el elemento
+      // Ejemplo: await deleteViaje(selectedItem._id);
+      handleClose();
+      return;
+    }
+
     const allTouched = Object.keys(formData).reduce((acc, key) => ({ ...acc, [key]: true }), {});
     setTouched(allTouched);
     try {
@@ -177,6 +184,14 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem }) => {
   };
 
   const renderForm = () => {
+    if (page.includes('confirmar-eliminar')) {
+      return (
+        <Box>
+          <p>¿Estás seguro que deseas eliminar este elemento?</p>
+          <p>Esta acción no se puede deshacer.</p>
+        </Box>
+      );
+    }
     if (children) return children;
     if (page.includes('deposito')) return <DepositoForm formData={formData} handleChange={handleChange} handleBlur={handleBlur} errors={errors} />;
     if (page.includes('viaje')) return <ViajeForm formData={formData} handleChange={handleChange} handleBlur={handleBlur} errors={errors} />;
@@ -196,31 +211,55 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem }) => {
         open={currentOpen} 
         onClose={handleClose} 
         fullWidth
+        maxWidth="sm"
         PaperProps={{
           sx: {
-            backgroundColor: 'transparent',
-            boxShadow: 'none',
+            backgroundColor: page.includes('confirmar-eliminar') ? 'rgba(255, 235, 235, 0.9)' : 'rgba(255, 255, 255, 0.8)',
+            backdropFilter: 'blur(4px)',
+            borderRadius: '8px',
+            p: 2,
+            boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.1)'
           }
         }}
       >
         <Box sx={{ 
-          backgroundColor: 'rgba(255, 255, 255, 0.8)',
-          backdropFilter: 'blur(4px)',
+          backgroundColor: 'transparent',
           borderRadius: '8px',
-          p: 2
+          pb: 2 
         }}>
-          {ROUTE_CONFIG[`/${page}`]?.logo}
-          <DialogTitle>{ROUTE_CONFIG[`/${page}`]?.newButton || buttonName}</DialogTitle>
-          <Box sx={{ 
-            backgroundColor: 'rgba(245, 245, 245, 0.8)',
-            borderRadius: '8px',
-            pb: 2 
+          {!page.includes('confirmar-eliminar') && ROUTE_CONFIG[`/${page}`]?.logo}
+          <DialogTitle sx={{ 
+            fontSize: '1.2rem',
+            fontWeight: 'bold',
+            color: page.includes('confirmar-eliminar') ? 'error.main' : 'inherit'
           }}>
-            <DialogContent>{renderForm()}</DialogContent>
-            <DialogActions>
-              <Button onClick={handleClose}>Cancelar</Button>
-              <Button onClick={handleSubmit} color="secondary" disabled={Object.values(errors).some(Boolean)}>
-                Guardar
+            {page.includes('confirmar-eliminar') 
+              ? 'Confirmar eliminación' 
+              : ROUTE_CONFIG[`/${page}`]?.newButton || buttonName}
+          </DialogTitle>
+          <Box sx={{ 
+            backgroundColor: page.includes('confirmar-eliminar') 
+              ? 'rgba(255, 235, 235, 0.5)' 
+              : 'rgba(245, 245, 245, 0.8)',
+            borderRadius: '8px',
+            p: 3
+          }}>
+            <DialogContent sx={{ py: 2 }}>{renderForm()}</DialogContent>
+            <DialogActions sx={{ px: 3, py: 2 }}>
+              <Button 
+                onClick={handleClose} 
+                variant="outlined"
+                sx={{ mr: 2 }}
+              >
+                Cancelar
+              </Button>
+              <Button 
+                onClick={handleSubmit} 
+                color={page.includes('confirmar-eliminar') ? 'error' : 'secondary'}
+                variant="contained"
+                disabled={Object.values(errors).some(Boolean) && !page.includes('confirmar-eliminar')}
+              >
+                {page.includes('confirmar-eliminar') ? 'Eliminar definitivamente' : 'Guardar'}
               </Button>
             </DialogActions>
           </Box>

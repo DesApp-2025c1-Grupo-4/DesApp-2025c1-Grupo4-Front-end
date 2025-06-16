@@ -17,7 +17,8 @@ export function ListadoChoferes(){
   const itemsPorPagina = 10;
 
   // Popup state
-  const [openPopup, setOpenPopup] = useState(false);
+  const [popupOpen, setPopupOpen] = useState(false);
+  const [popupType, setPopupType] = useState('');
   const [selectedChofer, setSelectedChofer] = useState(null);
 
   //Content state
@@ -44,15 +45,11 @@ export function ListadoChoferes(){
     fetchChoferes();
   }, []);
   
-  // Handle modificar click
-  const handleModificar = (chofer) => {
+  // Handle popup open
+  const handleOpenPopup = (type, chofer = null) => {
+    setPopupType(type);
     setSelectedChofer(chofer);
-    setOpenPopup(true);
-  };
-
-  // Handle eliminar click
-  const handleEliminar = () => {
-    console.log('Eliminar chofer');
+    setPopupOpen(true);
   };
 
   //Adding icons
@@ -62,18 +59,23 @@ export function ListadoChoferes(){
       fechaNacimiento: dateFormat(chofer.fechaNacimiento),
       modificar: (
         <IconButton 
-          onClick={() => handleModificar(chofer)}
-          variant="tableButtons"
+          onClick={() => handleOpenPopup('modificar-chofer', chofer)}
+          size="small"
         >
-          <CreateOutlinedIcon variant="tableButtons"/>
+          <CreateOutlinedIcon fontSize="small"/>
         </IconButton>
       ),
       eliminar: (
         <IconButton 
-          onClick={handleEliminar}
-          variant="tableButtons"
+          onClick={() => handleOpenPopup('confirmar-eliminar', chofer)}
+          size="small"
+          sx={{
+            '&:hover': {
+              backgroundColor: 'rgba(0, 0, 0, 0.04)'
+            }
+          }}
         >
-          <CloseOutlinedIcon variant="tableButtons"/>
+          <CloseOutlinedIcon fontSize="small"/>
         </IconButton>
       )
     };
@@ -129,14 +131,14 @@ export function ListadoChoferes(){
       id: 'modificar',
       label: 'Modificar',
       sortable: false,
-      minWidth: 50
+      width: '5%'
     },
     {
       id: 'eliminar',
       label: 'Eliminar',
       sortable: false,
-      minWidth: 50
-    },
+      width: '5%'
+    }
   ];
 
   // Sort handler
@@ -145,65 +147,6 @@ export function ListadoChoferes(){
     setSortDirection(isAsc ? 'desc' : 'asc');
     setSortBy(columnId);
   };
-
-  // Custom form for choferes
-  const renderChoferForm = () => (
-    <Grid container spacing={2}>
-      <Grid item xs={6}>
-        <InputLabel required sx={{color: 'grey.900', fontWeight: 'bold'}}>Nombre</InputLabel>
-        <TextField
-          fullWidth
-          margin="dense"
-          value={selectedChofer?.nombre || ''}
-          sx={{backgroundColor: 'grey.50'}}
-        />
-
-        <InputLabel required sx={{color: 'grey.900', fontWeight: 'bold', mt: 2}}>Apellido</InputLabel>
-        <TextField
-          fullWidth
-          margin="dense"
-          value={selectedChofer?.apellido || ''}
-          sx={{backgroundColor: 'grey.50'}}
-        />
-
-        <InputLabel required sx={{color: 'grey.900', fontWeight: 'bold', mt: 2}}>CUIL</InputLabel>
-        <TextField
-          fullWidth
-          margin="dense"
-          value={selectedChofer?.cuil || ''}
-          sx={{backgroundColor: 'grey.50'}}
-        />
-      </Grid>
-
-      <Grid item xs={6}>
-        <InputLabel required sx={{color: 'grey.900', fontWeight: 'bold'}}>Fecha de Nacimiento</InputLabel>
-        <TextField
-          fullWidth
-          margin="dense"
-          type="date"
-          InputLabelProps={{ shrink: true }}
-          value={selectedChofer?.fechaNacimiento || ''}
-          sx={{backgroundColor: 'grey.50'}}
-        />
-
-        <InputLabel required sx={{color: 'grey.900', fontWeight: 'bold', mt: 2}}>Empresa</InputLabel>
-        <TextField
-          fullWidth
-          margin="dense"
-          value={selectedChofer?.empresa || ''}
-          sx={{backgroundColor: 'grey.50'}}
-        />
-
-        <InputLabel sx={{color: 'grey.900', fontWeight: 'bold', mt: 2}}>Vehículo Asignado</InputLabel>
-        <TextField
-          fullWidth
-          margin="dense"
-          value={selectedChofer?.vehiculoAsignado || ''}
-          sx={{backgroundColor: 'grey.50'}}
-        />
-      </Grid>
-    </Grid>
-  );
 
   return <>
     <Box sx={{py:4, px:15}}>
@@ -226,14 +169,17 @@ export function ListadoChoferes(){
       />
     </Box>
 
-    {/* Popup para modificar chofer */}
+    {/* Popup*/}
     <Popup
-      open={openPopup}
-      onClose={() => setOpenPopup(false)}
-      page="modificar-chofer"
-      buttonName="Modificar chofer"
-    >
-      {renderChoferForm()}
-    </Popup>
+      open={popupOpen}
+      onClose={() => setPopupOpen(false)}
+      page={popupType}
+      selectedItem={selectedChofer}
+      buttonName={
+        popupType === 'modificar-chofer' ? 'Modificar Chofer' :
+        popupType === 'confirmar-eliminar' ? 'Eliminar Chofer' :
+        'Aceptar'
+      }
+    />
   </>
 };

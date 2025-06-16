@@ -16,7 +16,8 @@ export function ListadoDepositos() {
   const itemsPorPagina = 10;
 
   // Popup state
-  const [openPopup, setOpenPopup] = useState(false);
+  const [popupOpen, setPopupOpen] = useState(false);
+  const [popupType, setPopupType] = useState('');
   const [selectedDeposito, setSelectedDeposito] = useState(null);
 
   // Content state
@@ -43,16 +44,11 @@ export function ListadoDepositos() {
     fetchDepositos();
   }, []);
 
-  // Handle modificar click
-  const handleModificar = (deposito) => {
+  // Handle popup open
+  const handleOpenPopup = (type, deposito = null) => {
+    setPopupType(type);
     setSelectedDeposito(deposito);
-    setOpenPopup(true);
-  };
-
-  // Handle eliminar click (placeholder)
-  const handleEliminar = () => {
-    console.log('Eliminar deposito');
-    // Aquí iría la lógica para eliminar el depósito
+    setPopupOpen(true);
   };
 
   // Adding icons and actions
@@ -62,18 +58,23 @@ export function ListadoDepositos() {
       localizacion: `${deposito.localizacion?.calle} ${deposito.localizacion?.número}`,
       modificar: (
         <IconButton 
-          onClick={() => handleModificar(deposito)}
-          variant="tableButtons"
+          onClick={() => handleOpenPopup('modificar-deposito', deposito)}
+          size="small"
         >
-          <CreateOutlinedIcon variant="tableButtons"/>
+          <CreateOutlinedIcon fontSize="small"/>
         </IconButton>
       ),
       eliminar: (
         <IconButton 
-          onClick={handleEliminar}
-          variant="tableButtons"
+          onClick={() => handleOpenPopup('confirmar-eliminar', deposito)}
+          size="small"
+          sx={{
+            '&:hover': {
+              backgroundColor: 'rgba(0, 0, 0, 0.04)'
+            }
+          }}
         >
-          <CloseOutlinedIcon variant="tableButtons"/>
+          <CloseOutlinedIcon fontSize="small"/>
         </IconButton>
       )
     };
@@ -123,14 +124,14 @@ export function ListadoDepositos() {
       id: 'modificar',
       label: 'Modificar',
       sortable: false,
-      minWidth: 50
+      width: '5%'
     },
     {
       id: 'eliminar',
       label: 'Eliminar',
       sortable: false,
-      minWidth: 50
-    },
+      width: '5%'
+    }
   ];
 
   // Sort handler
@@ -139,93 +140,6 @@ export function ListadoDepositos() {
     setSortDirection(isAsc ? 'desc' : 'asc');
     setSortBy(columnId);
   };
-
-  // Custom form for depositos
-  const renderDepositoForm = () => (
-    <Grid container spacing={2}>
-      {/* Columna 1 */}
-      <Grid item xs={6}>
-        <InputLabel sx={{color: 'grey.900', fontWeight: 'bold'}}>Tipo</InputLabel>
-        <TextField
-          fullWidth
-          margin="dense"
-          value={selectedDeposito?.tipo || ''}
-          sx={{backgroundColor: 'grey.50'}}
-        />
-
-        <InputLabel sx={{color: 'grey.900', fontWeight: 'bold', mt: 2}}>Franja Horaria</InputLabel>
-        <TextField
-          fullWidth
-          margin="dense"
-          value={selectedDeposito?.horarios || ''}
-          sx={{backgroundColor: 'grey.50'}}
-        />
-
-        <InputLabel sx={{color: 'grey.900', fontWeight: 'bold', mt: 2}}>Localización</InputLabel>
-        <TextField
-          fullWidth
-          margin="dense"
-          label="Dirección"
-          value={selectedDeposito?.localizacion || ''}
-          sx={{backgroundColor: 'grey.50', mb: 1}}
-        />
-        <TextField
-          fullWidth
-          margin="dense"
-          label="Provincia/Estado"
-          value={selectedDeposito?.localizacion?.provincia || ''}
-          sx={{backgroundColor: 'grey.50', mb: 1}}
-        />
-        <TextField
-          fullWidth
-          margin="dense"
-          label="País"
-          value={selectedDeposito?.localizacion?.pais || ''}
-          sx={{backgroundColor: 'grey.50', mb: 1}}
-        />
-        <TextField
-          fullWidth
-          margin="dense"
-          label="Coordenadas"
-          value={selectedDeposito?.localizacion?.coordenadas || ''}
-          sx={{backgroundColor: 'grey.50'}}
-        />
-      </Grid>
-
-      {/* Columna 2 */}
-      <Grid item xs={6}>
-        <InputLabel sx={{color: 'grey.900', fontWeight: 'bold'}}>Personal de Contacto</InputLabel>
-        <TextField
-          fullWidth
-          margin="dense"
-          label="Nombre"
-          value={selectedDeposito?.contacto?.nombre || ''}
-          sx={{backgroundColor: 'grey.50', mb: 1}}
-        />
-        <TextField
-          fullWidth
-          margin="dense"
-          label="Apellido"
-          value={selectedDeposito?.contacto?.apellido || ''}
-          sx={{backgroundColor: 'grey.50', mb: 1}}
-        />
-        <TextField
-          fullWidth
-          margin="dense"
-          label="DNI"
-          value={selectedDeposito?.contacto?.dni || ''}
-          sx={{backgroundColor: 'grey.50', mb: 1}}
-        />
-        <TextField
-          fullWidth
-          margin="dense"
-          label="Teléfono"
-          value={selectedDeposito?.contacto?.telefono || ''}
-          sx={{backgroundColor: 'grey.50'}}
-        />
-      </Grid>
-    </Grid>
-  );
 
   return (
     <>
@@ -249,15 +163,18 @@ export function ListadoDepositos() {
         />
       </Box>
 
-      {/* Popup para modificar depósito */}
+      {/* Popup */}
       <Popup
-        open={openPopup}
-        onClose={() => setOpenPopup(false)}
-        page="modificar-deposito"
-        buttonName="Modificar depósito"
-      >
-        {renderDepositoForm()}
-      </Popup>
+        open={popupOpen}
+        onClose={() => setPopupOpen(false)}
+        page={popupType}
+        selectedItem={selectedDeposito}
+        buttonName={
+          popupType === 'modificar-deposito' ? 'Modificar Depósito' :
+          popupType === 'confirmar-eliminar' ? 'Eliminar Depósito' :
+          'Aceptar'
+        }
+      />
     </>
   );
 }
