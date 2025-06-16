@@ -67,13 +67,12 @@ const Filtro = ({
     <LocalizationProvider dateAdapter={AdapterDateFns}>
       <Box className="filterGrid">
         <Grid container spacing={3} alignItems="center">
-          {/* Botones de Registrar Viaje y Seguimiento (solo en modo viajes) */}
           {mode === 'viajes' && (
             <>
-              <Grid item xs={12} sm={6} md={2}>
+              <Grid item xs={12} sm={6} md={1.5}>
                 <Popup buttonName={currentConfig.registerButton} page={mode}/>
               </Grid>
-              <Grid item xs={12} sm={6} md={2}>
+              <Grid item xs={12} sm={6} md={1.5}>
                 <Button 
                   fullWidth 
                   variant="contained" 
@@ -86,14 +85,11 @@ const Filtro = ({
             </>
           )}
 
-          {/* Botón de Registrar (para otros modos) */}
           {mode !== 'viajes' && currentConfig.registerButton && (
             <Grid item xs={12} sm={6} md={2}>
               <Popup buttonName={currentConfig.registerButton} page={mode}/>
             </Grid>
           )}
-
-          {/* Selector de Criterio (solo en modo viajes) */}
           {currentConfig.showCriterio && (
             <Grid item xs={12} sm={6} md={1.5}>
               <TextField 
@@ -113,7 +109,7 @@ const Filtro = ({
           )}
 
           {/* Campo de Búsqueda */}
-          <Grid item xs={12} sm={6} md={currentConfig.showCriterio ? 2.5 : 3  }>
+          <Grid item xs={12} sm={6} md={currentConfig.showCriterio ? 4 : 6.5  }>
             <TextField
               fullWidth
               label={currentConfig.searchLabel}
@@ -163,7 +159,7 @@ const Filtro = ({
           )}
 
           {/* Botón de Limpiar */}
-          <Grid item xs={12} sm={6} md={2}>
+          <Grid item xs={12} sm={6} md={1.5}>
             <Button 
               fullWidth 
               variant="outlined" 

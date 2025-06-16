@@ -1,9 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import {
-  Box, Drawer, IconButton, List, ListItemButton, ListItemIcon, ListItemText,
-  Divider, Tooltip, Toolbar
-} from '@mui/material';
+import {Box, Drawer, IconButton, List, ListItemButton, ListItemIcon, ListItemText,Divider, Tooltip, Toolbar} from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import HomeIcon from '@mui/icons-material/Home';
 import LanguageIcon from '@mui/icons-material/LanguageOutlined';
@@ -14,7 +11,7 @@ import MapIcon from '@mui/icons-material/MapOutlined';
 import ReportIcon from '@mui/icons-material/SignalCellularAltOutlined';
 import { Header } from '../commonComponents/Header';
 
-const drawerWidth = 240;
+const drawerWidth = 200;
 
 const menuItems = [
   { icon: <HomeIcon />, label: "Inicio", path: "/" },

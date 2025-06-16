@@ -112,13 +112,25 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem }) => {
     };
   };
 
-  const [formData, setFormData] = useState(getInitialFormData);
+  const [formData, setFormData] = useState(getInitialFormData());
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
 
   const isControlled = open !== undefined;
   const currentOpen = isControlled ? open : internalOpen;
-  const currentOnClose = isControlled ? onClose : () => setInternalOpen(false);
+  
+  const handleClose = () => {
+    // Resetear todos los estados cuando se cierra el popup
+    setFormData(getInitialFormData());
+    setErrors({});
+    setTouched({});
+    
+    if (isControlled) {
+      onClose();
+    } else {
+      setInternalOpen(false);
+    }
+  };
 
   const getValidationSchema = () => {
     if (page.includes('deposito')) return validationSchemas.deposito;
@@ -156,7 +168,7 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem }) => {
       await getValidationSchema().validate(formData, { abortEarly: false });
       setErrors({});
       console.log('Submit:', formData);
-      currentOnClose();
+      handleClose();
     } catch (validationErrors) {
       const newErrors = {};
       validationErrors.inner.forEach(err => newErrors[err.path] = err.message);
@@ -180,17 +192,38 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem }) => {
         <Button fullWidth variant="contained" onClick={() => setInternalOpen(true)}>{buttonName}</Button>
       )}
 
-      <Dialog open={currentOpen} onClose={currentOnClose} fullWidth>
-        <Box>
+      <Dialog 
+        open={currentOpen} 
+        onClose={handleClose} 
+        fullWidth
+        PaperProps={{
+          sx: {
+            backgroundColor: 'transparent',
+            boxShadow: 'none',
+          }
+        }}
+      >
+        <Box sx={{ 
+          backgroundColor: 'rgba(255, 255, 255, 0.8)',
+          backdropFilter: 'blur(4px)',
+          borderRadius: '8px',
+          p: 2
+        }}>
           {ROUTE_CONFIG[`/${page}`]?.logo}
           <DialogTitle>{ROUTE_CONFIG[`/${page}`]?.newButton || buttonName}</DialogTitle>
-        </Box>
-        <Box sx={{ backgroundColor: grey[300], pb: 2 }}>
-          <DialogContent>{renderForm()}</DialogContent>
-          <DialogActions>
-            <Button onClick={currentOnClose}>Cancelar</Button>
-            <Button onClick={handleSubmit} color="secondary" disabled={Object.values(errors).some(Boolean)}>Guardar</Button>
-          </DialogActions>
+          <Box sx={{ 
+            backgroundColor: 'rgba(245, 245, 245, 0.8)',
+            borderRadius: '8px',
+            pb: 2 
+          }}>
+            <DialogContent>{renderForm()}</DialogContent>
+            <DialogActions>
+              <Button onClick={handleClose}>Cancelar</Button>
+              <Button onClick={handleSubmit} color="secondary" disabled={Object.values(errors).some(Boolean)}>
+                Guardar
+              </Button>
+            </DialogActions>
+          </Box>
         </Box>
       </Dialog>
     </>
