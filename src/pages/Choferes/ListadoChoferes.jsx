@@ -1,223 +1,181 @@
 import { useState, useEffect } from 'react';
-import { Box, IconButton, Grid, InputLabel, TextField } from '@mui/material';
+import { Box, Container, CircularProgress, Alert, IconButton } from '@mui/material';
+import Filtro from '../../commonComponents/Filtro';
 import Tabla2 from '../../commonComponents/Tabla2';
+import Paginacion from '../../commonComponents/Paginacion';
+import Popup from '../../commonComponents/Popup';
 import CreateOutlinedIcon from '@mui/icons-material/CreateOutlined';
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
-import { getAllChoferes } from '../../services/Choferes/ChoferService';
-import Paginacion from '../../commonComponents/Paginacion';
-import Filtro from '../../commonComponents/Filtro';
+import axios from 'axios';
 import { dateFormat } from '../../helpers/dateFormat';
-import Popup from '../../commonComponents/Popup';
 
-export function ListadoChoferes(){
-  // Table state
-  const [sortDirection, setSortDirection] = useState('asc');
-  const [sortBy, setSortBy] = useState('name');
+const ListadoChoferes = () => {
+  const [filtros, setFiltros] = useState({ criterio: 'CUIL', busqueda: '' });
   const [pagina, setPagina] = useState(1);
-  const itemsPorPagina = 10;
-
-  // Popup state
+  const [itemsPorPagina] = useState(10);
+  const [choferes, setChoferes] = useState([]);
+  const [choferesFiltrados, setChoferesFiltrados] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [popupOpen, setPopupOpen] = useState(false);
   const [popupType, setPopupType] = useState('');
   const [selectedChofer, setSelectedChofer] = useState(null);
-  const [isDataReady, setIsDataReady] = useState(false); // Nuevo estado
+  const [isSearching, setIsSearching] = useState(false);
 
-  // Content state
-  const [choferes, setChoferes] = useState([]);
-  const [choferesFiltrados, setChoferesFiltrados] = useState([]);
-
-  // Filtro state
-  const [filtros, setFiltros] = useState({
-    criterio: '',
-    fechaDesde: '',
-    fechaHasta: '',
-    busqueda: '',
-  });
-  
-  // API Call
   useEffect(() => {
-    async function fetchChoferes() {
-      try {
-        const choferes = await getAllChoferes();
-        setChoferes(choferes);
-        setChoferesFiltrados(choferes);
-      } catch (error) {
-        console.log('ERROR FETCH API [choferes]: ' + error);
-      }
-    }
     fetchChoferes();
   }, []);
 
-  // Función de búsqueda
-  const handleSearch = () => {
-    if (!filtros.busqueda) {
-      setChoferesFiltrados(choferes);
-      return;
+  const fetchChoferes = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get('/api/choferes');
+
+      const datosTransformados = response.data.map(item => ({
+        ...item,
+        fechaNacimiento: dateFormat(item.fecha_nacimiento),
+        empresa: item.empresa?.nombre_empresa || 'Sin empresa',
+        vehiculoAsignado: item.vehiculo_defecto?.patente || 'Sin vehículo'
+      }));
+
+      setChoferes(datosTransformados);
+      setChoferesFiltrados(datosTransformados);
+    } catch (err) {
+      setError(`Error al cargar datos: ${err.message}`);
+      console.error('Error fetching choferes:', err);
+    } finally {
+      setLoading(false);
     }
+  };
 
-    const resultados = choferes.filter(chofer => {
-      const cuilNormalizado = chofer.cuil?.replace(/[- ]/g, '').toLowerCase() || '';
-      const busquedaNormalizada = filtros.busqueda.replace(/[- ]/g, '').toLowerCase();
-      return cuilNormalizado.includes(busquedaNormalizada);
-    });
-
-    setChoferesFiltrados(resultados);
-    setPagina(1);
+  // Función para aplicar filtros localmente
+  const aplicarFiltros = () => {
+    setIsSearching(true);
+    try {
+      const filtered = choferes.filter(chofer => {
+        if (filtros.busqueda) {
+          const searchTerm = filtros.busqueda.toLowerCase();
+          switch (filtros.criterio) {
+            case 'CUIL':
+              return (chofer.cuil || '').toLowerCase().includes(searchTerm);
+            case 'Nombre':
+              return (chofer.nombre || '').toLowerCase().includes(searchTerm);
+            case 'Apellido':
+              return (chofer.apellido || '').toLowerCase().includes(searchTerm);
+            case 'Empresa':
+              return (chofer.empresa || '').toLowerCase().includes(searchTerm);
+            default:
+              return true;
+          }
+        }
+        return true;
+      });
+      setChoferesFiltrados(filtered);
+      setPagina(1);
+    } catch (err) {
+      console.error('Error al filtrar choferes:', err);
+    } finally {
+      setIsSearching(false);
+    }
   };
 
   const handleClear = () => {
+    setFiltros({ criterio: 'CUIL', busqueda: '' });
     setChoferesFiltrados(choferes);
     setPagina(1);
   };
-  
-  // Handle popup open
-  const handleOpenPopup = async (type, chofer = null) => {
-    setSelectedChofer(chofer);
+
+  const choferesPaginaActual = () => {
+    const inicio = (pagina - 1) * itemsPorPagina;
+    return choferesFiltrados.slice(inicio, inicio + itemsPorPagina);
+  };
+
+  const handleOpenPopup = async (type, chofer) => {
+    setSelectedChofer(null);
+    try {
+      const response = await axios.get(`/api/choferes/${chofer.cuil}`);
+      setSelectedChofer({ ...response.data, dni: response.data.dni });
+    } catch (error) {
+      console.error('Error al obtener chofer:', error);
+      setSelectedChofer({ ...chofer, dni: chofer.dni });
+    }
     setPopupType(type);
-    setIsDataReady(false);
-    
-    // Pequeño delay para asegurar que el estado se actualizó
-    await new Promise(resolve => setTimeout(resolve, 50));
-    setIsDataReady(true);
+    await new Promise(resolve => setTimeout(resolve, 2));
     setPopupOpen(true);
   };
 
-  // Adding icons
-  let listaCompleta = choferesFiltrados.map(chofer => {
-    return {
-      ...chofer,
-      fechaNacimiento: dateFormat(chofer.fechaNacimiento),
-      modificar: (
-        <IconButton 
-          onClick={() => handleOpenPopup('modificar-chofer', chofer)}
-          size="small"
-        >
-          <CreateOutlinedIcon fontSize="small"/>
-        </IconButton>
-      ),
-      eliminar: (
-        <IconButton 
-          onClick={() => handleOpenPopup('confirmar-eliminar', chofer)}
-          size="small"
-          sx={{
-            '&:hover': {
-              backgroundColor: 'rgba(0, 0, 0, 0.04)'
-            }
-          }}
-        >
-          <CloseOutlinedIcon fontSize="small"/>
-        </IconButton>
-      )
-    };
-  });
-
-  // Parametros para paginado
-  const PaginaActual = (pagina) => {
-    return listaCompleta.slice(
-      (pagina - 1) * itemsPorPagina,
-      pagina * itemsPorPagina
-    );
+  const handleDeleteChofer = async (cuil) => {
+    try {
+      await axios.patch(`/api/choferes/${cuil}/delete`);
+      setChoferes(prev => prev.filter(c => c.cuil !== cuil));
+      setChoferesFiltrados(prev => prev.filter(c => c.cuil !== cuil));
+      return { success: true };
+    } catch (error) {
+      console.error('Error al eliminar chofer:', error);
+      return { success: false, error: error.message };
+    }
   };
 
-  // Columns configuration
   const columns = [
-    { 
-      id: 'nombre', 
-      label: 'Nombre', 
-      sortable: false,
-      minWidth: 80 
-    },
-    { 
-      id: 'apellido', 
-      label: 'Apellido', 
-      sortable: false,
-      minWidth: 80
+    { id: 'nombre', label: 'Nombre', minWidth: 120, align: 'left' },
+    { id: 'apellido', label: 'Apellido', minWidth: 120, align: 'left' },
+    { id: 'cuil', label: 'CUIL', minWidth: 150, align: 'left' },
+    { id: 'fechaNacimiento', label: 'Fecha Nacimiento', minWidth: 150, align: 'left' },
+    { id: 'empresa', label: 'Empresa', minWidth: 150, align: 'left' },
+    { id: 'vehiculoAsignado', label: 'Vehículo Asignado', minWidth: 150, align: 'left' },
+    {
+      id: 'modificar', label: 'Modificar', minWidth: 80, align: 'center',
+      render: (_, row) => <IconButton onClick={() => handleOpenPopup('modificar-chofer', row)} size="small" color="primary">
+        <CreateOutlinedIcon fontSize="small" />
+      </IconButton>
     },
     {
-      id: 'cuil',
-      label: 'CUIL',
-      sortable: false,
-      minWidth: 80
-    },
-    {
-      id: 'fechaNacimiento',
-      label: 'Fecha de nacimiento',
-      sortable: false,
-      minWidth: 80
-    },
-    {
-      id: 'empresa',
-      label: 'Empresa',
-      sortable: false,
-      minWidth: 80
-    },
-    {
-      id: 'asignaciones',
-      label: 'Vehículo asignado',
-      sortable: false,
-      minWidth: 80
-    },
-    {
-      id: 'modificar',
-      label: 'Modificar',
-      sortable: false,
-      width: '5%'
-    },
-    {
-      id: 'eliminar',
-      label: 'Eliminar',
-      sortable: false,
-      width: '5%'
+      id: 'eliminar', label: 'Eliminar', minWidth: 80, align: 'center',
+      render: (_, row) => <IconButton onClick={() => handleOpenPopup('confirmar-eliminar', row)} size="small" color="error">
+        <CloseOutlinedIcon fontSize="small" />
+      </IconButton>
     }
   ];
 
-  // Sort handler
-  const handleSort = (columnId) => {
-    const isAsc = sortBy === columnId && sortDirection === 'asc';
-    setSortDirection(isAsc ? 'desc' : 'asc');
-    setSortBy(columnId);
-  };
+  if (loading) return <Box display="flex" justifyContent="center" mt={4}><CircularProgress /></Box>;
+  if (error) return <Alert severity="error">{error}</Alert>;
 
-  return <>
-    <Box sx={{py:4, px:15}}>
-      <Box mb={4}>
-          <Filtro 
-            filtros={filtros} 
-            setFiltros={setFiltros} 
-            mode={'choferes'}
-            onSearch={handleSearch}
-            onClear={handleClear} 
-          />
-      </Box>
-      <Tabla2
-        columns={columns}
-        data={PaginaActual(pagina)}
-        sortDirection={sortDirection}
-        sortBy={sortBy}
-        onSort={handleSort}
-      />
-      <Paginacion
-        pagina={pagina}
-        setPagina={setPagina}
-        totalItems={listaCompleta.length}
-        itemsPorPagina={itemsPorPagina}
-        elemento="choferes"
-      />
-    </Box>
-
-    {/* Popup*/}
-    {isDataReady && (
+  return (
+    <Container maxWidth="xl" sx={{ py: 4 }}>
       <Popup
         open={popupOpen}
         onClose={() => setPopupOpen(false)}
         page={popupType}
         selectedItem={selectedChofer}
-        buttonName={
-          popupType === 'modificar-chofer' ? 'Modificar Chofer' :
-          popupType === 'confirmar-eliminar' ? 'Eliminar Chofer' :
-          'Aceptar'
-        }
+        onDelete={popupType === 'confirmar-eliminar' ? handleDeleteChofer : null}
+        buttonName={popupType === 'modificar-chofer' ? 'Modificar Chofer' : popupType === 'confirmar-eliminar' ? 'Eliminar Chofer' : 'Aceptar'}
+        message={popupType === 'confirmar-eliminar' ? '¿Está seguro que desea eliminar este chofer?' : ''}
       />
-    )}
-  </>
+
+      <Box mb={4}>
+        <Filtro
+          filtros={filtros}
+          setFiltros={setFiltros}
+          mode="choferes"
+          onClear={handleClear}
+          onBuscar={aplicarFiltros}
+          isSearching={isSearching}
+        />
+      </Box>
+
+      <Box sx={{ width: '85vw', marginLeft: 'calc(-43vw + 50%)', marginRight: 'calc(-40vw + 50%)', overflowX: 'hidden' }}>
+        <Tabla2 columns={columns} data={choferesPaginaActual()} sx={{ tableLayout: 'auto', width: '100%' }} />
+      </Box>
+
+      <Paginacion
+        pagina={pagina}
+        setPagina={setPagina}
+        totalItems={choferesFiltrados.length}
+        itemsPorPagina={itemsPorPagina}
+        elemento="choferes"
+      />
+    </Container>
+  );
 };
+
+export { ListadoChoferes };

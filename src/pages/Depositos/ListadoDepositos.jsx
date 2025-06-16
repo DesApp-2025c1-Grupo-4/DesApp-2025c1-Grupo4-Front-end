@@ -1,218 +1,208 @@
 import { useState, useEffect } from 'react';
-import { Box, IconButton, Grid, TextField, InputLabel } from '@mui/material';
+import { Box, Container, CircularProgress, Alert, IconButton } from '@mui/material';
+import Filtro from '../../commonComponents/Filtro';
 import Tabla2 from '../../commonComponents/Tabla2';
+import Paginacion from '../../commonComponents/Paginacion';
+import Popup from '../../commonComponents/Popup';
 import CreateOutlinedIcon from '@mui/icons-material/CreateOutlined';
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
-import { getAllDepositos } from '../../services/Depositos/DepositoService';
-import Paginacion from '../../commonComponents/Paginacion';
-import Filtro from '../../commonComponents/Filtro';
-import Popup from '../../commonComponents/Popup';
+import axios from 'axios';
 
-export function ListadoDepositos() {
-  // Table state
-  const [sortDirection, setSortDirection] = useState('asc');
-  const [sortBy, setSortBy] = useState('name');
+const ListadoDepositos = () => {
+  const [filtros, setFiltros] = useState({ criterio: 'Localización', busqueda: '' });
   const [pagina, setPagina] = useState(1);
-  const itemsPorPagina = 10;
-
-  // Popup state
+  const [itemsPorPagina] = useState(10);
+  const [depositos, setDepositos] = useState([]);
+  const [depositosFiltrados, setDepositosFiltrados] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [popupOpen, setPopupOpen] = useState(false);
   const [popupType, setPopupType] = useState('');
   const [selectedDeposito, setSelectedDeposito] = useState(null);
-  const [isDataReady, setIsDataReady] = useState(false); // Nuevo estado
+  const [isDataReady, setIsDataReady] = useState(false);
 
-  // Content state
-  const [depositos, setDepositos] = useState([]);
-  const [depositosFiltrados, setDepositosFiltrados] = useState([]);
-
-  // Filtro state
-  const [filtros, setFiltros] = useState({
-    criterio: '',
-    fechaDesde: '',
-    fechaHasta: '',
-    busqueda: '',
-  });
-
-  // API Call
   useEffect(() => {
-    async function fetchDepositos() {
+    const fetchDepositos = async () => {
       try {
-        const depositos = await getAllDepositos();
-        setDepositos(depositos);
-        setDepositosFiltrados(depositos);
-      } catch (error) {
-        console.log('ERROR FETCH API [depositos]: ' + error);
+        const response = await axios.get('/api/depositos');
+
+        const datosTransformados = response.data.map(item => ({
+          ...item,
+          direccionCompleta: `${item.localizacion?.direccion || ''}, ${item.localizacion?.ciudad || ''}, ${item.localizacion?.provincia_estado || ''}`,
+          contacto: `${item.personal_contacto?.nombre || ''} ${item.personal_contacto?.apellido || ''}`.trim() || 'Sin contacto',
+          horarios: item.horarios ? `${item.horarios.dias.join(', ')}: ${item.horarios.desde} - ${item.horarios.hasta}` : 'Sin horarios'
+        }));
+
+        setDepositos(datosTransformados);
+        setDepositosFiltrados(datosTransformados);
+      } catch (err) {
+        setError(`Error al cargar datos: ${err.message}`);
+        console.error('Error fetching depositos:', err);
+      } finally {
+        setLoading(false);
       }
-    }
+    };
+
     fetchDepositos();
   }, []);
 
-  // Función de búsqueda
-  const handleSearch = () => {
-    if (!filtros.busqueda) {
-      setDepositosFiltrados(depositos);
-      return;
-    }
-
-    const resultados = depositos.filter(deposito => {
-      const localizacionStr = `${deposito.localizacion?.provincia || ''} ${deposito.localizacion?.pais || ''}`.toLowerCase();
-      const busquedaNormalizada = filtros.busqueda.toLowerCase();
-      return localizacionStr.includes(busquedaNormalizada);
+  const aplicarFiltros = () => {
+    const filtered = depositos.filter(deposito => {
+      const searchTerm = filtros.busqueda.toLowerCase();
+      switch (filtros.criterio) {
+        case 'Localización':
+          return (deposito.direccionCompleta || '').toLowerCase().includes(searchTerm);
+        case 'Tipo':
+          return (deposito.tipo || '').toLowerCase().includes(searchTerm);
+        case 'Contacto':
+          return (deposito.contacto || '').toLowerCase().includes(searchTerm);
+        default:
+          return true;
+      }
     });
-
-    setDepositosFiltrados(resultados);
+    setDepositosFiltrados(filtered);
     setPagina(1);
   };
 
   const handleClear = () => {
+    setFiltros({ criterio: 'Localización', busqueda: '' });
     setDepositosFiltrados(depositos);
     setPagina(1);
   };
 
-  // Handle popup open
+  const depositosPaginaActual = () => {
+    const inicio = (pagina - 1) * itemsPorPagina;
+    return depositosFiltrados.slice(inicio, inicio + itemsPorPagina);
+  };
+
   const handleOpenPopup = async (type, deposito = null) => {
-    setSelectedDeposito(deposito);
-    setPopupType(type);
+    setSelectedDeposito(null);
     setIsDataReady(false);
-    
-    // Pequeño delay para asegurar que el estado se actualizó
+
+    if (type === 'modificar-deposito' && deposito?._id) {
+      try {
+        const response = await axios.get(`/api/depositos/${deposito._id}`);
+        setSelectedDeposito(response.data);
+      } catch (error) {
+        console.error('Error al cargar datos del depósito:', error);
+        setSelectedDeposito(deposito);
+      }
+    } else {
+      setSelectedDeposito(deposito);
+    }
+
     await new Promise(resolve => setTimeout(resolve, 50));
     setIsDataReady(true);
+    setPopupType(type);
     setPopupOpen(true);
   };
 
-  // Adding icons and actions
-  let listaCompleta = depositosFiltrados.map(deposito => {
-    return {
-      ...deposito,
-      localizacion: `${deposito.localizacion?.calle} ${deposito.localizacion?.número}`,
-      modificar: (
-        <IconButton 
-          onClick={() => handleOpenPopup('modificar-deposito', deposito)}
-          size="small"
-        >
-          <CreateOutlinedIcon fontSize="small"/>
-        </IconButton>
-      ),
-      eliminar: (
-        <IconButton 
-          onClick={() => handleOpenPopup('confirmar-eliminar', deposito)}
-          size="small"
-          sx={{
-            '&:hover': {
-              backgroundColor: 'rgba(0, 0, 0, 0.04)'
-            }
-          }}
-        >
-          <CloseOutlinedIcon fontSize="small"/>
-        </IconButton>
-      )
-    };
-  });
-
-  // Pagination
-  const PaginaActual = (pagina) => {
-    return listaCompleta.slice(
-      (pagina - 1) * itemsPorPagina,
-      pagina * itemsPorPagina
-    );
+  const handleAddDeposito = async (nuevoDeposito) => {
+    try {
+      const response = await axios.post('/api/depositos', nuevoDeposito);
+      const newDeposito = {
+        ...response.data,
+        direccionCompleta: `${response.data.localizacion?.direccion || ''}, ${response.data.localizacion?.ciudad || ''}, ${response.data.localizacion?.provincia_estado || ''}`,
+        contacto: `${response.data.personal_contacto?.nombre || ''} ${response.data.personal_contacto?.apellido || ''}`.trim() || 'Sin contacto',
+        horarios: response.data.horarios ? `${response.data.horarios.dias.join(', ')}: ${response.data.horarios.desde} - ${response.data.horarios.hasta}` : 'Sin horarios'
+      };
+      setDepositos(prev => [newDeposito, ...prev]);
+      setDepositosFiltrados(prev => [newDeposito, ...prev]);
+      return { success: true };
+    } catch (error) {
+      console.error('Error al agregar depósito:', error);
+      return { success: false, error: error.message };
+    }
   };
 
-  // Columns configuration
+  const handleUpdateDeposito = async (depositoActualizado) => {
+    try {
+      const response = await axios.put(`/api/depositos/${depositoActualizado._id}`, depositoActualizado);
+      const updatedDeposito = {
+        ...response.data,
+        direccionCompleta: `${response.data.localizacion?.direccion || ''}, ${response.data.localizacion?.ciudad || ''}, ${response.data.localizacion?.provincia_estado || ''}`,
+        contacto: `${response.data.personal_contacto?.nombre || ''} ${response.data.personal_contacto?.apellido || ''}`.trim() || 'Sin contacto',
+        horarios: response.data.horarios ? `${response.data.horarios.dias.join(', ')}: ${response.data.horarios.desde} - ${response.data.horarios.hasta}` : 'Sin horarios'
+      };
+      setDepositos(prev => prev.map(d => d._id === depositoActualizado._id ? updatedDeposito : d));
+      setDepositosFiltrados(prev => prev.map(d => d._id === depositoActualizado._id ? updatedDeposito : d));
+      return { success: true };
+    } catch (error) {
+      console.error('Error al actualizar depósito:', error);
+      return { success: false, error: error.message };
+    }
+  };
+
+  const handleDeleteDeposito = async (id) => {
+    try {
+      await axios.delete(`/api/depositos/${id}`);
+      setDepositos(prev => prev.filter(d => d._id !== id));
+      setDepositosFiltrados(prev => prev.filter(d => d._id !== id));
+      return { success: true };
+    } catch (error) {
+      console.error('Error al eliminar depósito:', error);
+      return { success: false, error: error.message };
+    }
+  };
+
   const columns = [
-    { 
-      id: '_id', 
-      label: 'ID', 
-      sortable: false,
-      minWidth: 80 
-    },
-    { 
-      id: 'tipo', 
-      label: 'Tipo', 
-      sortable: false,
-      minWidth: 80
+    { id: '_id', label: 'ID', minWidth: 100, align: 'left', render: (value) => value?.toString() || 'N/A' },
+    { id: 'tipo', label: 'Tipo', minWidth: 150, align: 'left' },
+    { id: 'direccionCompleta', label: 'Localización', minWidth: 200, align: 'left' },
+    { id: 'horarios', label: 'Horarios', minWidth: 200, align: 'left' },
+    { id: 'contacto', label: 'Contacto', minWidth: 150, align: 'left' },
+    {
+      id: 'modificar', label: 'Modificar', minWidth: 80, align: 'center',
+      render: (_, row) => <IconButton onClick={() => handleOpenPopup('modificar-deposito', row)} size="small" color="primary"><CreateOutlinedIcon fontSize="small" /></IconButton>
     },
     {
-      id: 'localizacion',
-      label: 'Localización',
-      sortable: false,
-      minWidth: 80
-    },
-    {
-      id: 'horarios',
-      label: 'Horarios',
-      sortable: false,
-      minWidth: 80
-    },
-    {
-      id: 'contacto',
-      label: 'Contacto',
-      sortable: false,
-      minWidth: 80
-    },
-    {
-      id: 'modificar',
-      label: 'Modificar',
-      sortable: false,
-      width: '5%'
-    },
-    {
-      id: 'eliminar',
-      label: 'Eliminar',
-      sortable: false,
-      width: '5%'
+      id: 'eliminar', label: 'Eliminar', minWidth: 80, align: 'center',
+      render: (_, row) => <IconButton onClick={() => handleOpenPopup('confirmar-eliminar', row)} size="small" color="error"><CloseOutlinedIcon fontSize="small" /></IconButton>
     }
   ];
 
-  // Sort handler
-  const handleSort = (columnId) => {
-    const isAsc = sortBy === columnId && sortDirection === 'asc';
-    setSortDirection(isAsc ? 'desc' : 'asc');
-    setSortBy(columnId);
-  };
+  if (loading) return <Box display="flex" justifyContent="center" mt={4}><CircularProgress /></Box>;
+  if (error) return <Alert severity="error">{error}</Alert>;
 
   return (
-    <>
-      <Box sx={{py:4, px:15}}>
-        <Box mb={4}>
-          <Filtro 
-            filtros={filtros} 
-            setFiltros={setFiltros} 
-            mode={'depositos'}
-            onSearch={handleSearch}
-            onClear={handleClear} 
-          />
-        </Box>
-        <Tabla2
-          columns={columns}
-          data={PaginaActual(pagina)}
-          sortDirection={sortDirection}
-          sortBy={sortBy}
-          onSort={handleSort}
-        />
-        <Paginacion
-          pagina={pagina}
-          setPagina={setPagina}
-          totalItems={listaCompleta.length}
-          itemsPorPagina={itemsPorPagina}
-          elemento="depositos"
-        />
-      </Box>
-
-      {/* Popup */}
+    <Container maxWidth="xl" sx={{ py: 4 }}>
       {isDataReady && (
         <Popup
           open={popupOpen}
           onClose={() => setPopupOpen(false)}
           page={popupType}
           selectedItem={selectedDeposito}
-          buttonName={
-            popupType === 'modificar-deposito' ? 'Modificar Depósito' :
-            popupType === 'confirmar-eliminar' ? 'Eliminar Depósito' :
-            'Aceptar'
-          }
+          onAddItem={handleAddDeposito}
+          onUpdateItem={handleUpdateDeposito}
+          onDelete={popupType === 'confirmar-eliminar' ? handleDeleteDeposito : null}
+          buttonName={popupType === 'modificar-deposito' ? 'Modificar Depósito' : 'Eliminar Depósito'}
+          message={popupType === 'confirmar-eliminar' ? '¿Está seguro que desea eliminar este depósito?' : ''}
         />
       )}
-    </>
+
+      <Box mb={4}>
+        <Filtro
+          filtros={filtros}
+          setFiltros={setFiltros}
+          mode="depositos"
+          onSearch={aplicarFiltros}
+          onClear={handleClear}
+        />
+      </Box>
+
+      <Box sx={{ width: '85vw', marginLeft: 'calc(-43vw + 50%)', marginRight: 'calc(-40vw + 50%)', overflowX: 'hidden' }}>
+        <Tabla2 columns={columns} data={depositosPaginaActual()} sx={{ tableLayout: 'auto', width: '100%' }} />
+      </Box>
+
+      <Paginacion
+        pagina={pagina}
+        setPagina={setPagina}
+        totalItems={depositosFiltrados.length}
+        itemsPorPagina={itemsPorPagina}
+        elemento="depósitos"
+      />
+    </Container>
   );
-}
+};
+
+export { ListadoDepositos };

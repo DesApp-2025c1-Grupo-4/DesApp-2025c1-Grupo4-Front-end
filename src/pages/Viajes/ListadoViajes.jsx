@@ -1,170 +1,155 @@
-import { useState } from 'react';
-import { Box, Container, CircularProgress, Alert, Stack, Button, IconButton } from '@mui/material';
+import { useState, useEffect } from 'react';
+import { Box, Container, CircularProgress, Alert, IconButton } from '@mui/material';
 import Filtro from '../../commonComponents/Filtro';
 import Tabla2 from '../../commonComponents/Tabla2';
 import Paginacion from '../../commonComponents/Paginacion';
-import { useViajesData } from '../../hooks/useViajesData';
-import { useViajesFiltrados } from '../../hooks/useViajesFiltrados';
 import Popup from '../../commonComponents/Popup';
 import CreateOutlinedIcon from '@mui/icons-material/CreateOutlined';
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
-import { grey } from "@mui/material/colors";
+import axios from 'axios';
 
 const ListadoDeViajes = () => {
   const [filtros, setFiltros] = useState({
-    criterio: 'Empresa transportista', // Valor por defecto
+    criterio: 'Empresa transportista',
     fechaDesde: '',
     fechaHasta: '',
     busqueda: ''
   });
   const [pagina, setPagina] = useState(1);
+  const [itemsPorPagina] = useState(10);
+  const [viajes, setViajes] = useState([]);
+  const [viajesFiltrados, setViajesFiltrados] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [popupOpen, setPopupOpen] = useState(false);
   const [popupType, setPopupType] = useState('');
   const [selectedViaje, setSelectedViaje] = useState(null);
   const [isDataReady, setIsDataReady] = useState(false);
-  
-  const { viajes, loading, error } = useViajesData();
-  const { viajesFiltrados, viajesPaginaActual, itemsPorPagina } = useViajesFiltrados(viajes, filtros);
 
-  // Función para filtrar según el criterio seleccionado
-  const handleSearch = () => {
-    setPagina(1); // Resetear a la primera página
-  };
+  useEffect(() => {
+    const fetchViajes = async () => {
+      try {
+        const response = await axios.get('/api/viajes');
 
-  // Función para limpiar filtros
-  const handleClear = () => {
-    setFiltros({
-      criterio: 'Empresa transportista',
-      fechaDesde: '',
-      fechaHasta: '',
-      busqueda: ''
+        const datosTransformados = response.data.map(item => {
+          const paisOrigen = item.deposito_origen?.localizacion?.pais || '';
+          const paisDestino = item.deposito_destino?.localizacion?.pais || '';
+          const esNacional = paisOrigen === 'Argentina' && paisDestino === 'Argentina';
+
+          return {
+            ...item,
+            numeroViaje: item.guid_viaje?.toString() || 'N/A',
+            empresaTransportista: item.empresa_asignada?.nombre_empresa || 'Sin empresa',
+            nombreChofer: `${item.chofer_asignado?.nombre || ''} ${item.chofer_asignado?.apellido || ''}`.trim() || 'Sin chofer',
+            patenteVehiculo: item.vehiculo_asignado?.patente || 'Sin patente',
+            fechaInicio: item.inicio_viaje || 'Sin fecha',
+            fechaFin: item.fin_viaje || 'Sin fecha',
+            tipoViaje: esNacional ? 'Nacional' : 'Internacional',
+            origen: item.deposito_origen?.localizacion?.direccion || 'Sin origen',
+            destino: item.deposito_destino?.localizacion?.direccion || 'Sin destino',
+            estado: item.estado || 'planificado'
+          };
+        });
+
+        setViajes(datosTransformados);
+        setViajesFiltrados(datosTransformados);
+      } catch (err) {
+        setError(`Error al cargar datos: ${err.message}`);
+        console.error('Error fetching viajes:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchViajes();
+  }, []);
+
+  useEffect(() => {
+    aplicarFiltros();
+  }, [filtros, viajes]);
+
+  const aplicarFiltros = () => {
+    const filtered = viajes.filter(viaje => {
+      const searchTerm = filtros.busqueda.toLowerCase();
+      switch (filtros.criterio) {
+        case 'Empresa transportista':
+          return (viaje.empresaTransportista || '').toLowerCase().includes(searchTerm);
+        case 'Chofer':
+          return (viaje.nombreChofer || '').toLowerCase().includes(searchTerm);
+        case 'Vehículo':
+          return (viaje.patenteVehiculo || '').toLowerCase().includes(searchTerm);
+        default:
+          return true;
+      }
     });
+    setViajesFiltrados(filtered);
     setPagina(1);
   };
 
-  // Handle popup open
-  const handleOpenPopup = async (type, viaje = null) => {
-    setSelectedViaje(viaje);
-    setPopupType(type);
+  const handleClear = () => {
+    setFiltros({ criterio: 'Empresa transportista', fechaDesde: '', fechaHasta: '', busqueda: '' });
+    setViajesFiltrados(viajes);
+    setPagina(1);
+  };
+
+  const viajesPaginaActual = () => {
+    const inicio = (pagina - 1) * itemsPorPagina;
+    return viajesFiltrados.slice(inicio, inicio + itemsPorPagina);
+  };
+
+  const handleOpenPopup = async (type, viaje) => {
+    setSelectedViaje(null);
     setIsDataReady(false);
-    
+
+    try {
+      const response = await axios.get(`/api/viajes/${viaje.guid_viaje}`);
+      const viajeDetallado = {
+        ...response.data,
+        empresaTransportista: response.data.empresa_asignada?.nombre_empresa,
+        nombreChofer: `${response.data.chofer_asignado?.nombre || ''} ${response.data.chofer_asignado?.apellido || ''}`.trim(),
+        patenteVehiculo: response.data.vehiculo_asignado?.patente
+      };
+
+      const fechaInicio = response.data.inicio_viaje ? new Date(response.data.inicio_viaje).toISOString().slice(0, 16) : '';
+      const fechaFin = response.data.fin_viaje ? new Date(response.data.fin_viaje).toISOString().slice(0, 16) : '';
+
+      setSelectedViaje({ ...viajeDetallado, fechaInicio, fechaFin });
+    } catch (error) {
+      console.error('Error al obtener detalles del viaje:', error);
+      setSelectedViaje(viaje);
+    }
+
+    setPopupType(type);
     await new Promise(resolve => setTimeout(resolve, 50));
     setIsDataReady(true);
     setPopupOpen(true);
   };
 
-  // Configuración de columnas
   const columns = [
-    { 
-      id: 'numeroViaje', 
-      label: 'Número', 
-      sortable: false,
-      width: '8%' 
-    },
-    { 
-      id: 'empresaTransportista', 
-      label: 'Empresa', 
-      sortable: false,
-      width: '15%'
+    { id: 'guid_viaje', label: 'Número', minWidth: 80, align: 'left', render: (value) => value?.toString() || 'N/A' },
+    { id: 'empresaTransportista', label: 'Empresa', minWidth: 150, align: 'left' },
+    { id: 'nombreChofer', label: 'Chofer', minWidth: 120, align: 'left' },
+    { id: 'patenteVehiculo', label: 'Vehículo', minWidth: 100, align: 'left' },
+    { id: 'fechaInicio', label: 'Fecha Inicio', minWidth: 120, align: 'left' },
+    { id: 'fechaFin', label: 'Fecha Fin', minWidth: 120, align: 'left' },
+    { id: 'tipoViaje', label: 'Tipo', minWidth: 100, align: 'left' },
+    { id: 'origen', label: 'Origen', minWidth: 150, align: 'left' },
+    { id: 'destino', label: 'Destino', minWidth: 150, align: 'left' },
+    {
+      id: 'modificar', label: 'Modificar', minWidth: 80, align: 'center',
+      render: (_, row) => <IconButton onClick={() => handleOpenPopup('modificar-viaje', row)} size="small" color="primary"><CreateOutlinedIcon fontSize="small" /></IconButton>
     },
     {
-      id: 'nombreChofer',
-      label: 'Chofer',
-      sortable: false,
-      width: '12%'
-    },
-    {
-      id: 'patenteVehiculo',
-      label: 'Vehículo',
-      sortable: false,
-      width: '10%'
-    },
-    {
-      id: 'fechaFormateada',
-      label: 'Fecha',
-      sortable: false,
-      width: '10%'
-    },
-    {
-      id: 'tipoViaje',
-      label: 'Tipo',
-      sortable: false,
-      width: '10%'
-    },
-    {
-      id: 'origen',
-      label: 'Origen',
-      sortable: false,
-      width: '15%'
-    },
-    {
-      id: 'destino',
-      label: 'Destino',
-      sortable: false,
-      width: '15%'
-    },
-    {
-      id: 'modificar',
-      label: 'Modificar',
-      sortable: false,
-      width: '5%',
-      render: (_, row) => (
-        <IconButton 
-          onClick={() => handleOpenPopup('modificar-viaje', row)}
-          size="small"
-        >
-          <CreateOutlinedIcon fontSize="small"/>
-        </IconButton>
-      )
-    },
-    {
-      id: 'eliminar',
-      label: 'Eliminar',
-      sortable: false,
-      width: '5%',
-      render: (_, row) => (
-        <IconButton 
-          onClick={() => handleOpenPopup('confirmar-eliminar', row)}
-          size="small"
-          sx={{
-            '&:hover': {
-              backgroundColor: 'rgba(0, 0, 0, 0.04)'
-            }
-          }}
-        >
-          <CloseOutlinedIcon fontSize="small"/>
-        </IconButton>
-      )
+      id: 'eliminar', label: 'Eliminar', minWidth: 80, align: 'center',
+      render: (_, row) => <IconButton onClick={() => handleOpenPopup('confirmar-eliminar', row)} size="small" color="error"><CloseOutlinedIcon fontSize="small" /></IconButton>
     }
   ];
-
-  // Estilos para la tabla
-  const tableStyles = {
-    container: {
-      width: '100%',
-      overflowX: 'auto',
-      '& .MuiTableCell-root': {
-        whiteSpace: 'nowrap',
-        overflow: 'hidden',
-        textOverflow: 'ellipsis',
-        padding: '8px 12px'
-      }
-    },
-    headerRow: {
-      backgroundColor: grey[200],
-      '& .MuiTableCell-head': {
-        fontWeight: 'bold',
-        fontSize: '0.875rem'
-      }
-    }
-  };
 
   if (loading) return <Box display="flex" justifyContent="center" mt={4}><CircularProgress /></Box>;
   if (error) return <Alert severity="error">{error}</Alert>;
 
   return (
-    <Container maxWidth="xl" sx={{ py: 4 }}> 
-      {/* Popup */}
+    <Container maxWidth="xl" sx={{ py: 4 }}>
       {isDataReady && (
         <Popup
           open={popupOpen}
@@ -172,35 +157,28 @@ const ListadoDeViajes = () => {
           page={popupType}
           selectedItem={selectedViaje}
           buttonName={
-            popupType === 'registrar-viaje' ? 'Registrar Viaje' :
             popupType === 'modificar-viaje' ? 'Modificar Viaje' :
-            'Seguimiento'
+            popupType === 'confirmar-eliminar' ? 'Eliminar Viaje' :
+            'Aceptar'
           }
+          message={popupType === 'confirmar-eliminar' ? '¿Está seguro que desea eliminar este viaje?' : ''}
         />
       )}
 
-      {/* Filtro y tabla */}
       <Box mb={4}>
         <Filtro 
           filtros={filtros} 
           setFiltros={setFiltros} 
-          mode={"viajes"}
-          onSearch={handleSearch}
+          mode="viajes"
           onClear={handleClear}
+          onBuscar={aplicarFiltros}
         />
       </Box>
-      
-      <Box sx={tableStyles.container}>
-        <Tabla2
-          columns={columns}
-          data={viajesPaginaActual(pagina)}
-          sortDirection="asc"
-          sortBy=""
-          onSort={() => {}}
-          sx={{ tableLayout: 'fixed' }}
-        />
+
+      <Box sx={{ width: '85vw', marginLeft: 'calc(-43vw + 50%)', marginRight: 'calc(-40vw + 50%)', overflowX: 'hidden' }}>
+        <Tabla2 columns={columns} data={viajesPaginaActual()} sx={{ tableLayout: 'auto', width: '100%' }} />
       </Box>
-      
+
       <Paginacion
         pagina={pagina}
         setPagina={setPagina}

@@ -1,212 +1,239 @@
 import { useState, useEffect } from 'react';
-import { Box, IconButton } from '@mui/material';
+import { Box, Container, CircularProgress, Alert, IconButton } from '@mui/material';
+import Filtro from '../../commonComponents/Filtro';
 import Tabla2 from '../../commonComponents/Tabla2';
+import Paginacion from '../../commonComponents/Paginacion';
+import Popup from '../../commonComponents/Popup';
 import CreateOutlinedIcon from '@mui/icons-material/CreateOutlined';
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
-import { getAllEmpresas } from '../../services/Empresas/EmpresaService';
-import Paginacion from '../../commonComponents/Paginacion';
-import Filtro from '../../commonComponents/Filtro';
-import Popup from '../../commonComponents/Popup';
+import axios from 'axios';
 
-export function ListadoEmpresas(){
-  // Table state
-  const [sortDirection, setSortDirection] = useState('asc');
-  const [sortBy, setSortBy] = useState('name');
+const ListadoEmpresas = () => {
+  const [filtros, setFiltros] = useState({
+    criterio: 'Razón Social',
+    busqueda: ''
+  });
   const [pagina, setPagina] = useState(1);
-  const itemsPorPagina = 10;
-
-  // Popup state
+  const [itemsPorPagina] = useState(10);
+  const [empresas, setEmpresas] = useState([]);
+  const [empresasFiltradas, setEmpresasFiltradas] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [popupOpen, setPopupOpen] = useState(false);
   const [popupType, setPopupType] = useState('');
   const [selectedEmpresa, setSelectedEmpresa] = useState(null);
-  const [isDataReady, setIsDataReady] = useState(false);
 
-  // Content state
-  const [empresas, setEmpresas] = useState([]);
-  const [empresasFiltradas, setEmpresasFiltradas] = useState([]);
-
-  // Filtro state
-  const [filtros, setFiltros] = useState({
-    criterio: '',
-    fechaDesde: '',
-    fechaHasta: '',
-    busqueda: '',
-  });
-  
-  // API Call
   useEffect(() => {
-    async function fetchEmpresas() {
+    const fetchEmpresas = async () => {
       try {
-        const empresas = await getAllEmpresas();
-        setEmpresas(empresas);
-        setEmpresasFiltradas(empresas);
-      } catch (error) {
-        console.log('ERROR FETCH API [empresas]: ' + error);
+        const response = await axios.get('/api/empresas');
+        
+        const datosTransformados = response.data.map(item => ({
+          ...item,
+          razonSocial: item.nombre_empresa || 'Sin nombre',
+          domicilioFiscal: item.domicilio_fiscal ? 
+            `${item.domicilio_fiscal.calle}, ${item.domicilio_fiscal.ciudad}, ${item.domicilio_fiscal.provincia}` : 
+            'Sin domicilio',
+          telefono: item.datos_contacto?.telefono || 'Sin teléfono',
+          email: item.datos_contacto?.mail || 'Sin email'
+        }));
+
+        setEmpresas(datosTransformados);
+        setEmpresasFiltradas(datosTransformados);
+      } catch (err) {
+        setError(`Error al cargar datos: ${err.message}`);
+        console.error('Error fetching empresas:', err);
+      } finally {
+        setLoading(false);
       }
-    }
+    };
+
     fetchEmpresas();
   }, []);
-  
-  // Función de búsqueda
-  const handleSearch = () => {
-    if (!filtros.busqueda) {
-      setEmpresasFiltradas(empresas);
-      return;
-    }
 
-    const resultados = empresas.filter(empresa => {
-      const cuitNormalizado = empresa.cuit?.replace(/[- ]/g, '').toLowerCase() || '';
-      const busquedaNormalizada = filtros.busqueda.replace(/[- ]/g, '').toLowerCase();
-      return cuitNormalizado.includes(busquedaNormalizada);
+  // Función para aplicar filtros manualmente
+  const aplicarFiltros = () => {
+    const filtered = empresas.filter(empresa => {
+      if (filtros.busqueda) {
+        const searchTerm = filtros.busqueda.toLowerCase();
+        switch (filtros.criterio) {
+          case 'Razón Social':
+            return (empresa.razonSocial || '').toLowerCase().includes(searchTerm);
+          case 'CUIT':
+            return (empresa.cuit || '').toLowerCase().includes(searchTerm);
+          case 'Domicilio':
+            return (empresa.domicilioFiscal || '').toLowerCase().includes(searchTerm);
+          case 'Teléfono':
+            return (empresa.telefono || '').toLowerCase().includes(searchTerm);
+          default:
+            return true;
+        }
+      }
+      return true;
     });
-
-    setEmpresasFiltradas(resultados);
+    setEmpresasFiltradas(filtered);
     setPagina(1);
   };
 
-  // Función para limpiar filtros
-  const handleClear = () => {
-    setEmpresasFiltradas(empresas);
-    setPagina(1);
+  const empresasPaginaActual = () => {
+    const inicio = (pagina - 1) * itemsPorPagina;
+    const fin = inicio + itemsPorPagina;
+    return empresasFiltradas.slice(inicio, fin);
   };
 
-  // Handle popup open - CORREGIDO
-  const handleOpenPopup = async (type, empresa = null) => {
-    setSelectedEmpresa(empresa);
-    setPopupType(type);
-    setIsDataReady(false);
+  const handleOpenPopup = async (type, empresa) => {
+    setSelectedEmpresa(null);
     
-    // Pequeño delay para asegurar que el estado se actualizó
-    await new Promise(resolve => setTimeout(resolve, 50));
-    setIsDataReady(true);
+    try {
+      // Obtener datos frescos del servidor
+      const response = await axios.get(`/api/empresas/${empresa.cuit}`);
+      setSelectedEmpresa(response.data);
+    } catch (error) {
+      console.error('Error al obtener empresa:', error);
+      setSelectedEmpresa(empresa);
+    }
+    
+    setPopupType(type);
+    await new Promise(resolve => setTimeout(resolve, 10)); // Pequeño delay
     setPopupOpen(true);
   };
 
-  // Adding icons
-  let listaCompleta = empresasFiltradas.map(empresa => {
-    return {
-      ...empresa,
-      modificar: (
-        <IconButton 
-          onClick={() => handleOpenPopup('modificar-empresa', empresa)}
-          size="small"
-        >
-          <CreateOutlinedIcon fontSize="small"/>
-        </IconButton>
-      ),
-      eliminar: (
-        <IconButton 
-          onClick={() => handleOpenPopup('confirmar-eliminar', empresa)}
-          size="small"
-          sx={{
-            '&:hover': {
-              backgroundColor: 'rgba(0, 0, 0, 0.04)'
-            }
-          }}
-        >
-          <CloseOutlinedIcon fontSize="small"/>
-        </IconButton>
-      )
-    };
-  });
-
-  // Parametros para paginado
-  const PaginaActual = (pagina) => {
-    return listaCompleta.slice(
-      (pagina - 1) * itemsPorPagina,
-      pagina * itemsPorPagina
-    );
+  const handleDeleteEmpresa = async (cuit) => {
+    try {
+      await axios.patch(`/api/empresas/${cuit}/delete`);
+      setEmpresas(prev => prev.filter(e => e.cuit !== cuit));
+      setEmpresasFiltradas(prev => prev.filter(e => e.cuit !== cuit));
+      return { success: true };
+    } catch (error) {
+      console.error('Error al eliminar empresa:', error);
+      return { success: false, error: error.message };
+    }
   };
 
-  // Columns configuration
   const columns = [
     { 
-      id: 'razonSocial', 
-      label: 'Razón Social', 
-      sortable: false,
-      minWidth: 80 
+      id: 'razonSocial',
+      label: 'Razón Social',
+      minWidth: 200,
+      align: 'left'
     },
     { 
       id: 'cuit', 
-      label: 'CUIT/RUT', 
-      sortable: false,
-      minWidth: 80
+      label: 'CUIT', 
+      minWidth: 120,
+      align: 'left'
     },
     {
       id: 'domicilioFiscal',
       label: 'Domicilio Fiscal',
-      sortable: false,
-      minWidth: 80
+      minWidth: 250,
+      align: 'left'
     },
     {
       id: 'telefono',
       label: 'Teléfono',
-      sortable: false,
-      minWidth: 80
+      minWidth: 120,
+      align: 'left'
+    },
+    {
+      id: 'email',
+      label: 'Email',
+      minWidth: 180,
+      align: 'left'
     },
     {
       id: 'modificar',
       label: 'Modificar',
-      sortable: false,
-      width: '5%'
+      minWidth: 80,
+      align: 'center',
+      render: (_, row) => (
+        <IconButton 
+          onClick={() => handleOpenPopup('modificar-empresa', row)}
+          size="small"
+          color="primary"
+        >
+          <CreateOutlinedIcon fontSize="small"/>
+        </IconButton>
+      )
     },
     {
       id: 'eliminar',
       label: 'Eliminar',
-      sortable: false,
-      width: '5%'
+      minWidth: 80,
+      align: 'center',
+      render: (_, row) => (
+        <IconButton 
+          onClick={() => handleOpenPopup('confirmar-eliminar', row)}
+          size="small"
+          color="error"
+        >
+          <CloseOutlinedIcon fontSize="small"/>
+        </IconButton>
+      )
     }
   ];
 
-  // Sort handler
-  const handleSort = (columnId) => {
-    const isAsc = sortBy === columnId && sortDirection === 'asc';
-    setSortDirection(isAsc ? 'desc' : 'asc');
-    setSortBy(columnId);
-  };
+  if (loading) return <Box display="flex" justifyContent="center" mt={4}><CircularProgress /></Box>;
+  if (error) return <Alert severity="error">{error}</Alert>;
 
   return (
-    <>
-      <Box sx={{py:4, px:15}}>
-        <Box mb={4}>
-          <Filtro 
-            filtros={filtros} 
-            setFiltros={setFiltros} 
-            mode={'empresas'}
-            onSearch={handleSearch}
-            onClear={handleClear}
-          />
-        </Box>
-        <Tabla2
-          mb={4}
-          columns={columns}
-          data={PaginaActual(pagina)}
-          sortDirection={sortDirection}
-          sortBy={sortBy}
-          onSort={handleSort}
-        />
-        <Paginacion
-          pagina={pagina}
-          setPagina={setPagina}
-          totalItems={listaCompleta.length}
-          itemsPorPagina={itemsPorPagina}
-          elemento="empresas"
+    <Container maxWidth="xl" sx={{ py: 4 }}>
+      <Popup
+        open={popupOpen}
+        onClose={() => setPopupOpen(false)}
+        page={popupType}
+        selectedItem={selectedEmpresa}
+        onDelete={popupType === 'confirmar-eliminar' ? handleDeleteEmpresa : null}
+        buttonName={
+          popupType === 'modificar-empresa' ? 'Modificar Empresa' : 
+          popupType === 'confirmar-eliminar' ? 'Eliminar Empresa' : 
+          'Aceptar'
+        }
+        message={popupType === 'confirmar-eliminar' ? '¿Está seguro que desea eliminar esta empresa?' : ''}
+      />
+
+      <Box mb={4}>
+        <Filtro 
+          filtros={filtros} 
+          setFiltros={setFiltros} 
+          mode="empresas"
+          onSearch={aplicarFiltros}  // Pasar la función de búsqueda
+          onClear={() => {
+            setFiltros({
+              criterio: 'Razón Social',
+              busqueda: ''
+            });
+            setEmpresasFiltradas(empresas);  // Restablecer a todas las empresas
+            setPagina(1);
+          }}
         />
       </Box>
-
-      {isDataReady && (
-        <Popup
-          open={popupOpen}
-          onClose={() => setPopupOpen(false)}
-          page={popupType}
-          selectedItem={selectedEmpresa}
-          buttonName={
-            popupType === 'modificar-empresa' ? 'Modificar Empresa' :
-            popupType === 'confirmar-eliminar' ? 'Eliminar Empresa' :
-            'Aceptar'
-          }
+      
+      <Box sx={{
+        width: '85vw',
+        marginLeft: 'calc(-43vw + 50%)',
+        marginRight: 'calc(-40vw + 50%)',
+        overflowX: 'hidden'
+      }}>
+        <Tabla2
+          columns={columns}
+          data={empresasPaginaActual()}
+          sx={{
+            tableLayout: 'auto',
+            width: '100%',
+          }}
         />
-      )}
-    </>
+      </Box>
+            
+      <Paginacion
+        pagina={pagina}
+        setPagina={setPagina}
+        totalItems={empresasFiltradas.length}
+        itemsPorPagina={itemsPorPagina}
+        elemento="empresas"
+      />
+    </Container>
   );
 };
+
+export {ListadoEmpresas};
