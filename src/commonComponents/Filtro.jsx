@@ -7,7 +7,8 @@ const Filtro = ({
   filtros, 
   setFiltros, 
   mode, // 'viajes', 'empresas', 'choferes', 'depositos', 'vehiculos'
-  onSearch 
+  onSearch,
+  onClear // Nueva prop para manejar limpieza
 }) => {
   // Configuración por modo
   const config = {
@@ -109,7 +110,7 @@ const Filtro = ({
           )}
 
           {/* Campo de Búsqueda */}
-          <Grid item xs={12} sm={6} md={currentConfig.showCriterio ? 4 : 6.5  }>
+          <Grid item xs={12} sm={6} md={currentConfig.showCriterio ? 4 : 6.5}>
             <TextField
               fullWidth
               label={currentConfig.searchLabel}
@@ -163,7 +164,10 @@ const Filtro = ({
             <Button 
               fullWidth 
               variant="outlined" 
-              onClick={() => setFiltros({ criterio: '', fechaDesde: '', fechaHasta: '', busqueda: '' })}
+              onClick={() => {
+                setFiltros({ criterio: '', fechaDesde: '', fechaHasta: '', busqueda: '' });
+                if (onClear) onClear(); // Llama a onClear al limpiar
+              }}
             >
               Limpiar
             </Button>

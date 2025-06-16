@@ -3,12 +3,12 @@ import { Box, IconButton, Grid, InputLabel, TextField } from '@mui/material';
 import Tabla2 from '../../commonComponents/Tabla2';
 import CreateOutlinedIcon from '@mui/icons-material/CreateOutlined';
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
-import { getAllEmpresas } from '../../services/Empresas/EmpresaService';
+import { getAllVehiculos } from '../../services/Vehiculos/VehiculoService';
 import Paginacion from '../../commonComponents/Paginacion';
 import Filtro from '../../commonComponents/Filtro';
 import Popup from '../../commonComponents/Popup';
 
-export function ListadoEmpresas(){
+export function ListadoVehiculos(){
   // Table state
   const [sortDirection, setSortDirection] = useState('asc');
   const [sortBy, setSortBy] = useState('name');
@@ -18,12 +18,14 @@ export function ListadoEmpresas(){
   // Popup state
   const [popupOpen, setPopupOpen] = useState(false);
   const [popupType, setPopupType] = useState('');
-  const [selectedEmpresa, setSelectedEmpresa] = useState(null);
+  const [selectedVehiculo, setSelectedVehiculo] = useState(null);
+  const [isDataReady, setIsDataReady] = useState(false); // Nuevo estado
 
-  //Content state
-  const [empresas, setEmpresas] = useState([]);
+  // Content state
+  const [vehiculos, setVehiculos] = useState([]);
+  const [vehiculosFiltrados, setVehiculosFiltrados] = useState([]);
 
-  //Componente filtro
+  // Filtro state
   const [filtros, setFiltros] = useState({
     criterio: '',
     fechaDesde: '',
@@ -31,33 +33,62 @@ export function ListadoEmpresas(){
     busqueda: '',
   });
   
-  //API Call
+  // API Call
   useEffect(() => {
-    async function fetchEmpresas() {
+    async function fetchVehiculos() {
       try {
-        const empresas = await getAllEmpresas();
-        setEmpresas(empresas);
+        const vehiculos = await getAllVehiculos();
+        setVehiculos(vehiculos);
+        setVehiculosFiltrados(vehiculos);
       } catch (error) {
-        console.log('ERROR FETCH API [empresas]: ' + error);
+        console.log('ERROR FETCH API [vehiculos]: ' + error);
       }
     }
-    fetchEmpresas();
+    fetchVehiculos();
   }, []);
+
+  // Función de búsqueda
+  const handleSearch = () => {
+    if (!filtros.busqueda) {
+      setVehiculosFiltrados(vehiculos);
+      return;
+    }
+
+    const resultados = vehiculos.filter(vehiculo => {
+      const patenteNormalizada = vehiculo.patente?.replace(/\s/g, '').toLowerCase() || '';
+      const busquedaNormalizada = filtros.busqueda.replace(/\s/g, '').toLowerCase();
+      return patenteNormalizada.includes(busquedaNormalizada);
+    });
+
+    setVehiculosFiltrados(resultados);
+    setPagina(1);
+  };
+
+  const handleClear = () => {
+    setVehiculosFiltrados(vehiculos); 
+    setPagina(1);
+  };
   
   // Handle popup open
-  const handleOpenPopup = (type, empresa = null) => {
+  const handleOpenPopup = async (type, vehiculo = null) => {
+    setSelectedVehiculo(vehiculo);
     setPopupType(type);
-    setSelectedEmpresa(empresa);
+    setIsDataReady(false);
+    
+    // Pequeño delay para asegurar que el estado se actualizó
+    await new Promise(resolve => setTimeout(resolve, 50));
+    setIsDataReady(true);
     setPopupOpen(true);
   };
 
-  //Adding icons
-  let listaCompleta = empresas.map(empresa => {
+  // Adding icons
+  let listaCompleta = vehiculosFiltrados.map(vehiculo => {
     return {
-      ...empresa,
+      ...vehiculo,
+      capacidad: `${vehiculo.volumen}m³ - ${vehiculo.peso}kg`,
       modificar: (
         <IconButton 
-          onClick={() => handleOpenPopup('modificar-empresa', empresa)}
+          onClick={() => handleOpenPopup('modificar-vehiculo', vehiculo)}
           size="small"
         >
           <CreateOutlinedIcon fontSize="small"/>
@@ -65,7 +96,7 @@ export function ListadoEmpresas(){
       ),
       eliminar: (
         <IconButton 
-          onClick={() => handleOpenPopup('confirmar-eliminar', empresa)}
+          onClick={() => handleOpenPopup('confirmar-eliminar', vehiculo)}
           size="small"
           sx={{
             '&:hover': {
@@ -75,11 +106,11 @@ export function ListadoEmpresas(){
         >
           <CloseOutlinedIcon fontSize="small"/>
         </IconButton>
-      )
+      ),
     };
   });
 
-  //Parametros para paginado
+  // Parametros para paginado
   const PaginaActual = (pagina) => {
     return listaCompleta.slice(
       (pagina - 1) * itemsPorPagina,
@@ -89,41 +120,58 @@ export function ListadoEmpresas(){
 
   // Columns configuration
   const columns = [
-    { 
-      id: 'razonSocial', 
-      label: 'Razón Social', 
+    { id: 'patente', 
+      label: 'Patente', 
       sortable: false,
       minWidth: 80 
     },
     { 
-      id: 'cuit', 
-      label: 'CUIT/RUT', 
+      id: 'marca', 
+      label: 'Marca', 
       sortable: false,
       minWidth: 80
     },
     {
-      id: 'domicilioFiscal',
-      label: 'Domicilio Fiscal',
+      id: 'modelo',
+      label: 'Modelo',
       sortable: false,
       minWidth: 80
     },
     {
-      id: 'telefono',
-      label: 'Teléfono',
+      id: 'año',
+      label: 'Año',
       sortable: false,
       minWidth: 80
+    },
+    {
+      id: 'capacidad',
+      label: 'Capacidad',
+      sortable: false,
+      minWidth: 50
+    },
+    {
+      id: 'tipoVehiculo',
+      label: 'Tipo de vehiculo',
+      sortable: false,
+      minWidth: 50
+    },
+    {
+      id: 'empresa',
+      label: 'Empresa',
+      sortable: false,
+      minWidth: 50
     },
     {
       id: 'modificar',
       label: 'Modificar',
       sortable: false,
-      width: '5%'
+      minWidth: 50,
     },
     {
       id: 'eliminar',
       label: 'Eliminar',
       sortable: false,
-      width: '5%'
+      minWidth: 50,
     }
   ];
 
@@ -137,9 +185,15 @@ export function ListadoEmpresas(){
   return <>
     <Box sx={{py:4, px:15}}>
       <Box mb={4}>
-          <Filtro filtros={filtros} setFiltros={setFiltros} mode={'empresas'}/>
+          <Filtro 
+            filtros={filtros} 
+            setFiltros={setFiltros} 
+            mode={'vehiculos'}
+            onSearch={handleSearch}
+            onClear={handleClear} 
+          />
       </Box>
-      <Tabla2 mb={4}
+      <Tabla2
         columns={columns}
         data={PaginaActual(pagina)}
         sortDirection={sortDirection}
@@ -151,21 +205,23 @@ export function ListadoEmpresas(){
         setPagina={setPagina}
         totalItems={listaCompleta.length}
         itemsPorPagina={itemsPorPagina}
-        elemento="empresas"
+        elemento="vehiculos"
       />
     </Box>
 
     {/* Popup */}
-    <Popup
-      open={popupOpen}
-      onClose={() => setPopupOpen(false)}
-      page={popupType}
-      selectedItem={selectedEmpresa}
-      buttonName={
-        popupType === 'modificar-empresa' ? 'Modificar Empresa' :
-        popupType === 'confirmar-eliminar' ? 'Eliminar Empresa' :
-        'Aceptar'
-      }
-    />
+    {isDataReady && (
+      <Popup
+        open={popupOpen}
+        onClose={() => setPopupOpen(false)}
+        page={popupType}
+        selectedItem={selectedVehiculo}
+        buttonName={
+          popupType === 'modificar-vehiculo' ? 'Modificar Vehículo' :
+          popupType === 'confirmar-eliminar' ? 'Eliminar Vehículo' :
+          'Aceptar'
+        }
+      />
+    )}
   </>
 };

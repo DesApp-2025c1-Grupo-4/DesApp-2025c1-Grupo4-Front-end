@@ -21,13 +21,20 @@ const ListadoDeViajes = () => {
   const [popupOpen, setPopupOpen] = useState(false);
   const [popupType, setPopupType] = useState('');
   const [selectedViaje, setSelectedViaje] = useState(null);
+  const [isDataReady, setIsDataReady] = useState(false); // Nuevo estado
   
   const { viajes, loading, error } = useViajesData();
   const { viajesFiltrados, viajesPaginaActual, itemsPorPagina } = useViajesFiltrados(viajes, filtros);
 
-  const handleOpenPopup = (type, viaje = null) => {
-    setPopupType(type);
+  // Handle popup open
+  const handleOpenPopup = async (type, viaje = null) => {
     setSelectedViaje(viaje);
+    setPopupType(type);
+    setIsDataReady(false);
+    
+    // Pequeño delay para asegurar que el estado se actualizó
+    await new Promise(resolve => setTimeout(resolve, 50));
+    setIsDataReady(true);
     setPopupOpen(true);
   };
 
@@ -142,18 +149,20 @@ const ListadoDeViajes = () => {
 
   return (
     <Container maxWidth="xl" sx={{ py: 4 }}> 
-      {/* Popup */}
-      <Popup
-        open={popupOpen}
-        onClose={() => setPopupOpen(false)}
-        page={popupType}
-        selectedItem={selectedViaje}
-        buttonName={
-          popupType === 'registrar-viaje' ? 'Registrar Viaje' :
-          popupType === 'modificar-viaje' ? 'Modificar Viaje' :
-          'Seguimiento'
-        }
-      />
+      {/* Popup  */}
+      {isDataReady && (
+        <Popup
+          open={popupOpen}
+          onClose={() => setPopupOpen(false)}
+          page={popupType}
+          selectedItem={selectedViaje}
+          buttonName={
+            popupType === 'registrar-viaje' ? 'Registrar Viaje' :
+            popupType === 'modificar-viaje' ? 'Modificar Viaje' :
+            'Seguimiento'
+          }
+        />
+      )}
 
       {/* Filtro y tabla */}
       <Box mb={4}>

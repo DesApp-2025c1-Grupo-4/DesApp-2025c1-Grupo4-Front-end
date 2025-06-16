@@ -19,9 +19,11 @@ export function ListadoDepositos() {
   const [popupOpen, setPopupOpen] = useState(false);
   const [popupType, setPopupType] = useState('');
   const [selectedDeposito, setSelectedDeposito] = useState(null);
+  const [isDataReady, setIsDataReady] = useState(false); // Nuevo estado
 
   // Content state
   const [depositos, setDepositos] = useState([]);
+  const [depositosFiltrados, setDepositosFiltrados] = useState([]);
 
   // Filtro state
   const [filtros, setFiltros] = useState({
@@ -37,6 +39,7 @@ export function ListadoDepositos() {
       try {
         const depositos = await getAllDepositos();
         setDepositos(depositos);
+        setDepositosFiltrados(depositos);
       } catch (error) {
         console.log('ERROR FETCH API [depositos]: ' + error);
       }
@@ -44,15 +47,42 @@ export function ListadoDepositos() {
     fetchDepositos();
   }, []);
 
+  // Función de búsqueda
+  const handleSearch = () => {
+    if (!filtros.busqueda) {
+      setDepositosFiltrados(depositos);
+      return;
+    }
+
+    const resultados = depositos.filter(deposito => {
+      const localizacionStr = `${deposito.localizacion?.provincia || ''} ${deposito.localizacion?.pais || ''}`.toLowerCase();
+      const busquedaNormalizada = filtros.busqueda.toLowerCase();
+      return localizacionStr.includes(busquedaNormalizada);
+    });
+
+    setDepositosFiltrados(resultados);
+    setPagina(1);
+  };
+
+  const handleClear = () => {
+    setDepositosFiltrados(depositos);
+    setPagina(1);
+  };
+
   // Handle popup open
-  const handleOpenPopup = (type, deposito = null) => {
-    setPopupType(type);
+  const handleOpenPopup = async (type, deposito = null) => {
     setSelectedDeposito(deposito);
+    setPopupType(type);
+    setIsDataReady(false);
+    
+    // Pequeño delay para asegurar que el estado se actualizó
+    await new Promise(resolve => setTimeout(resolve, 50));
+    setIsDataReady(true);
     setPopupOpen(true);
   };
 
   // Adding icons and actions
-  let listaCompleta = depositos.map(deposito => {
+  let listaCompleta = depositosFiltrados.map(deposito => {
     return {
       ...deposito,
       localizacion: `${deposito.localizacion?.calle} ${deposito.localizacion?.número}`,
@@ -145,7 +175,13 @@ export function ListadoDepositos() {
     <>
       <Box sx={{py:4, px:15}}>
         <Box mb={4}>
-          <Filtro filtros={filtros} setFiltros={setFiltros} mode={'depositos'}/>
+          <Filtro 
+            filtros={filtros} 
+            setFiltros={setFiltros} 
+            mode={'depositos'}
+            onSearch={handleSearch}
+            onClear={handleClear} 
+          />
         </Box>
         <Tabla2
           columns={columns}
@@ -164,17 +200,19 @@ export function ListadoDepositos() {
       </Box>
 
       {/* Popup */}
-      <Popup
-        open={popupOpen}
-        onClose={() => setPopupOpen(false)}
-        page={popupType}
-        selectedItem={selectedDeposito}
-        buttonName={
-          popupType === 'modificar-deposito' ? 'Modificar Depósito' :
-          popupType === 'confirmar-eliminar' ? 'Eliminar Depósito' :
-          'Aceptar'
-        }
-      />
+      {isDataReady && (
+        <Popup
+          open={popupOpen}
+          onClose={() => setPopupOpen(false)}
+          page={popupType}
+          selectedItem={selectedDeposito}
+          buttonName={
+            popupType === 'modificar-deposito' ? 'Modificar Depósito' :
+            popupType === 'confirmar-eliminar' ? 'Eliminar Depósito' :
+            'Aceptar'
+          }
+        />
+      )}
     </>
   );
 }

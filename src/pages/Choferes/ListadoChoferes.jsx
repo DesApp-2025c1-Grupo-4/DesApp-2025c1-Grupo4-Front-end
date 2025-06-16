@@ -20,11 +20,13 @@ export function ListadoChoferes(){
   const [popupOpen, setPopupOpen] = useState(false);
   const [popupType, setPopupType] = useState('');
   const [selectedChofer, setSelectedChofer] = useState(null);
+  const [isDataReady, setIsDataReady] = useState(false); // Nuevo estado
 
-  //Content state
+  // Content state
   const [choferes, setChoferes] = useState([]);
+  const [choferesFiltrados, setChoferesFiltrados] = useState([]);
 
-  //Componente filtro
+  // Filtro state
   const [filtros, setFiltros] = useState({
     criterio: '',
     fechaDesde: '',
@@ -32,28 +34,56 @@ export function ListadoChoferes(){
     busqueda: '',
   });
   
-  //API Call
+  // API Call
   useEffect(() => {
     async function fetchChoferes() {
       try {
         const choferes = await getAllChoferes();
         setChoferes(choferes);
+        setChoferesFiltrados(choferes);
       } catch (error) {
         console.log('ERROR FETCH API [choferes]: ' + error);
       }
     }
     fetchChoferes();
   }, []);
+
+  // Función de búsqueda
+  const handleSearch = () => {
+    if (!filtros.busqueda) {
+      setChoferesFiltrados(choferes);
+      return;
+    }
+
+    const resultados = choferes.filter(chofer => {
+      const cuilNormalizado = chofer.cuil?.replace(/[- ]/g, '').toLowerCase() || '';
+      const busquedaNormalizada = filtros.busqueda.replace(/[- ]/g, '').toLowerCase();
+      return cuilNormalizado.includes(busquedaNormalizada);
+    });
+
+    setChoferesFiltrados(resultados);
+    setPagina(1);
+  };
+
+  const handleClear = () => {
+    setChoferesFiltrados(choferes);
+    setPagina(1);
+  };
   
   // Handle popup open
-  const handleOpenPopup = (type, chofer = null) => {
-    setPopupType(type);
+  const handleOpenPopup = async (type, chofer = null) => {
     setSelectedChofer(chofer);
+    setPopupType(type);
+    setIsDataReady(false);
+    
+    // Pequeño delay para asegurar que el estado se actualizó
+    await new Promise(resolve => setTimeout(resolve, 50));
+    setIsDataReady(true);
     setPopupOpen(true);
   };
 
-  //Adding icons
-  let listaCompleta = choferes.map(chofer => {
+  // Adding icons
+  let listaCompleta = choferesFiltrados.map(chofer => {
     return {
       ...chofer,
       fechaNacimiento: dateFormat(chofer.fechaNacimiento),
@@ -81,7 +111,7 @@ export function ListadoChoferes(){
     };
   });
 
-  //Parametros para paginado
+  // Parametros para paginado
   const PaginaActual = (pagina) => {
     return listaCompleta.slice(
       (pagina - 1) * itemsPorPagina,
@@ -151,7 +181,13 @@ export function ListadoChoferes(){
   return <>
     <Box sx={{py:4, px:15}}>
       <Box mb={4}>
-          <Filtro filtros={filtros} setFiltros={setFiltros} mode={'choferes'}/>
+          <Filtro 
+            filtros={filtros} 
+            setFiltros={setFiltros} 
+            mode={'choferes'}
+            onSearch={handleSearch}
+            onClear={handleClear} 
+          />
       </Box>
       <Tabla2
         columns={columns}
@@ -170,16 +206,18 @@ export function ListadoChoferes(){
     </Box>
 
     {/* Popup*/}
-    <Popup
-      open={popupOpen}
-      onClose={() => setPopupOpen(false)}
-      page={popupType}
-      selectedItem={selectedChofer}
-      buttonName={
-        popupType === 'modificar-chofer' ? 'Modificar Chofer' :
-        popupType === 'confirmar-eliminar' ? 'Eliminar Chofer' :
-        'Aceptar'
-      }
-    />
+    {isDataReady && (
+      <Popup
+        open={popupOpen}
+        onClose={() => setPopupOpen(false)}
+        page={popupType}
+        selectedItem={selectedChofer}
+        buttonName={
+          popupType === 'modificar-chofer' ? 'Modificar Chofer' :
+          popupType === 'confirmar-eliminar' ? 'Eliminar Chofer' :
+          'Aceptar'
+        }
+      />
+    )}
   </>
 };

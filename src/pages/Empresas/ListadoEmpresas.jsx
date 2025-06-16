@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Box, IconButton, Grid, InputLabel, TextField } from '@mui/material';
+import { Box, IconButton } from '@mui/material';
 import Tabla2 from '../../commonComponents/Tabla2';
 import CreateOutlinedIcon from '@mui/icons-material/CreateOutlined';
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
@@ -15,15 +15,17 @@ export function ListadoEmpresas(){
   const [pagina, setPagina] = useState(1);
   const itemsPorPagina = 10;
 
-  // Popup state (unificado como en ListadoViajes)
+  // Popup state
   const [popupOpen, setPopupOpen] = useState(false);
   const [popupType, setPopupType] = useState('');
   const [selectedEmpresa, setSelectedEmpresa] = useState(null);
+  const [isDataReady, setIsDataReady] = useState(false);
 
-  //Content state
+  // Content state
   const [empresas, setEmpresas] = useState([]);
+  const [empresasFiltradas, setEmpresasFiltradas] = useState([]);
 
-  //Componente filtro
+  // Filtro state
   const [filtros, setFiltros] = useState({
     criterio: '',
     fechaDesde: '',
@@ -31,12 +33,13 @@ export function ListadoEmpresas(){
     busqueda: '',
   });
   
-  //API Call
+  // API Call
   useEffect(() => {
     async function fetchEmpresas() {
       try {
         const empresas = await getAllEmpresas();
         setEmpresas(empresas);
+        setEmpresasFiltradas(empresas);
       } catch (error) {
         console.log('ERROR FETCH API [empresas]: ' + error);
       }
@@ -44,15 +47,43 @@ export function ListadoEmpresas(){
     fetchEmpresas();
   }, []);
   
-  // Handle popup open
-  const handleOpenPopup = (type, empresa = null) => {
-    setPopupType(type);
+  // Función de búsqueda
+  const handleSearch = () => {
+    if (!filtros.busqueda) {
+      setEmpresasFiltradas(empresas);
+      return;
+    }
+
+    const resultados = empresas.filter(empresa => {
+      const cuitNormalizado = empresa.cuit?.replace(/[- ]/g, '').toLowerCase() || '';
+      const busquedaNormalizada = filtros.busqueda.replace(/[- ]/g, '').toLowerCase();
+      return cuitNormalizado.includes(busquedaNormalizada);
+    });
+
+    setEmpresasFiltradas(resultados);
+    setPagina(1);
+  };
+
+  // Función para limpiar filtros
+  const handleClear = () => {
+    setEmpresasFiltradas(empresas);
+    setPagina(1);
+  };
+
+  // Handle popup open - CORREGIDO
+  const handleOpenPopup = async (type, empresa = null) => {
     setSelectedEmpresa(empresa);
+    setPopupType(type);
+    setIsDataReady(false);
+    
+    // Pequeño delay para asegurar que el estado se actualizó
+    await new Promise(resolve => setTimeout(resolve, 50));
+    setIsDataReady(true);
     setPopupOpen(true);
   };
 
-  //Adding icons
-  let listaCompleta = empresas.map(empresa => {
+  // Adding icons
+  let listaCompleta = empresasFiltradas.map(empresa => {
     return {
       ...empresa,
       modificar: (
@@ -79,7 +110,7 @@ export function ListadoEmpresas(){
     };
   });
 
-  //Parametros para paginado
+  // Parametros para paginado
   const PaginaActual = (pagina) => {
     return listaCompleta.slice(
       (pagina - 1) * itemsPorPagina,
@@ -134,38 +165,48 @@ export function ListadoEmpresas(){
     setSortBy(columnId);
   };
 
-  return <>
-    <Box sx={{py:4, px:15}}>
-      <Box mb={4}>
-          <Filtro filtros={filtros} setFiltros={setFiltros} mode={'empresas'}/>
+  return (
+    <>
+      <Box sx={{py:4, px:15}}>
+        <Box mb={4}>
+          <Filtro 
+            filtros={filtros} 
+            setFiltros={setFiltros} 
+            mode={'empresas'}
+            onSearch={handleSearch}
+            onClear={handleClear}
+          />
+        </Box>
+        <Tabla2
+          mb={4}
+          columns={columns}
+          data={PaginaActual(pagina)}
+          sortDirection={sortDirection}
+          sortBy={sortBy}
+          onSort={handleSort}
+        />
+        <Paginacion
+          pagina={pagina}
+          setPagina={setPagina}
+          totalItems={listaCompleta.length}
+          itemsPorPagina={itemsPorPagina}
+          elemento="empresas"
+        />
       </Box>
-      <Tabla2 mb={4}
-        columns={columns}
-        data={PaginaActual(pagina)}
-        sortDirection={sortDirection}
-        sortBy={sortBy}
-        onSort={handleSort}
-      />
-      <Paginacion
-        pagina={pagina}
-        setPagina={setPagina}
-        totalItems={listaCompleta.length}
-        itemsPorPagina={itemsPorPagina}
-        elemento="empresas"
-      />
-    </Box>
 
-    {/* Popup */}
-    <Popup
-      open={popupOpen}
-      onClose={() => setPopupOpen(false)}
-      page={popupType}
-      selectedItem={selectedEmpresa}
-      buttonName={
-        popupType === 'modificar-empresa' ? 'Modificar Empresa' :
-        popupType === 'confirmar-eliminar' ? 'Eliminar Empresa' :
-        'Aceptar'
-      }
-    />
-  </>
+      {isDataReady && (
+        <Popup
+          open={popupOpen}
+          onClose={() => setPopupOpen(false)}
+          page={popupType}
+          selectedItem={selectedEmpresa}
+          buttonName={
+            popupType === 'modificar-empresa' ? 'Modificar Empresa' :
+            popupType === 'confirmar-eliminar' ? 'Eliminar Empresa' :
+            'Aceptar'
+          }
+        />
+      )}
+    </>
+  );
 };
