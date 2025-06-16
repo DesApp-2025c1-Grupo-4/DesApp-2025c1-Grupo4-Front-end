@@ -12,7 +12,7 @@ import { grey } from "@mui/material/colors";
 
 const ListadoDeViajes = () => {
   const [filtros, setFiltros] = useState({
-    criterio: '',
+    criterio: 'Empresa transportista', // Valor por defecto
     fechaDesde: '',
     fechaHasta: '',
     busqueda: ''
@@ -21,10 +21,26 @@ const ListadoDeViajes = () => {
   const [popupOpen, setPopupOpen] = useState(false);
   const [popupType, setPopupType] = useState('');
   const [selectedViaje, setSelectedViaje] = useState(null);
-  const [isDataReady, setIsDataReady] = useState(false); // Nuevo estado
+  const [isDataReady, setIsDataReady] = useState(false);
   
   const { viajes, loading, error } = useViajesData();
   const { viajesFiltrados, viajesPaginaActual, itemsPorPagina } = useViajesFiltrados(viajes, filtros);
+
+  // Función para filtrar según el criterio seleccionado
+  const handleSearch = () => {
+    setPagina(1); // Resetear a la primera página
+  };
+
+  // Función para limpiar filtros
+  const handleClear = () => {
+    setFiltros({
+      criterio: 'Empresa transportista',
+      fechaDesde: '',
+      fechaHasta: '',
+      busqueda: ''
+    });
+    setPagina(1);
+  };
 
   // Handle popup open
   const handleOpenPopup = async (type, viaje = null) => {
@@ -32,13 +48,12 @@ const ListadoDeViajes = () => {
     setPopupType(type);
     setIsDataReady(false);
     
-    // Pequeño delay para asegurar que el estado se actualizó
     await new Promise(resolve => setTimeout(resolve, 50));
     setIsDataReady(true);
     setPopupOpen(true);
   };
 
-  // Configuración de columnas optimizada para ancho completo
+  // Configuración de columnas
   const columns = [
     { 
       id: 'numeroViaje', 
@@ -149,7 +164,7 @@ const ListadoDeViajes = () => {
 
   return (
     <Container maxWidth="xl" sx={{ py: 4 }}> 
-      {/* Popup  */}
+      {/* Popup */}
       {isDataReady && (
         <Popup
           open={popupOpen}
@@ -166,7 +181,13 @@ const ListadoDeViajes = () => {
 
       {/* Filtro y tabla */}
       <Box mb={4}>
-        <Filtro filtros={filtros} setFiltros={setFiltros} mode={"viajes"}/>
+        <Filtro 
+          filtros={filtros} 
+          setFiltros={setFiltros} 
+          mode={"viajes"}
+          onSearch={handleSearch}
+          onClear={handleClear}
+        />
       </Box>
       
       <Box sx={tableStyles.container}>
