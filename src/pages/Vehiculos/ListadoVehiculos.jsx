@@ -32,17 +32,12 @@ const ListadoVehiculos = () => {
     const fetchVehiculos = async () => {
       try {
         const response = await axios.get('/api/vehiculos');
-        
-        // Guardamos una copia exacta de los datos originales
         setVehiculosOriginales([...response.data]);
-        
-        // Datos transformados solo para visualización en tabla
         const datosTransformados = response.data.map(item => ({
           ...item,
           empresa: item.empresa?.nombre_empresa || 'Sin empresa',
           capacidad: `${item.capacidad_carga?.volumen || 0}m³ - ${item.capacidad_carga?.peso || 0}kg`,
           año: item.anio, // Para mostrar en tabla
-          // Mantenemos todos los campos originales
           tipo_vehiculo: item.tipo_vehiculo,
           capacidad_carga: item.capacidad_carga,
           anio: item.anio
@@ -106,36 +101,36 @@ const ListadoVehiculos = () => {
   };
 
   const handleOpenPopup = async (type, vehiculo) => {
-    setSelectedVehiculo(null);
-    
-    try {
-      // Obtener datos frescos del servidor
-      const response = await axios.get(`/api/vehiculos/${vehiculo.patente}`);
-      const vehiculoCompleto = {
-        ...response.data,
-        tipo: response.data.tipo_vehiculo,
-        año: response.data.anio,
-        peso: response.data.capacidad_carga?.peso,
-        volumen: response.data.capacidad_carga?.volumen
-      };
-      setSelectedVehiculo(vehiculoCompleto);
-    } catch (error) {
-      console.error('Error al obtener vehículo:', error);
-      // Usar datos locales si falla la API
-      const vehiculoCompleto = {
-        ...vehiculo,
-        tipo: vehiculo.tipo_vehiculo,
-        año: vehiculo.anio || vehiculo.año,
-        peso: vehiculo.capacidad_carga?.peso,
-        volumen: vehiculo.capacidad_carga?.volumen
-      };
-      setSelectedVehiculo(vehiculoCompleto);
-    }
-    
-    setPopupType(type);
-    await new Promise(resolve => setTimeout(resolve, 50)); // Pequeño delay
-    setPopupOpen(true);
-  };
+  setSelectedVehiculo(null);
+  try {
+    const response = await axios.get(`/api/vehiculos/${vehiculo.patente}`);
+    const vehiculoCompleto = {
+      ...response.data,
+      tipo_vehiculo: response.data.tipo_vehiculo, 
+      tipoVehiculo: response.data.tipo_vehiculo, 
+      año: response.data.anio,
+      volumen: response.data.capacidad_carga?.volumen,
+      peso: response.data.capacidad_carga?.peso,
+      empresa: response.data.empresa?.nombre_empresa || vehiculo.empresa || 'Sin empresa'
+    };
+    setSelectedVehiculo(vehiculoCompleto);
+  } catch (error) {
+    console.error('Error al obtener vehículo:', error);
+    const vehiculoCompleto = {
+      ...vehiculo,
+      tipo_vehiculo: vehiculo.tipo_vehiculo || vehiculo.tipo,
+      tipoVehiculo: vehiculo.tipo_vehiculo || vehiculo.tipo,
+      año: vehiculo.anio || vehiculo.año,
+      volumen: vehiculo.capacidad_carga?.volumen,
+      peso: vehiculo.capacidad_carga?.peso,
+      empresa: vehiculo.empresa || 'Sin empresa'
+    };
+    setSelectedVehiculo(vehiculoCompleto);
+  }
+  
+  setPopupType(type);
+  setPopupOpen(true);
+};
 
   const handleDeleteVehiculo = async (patente) => {
     try {

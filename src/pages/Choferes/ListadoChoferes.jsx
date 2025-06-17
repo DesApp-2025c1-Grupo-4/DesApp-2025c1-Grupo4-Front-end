@@ -90,19 +90,46 @@ const ListadoChoferes = () => {
     return choferesFiltrados.slice(inicio, inicio + itemsPorPagina);
   };
 
-  const handleOpenPopup = async (type, chofer) => {
-    setSelectedChofer(null);
+const handleOpenPopup = async (type, chofer = null) => {
+  setPopupType(type);
+  
+  if (type === 'modificar-chofer' && chofer?.cuil) {
     try {
       const response = await axios.get(`/api/choferes/${chofer.cuil}`);
-      setSelectedChofer({ ...response.data, dni: response.data.dni });
+      const fechaNacimiento = response.data.fecha_nacimiento 
+        ? new Date(response.data.fecha_nacimiento).toISOString().split('T')[0]
+        : '';
+
+      setSelectedChofer({
+        ...response.data,
+        nombre: response.data.nombre || '',
+        apellido: response.data.apellido || '',
+        cuil: response.data.cuil || '',
+        fechaNacimiento: fechaNacimiento, 
+        empresa: response.data.empresa?.nombre || response.data.empresa || '',
+        vehiculoAsignado: response.data.vehiculo?.patente || response.data.vehiculoAsignado || ''
+      });
     } catch (error) {
-      console.error('Error al obtener chofer:', error);
-      setSelectedChofer({ ...chofer, dni: chofer.dni });
+      console.error('Error al cargar datos del chofer:', error);
+      
+      // Formatear fecha también en caso de error
+      const fechaNacimiento = chofer.fecha_nacimiento 
+        ? new Date(chofer.fecha_nacimiento).toISOString().split('T')[0]
+        : '';
+
+      setSelectedChofer({
+        ...chofer,
+        cuil: chofer.cuil || '',
+        fechaNacimiento: fechaNacimiento
+      });
+    } finally {
+      setPopupOpen(true);
     }
-    setPopupType(type);
-    await new Promise(resolve => setTimeout(resolve, 2));
+  } else {
+    setSelectedChofer(chofer);
     setPopupOpen(true);
-  };
+  }
+};
 
   const handleDeleteChofer = async (cuil) => {
     try {

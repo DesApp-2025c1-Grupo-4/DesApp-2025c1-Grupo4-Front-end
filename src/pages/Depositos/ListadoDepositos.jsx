@@ -19,20 +19,18 @@ const ListadoDepositos = () => {
   const [popupOpen, setPopupOpen] = useState(false);
   const [popupType, setPopupType] = useState('');
   const [selectedDeposito, setSelectedDeposito] = useState(null);
-  const [isDataReady, setIsDataReady] = useState(false);
+  const [isLoadingDeposito, setIsLoadingDeposito] = useState(false);
 
   useEffect(() => {
     const fetchDepositos = async () => {
       try {
         const response = await axios.get('/api/depositos');
-
         const datosTransformados = response.data.map(item => ({
           ...item,
           direccionCompleta: `${item.localizacion?.direccion || ''}, ${item.localizacion?.ciudad || ''}, ${item.localizacion?.provincia_estado || ''}`,
           contacto: `${item.personal_contacto?.nombre || ''} ${item.personal_contacto?.apellido || ''}`.trim() || 'Sin contacto',
           horarios: item.horarios ? `${item.horarios.dias.join(', ')}: ${item.horarios.desde} - ${item.horarios.hasta}` : 'Sin horarios'
         }));
-
         setDepositos(datosTransformados);
         setDepositosFiltrados(datosTransformados);
       } catch (err) {
@@ -42,7 +40,6 @@ const ListadoDepositos = () => {
         setLoading(false);
       }
     };
-
     fetchDepositos();
   }, []);
 
@@ -75,27 +72,58 @@ const ListadoDepositos = () => {
     return depositosFiltrados.slice(inicio, inicio + itemsPorPagina);
   };
 
-  const handleOpenPopup = async (type, deposito = null) => {
-    setSelectedDeposito(null);
-    setIsDataReady(false);
-
-    if (type === 'modificar-deposito' && deposito?._id) {
-      try {
-        const response = await axios.get(`/api/depositos/${deposito._id}`);
-        setSelectedDeposito(response.data);
-      } catch (error) {
-        console.error('Error al cargar datos del depósito:', error);
-        setSelectedDeposito(deposito);
+const handleOpenPopup = async (type, deposito = null) => {
+  setPopupType(type);
+  
+  if (type === 'modificar-deposito' && deposito?._id) {
+    setIsLoadingDeposito(true);
+    try {
+      const response = await axios.get(`/api/depositos/${deposito._id}`);
+      
+      // Extraer número de la dirección si existe
+      const direccionCompleta = response.data.localizacion?.direccion || '';
+      let calle = direccionCompleta;
+      let numero = '';
+      
+      const match = direccionCompleta.match(/(.+?)\s*(\d+)\s*$/);
+      if (match) {
+        calle = match[1].trim();
+        numero = match[2].trim();
       }
-    } else {
-      setSelectedDeposito(deposito);
-    }
 
-    await new Promise(resolve => setTimeout(resolve, 50));
-    setIsDataReady(true);
-    setPopupType(type);
+      setSelectedDeposito({
+        ...response.data,
+        tipo: response.data.tipo || '',
+        horarios: response.data.horarios ? 
+          `${response.data.horarios.dias.join(', ')}: ${response.data.horarios.desde} - ${response.data.horarios.hasta}` : '',
+        localizacion: {
+          calle: calle,
+          número: numero,
+          provincia: response.data.localizacion?.provincia_estado || 'Buenos Aires',
+          pais: 'Argentina',
+          coordenadas: response.data.localizacion?.coordenadas || ''
+        },
+        contacto: {
+          nombre: response.data.personal_contacto?.nombre || '',
+          apellido: response.data.personal_contacto?.apellido || '',
+          dni: response.data.personal_contacto?.dni || '',
+          telefono: response.data.personal_contacto?.telefono || ''
+        },
+        razonSocial: response.data.razon_social || response.data.razonSocial || '',
+        cuit: response.data.cuit || response.data.cuit_rut || ''
+      });
+    } catch (error) {
+      console.error('Error al cargar datos del depósito:', error);
+      setSelectedDeposito(deposito);
+    } finally {
+      setIsLoadingDeposito(false);
+      setPopupOpen(true);
+    }
+  } else {
+    setSelectedDeposito(deposito);
     setPopupOpen(true);
-  };
+  }
+};
 
   const handleAddDeposito = async (nuevoDeposito) => {
     try {
@@ -153,11 +181,28 @@ const ListadoDepositos = () => {
     { id: 'contacto', label: 'Contacto', minWidth: 150, align: 'left' },
     {
       id: 'modificar', label: 'Modificar', minWidth: 80, align: 'center',
-      render: (_, row) => <IconButton onClick={() => handleOpenPopup('modificar-deposito', row)} size="small" color="primary"><CreateOutlinedIcon fontSize="small" /></IconButton>
+      render: (_, row) => (
+        <IconButton 
+          onClick={() => handleOpenPopup('modificar-deposito', row)} 
+          size="small" 
+          color="primary"
+          disabled={isLoadingDeposito}
+        >
+          {isLoadingDeposito ? <CircularProgress size={20} /> : <CreateOutlinedIcon fontSize="small" />}
+        </IconButton>
+      )
     },
     {
       id: 'eliminar', label: 'Eliminar', minWidth: 80, align: 'center',
-      render: (_, row) => <IconButton onClick={() => handleOpenPopup('confirmar-eliminar', row)} size="small" color="error"><CloseOutlinedIcon fontSize="small" /></IconButton>
+      render: (_, row) => (
+        <IconButton 
+          onClick={() => handleOpenPopup('confirmar-eliminar', row)} 
+          size="small" 
+          color="error"
+        >
+          <CloseOutlinedIcon fontSize="small" />
+        </IconButton>
+      )
     }
   ];
 
@@ -166,19 +211,16 @@ const ListadoDepositos = () => {
 
   return (
     <Container maxWidth="xl" sx={{ py: 4 }}>
-      {isDataReady && (
-        <Popup
-          open={popupOpen}
-          onClose={() => setPopupOpen(false)}
-          page={popupType}
-          selectedItem={selectedDeposito}
-          onAddItem={handleAddDeposito}
-          onUpdateItem={handleUpdateDeposito}
-          onDelete={popupType === 'confirmar-eliminar' ? handleDeleteDeposito : null}
-          buttonName={popupType === 'modificar-deposito' ? 'Modificar Depósito' : 'Eliminar Depósito'}
-          message={popupType === 'confirmar-eliminar' ? '¿Está seguro que desea eliminar este depósito?' : ''}
-        />
-      )}
+      <Popup
+        open={popupOpen}
+        onClose={() => setPopupOpen(false)}
+        page={popupType}
+        selectedItem={selectedDeposito}
+        onAddItem={handleAddDeposito}
+        onUpdateItem={handleUpdateDeposito}
+        onDelete={popupType === 'confirmar-eliminar' ? handleDeleteDeposito : null}
+        buttonName={popupType === 'modificar-deposito' ? 'Modificar Depósito' : 'Eliminar Depósito'}
+      />
 
       <Box mb={4}>
         <Filtro

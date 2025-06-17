@@ -1,9 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Button, Dialog, DialogTitle, DialogContent,
   DialogActions, Box
 } from '@mui/material';
-import { grey } from '@mui/material/colors';
 import { ROUTE_CONFIG } from '../config/routesConfig';
 import validationSchemas from '../validations/validationSchemas';
 import DepositoForm from './forms/DepositoForm';
@@ -13,114 +12,109 @@ import VehiculoForm from './forms/VehiculoForm';
 import DefaultForm from './forms/DefaultForm';
 import SeguimientoForm from './forms/SeguimientoForm';
 
+const initialData = {
+  deposito: {
+    tipo: '', horarios: '', calle: '', numero: '', provincia: '', pais: '', coordenadas: '',
+    nombreContacto: '', apellidoContacto: '', dniContacto: '', telefonoContacto: '', razonSocial: '', cuit: ''
+  },
+  viaje: {
+    idViaje: '', depositoOrigen: '', depositoDestino: '', fechaHoraInicio: '', fechaHoraFin: '', 
+    empresa: '', chofer: '', vehiculo: '', tipoViaje: '', estado: ''
+  },
+  chofer: {
+    nombre: '', apellido: '', cuil: '', fechaNacimiento: '', empresa: '', vehiculoAsignado: ''
+  },
+  vehiculo: {
+    patente: '', tipoVehiculo: '', marca: '', modelo: '', año: '', volumen: '', peso: '', empresa: ''
+  },
+  default: {
+    razonSocial: '', cuit: '', domicilio: '', telefono: ''
+  }
+};
+
 const Popup = ({ buttonName, page, open, onClose, children, selectedItem }) => {
   const [internalOpen, setInternalOpen] = useState(false);
-
-  const initialData = {
-    deposito: {
-      tipo: '', horarios: '', calle: '', numero: '', provincia: '', pais: '', coordenadas: '',
-      nombreContacto: '', apellidoContacto: '', dniContacto: '', telefonoContacto: '', razonSocial: '', cuit: ''
-    },
-    viaje: {
-      idViaje: '', depositoOrigen: '', depositoDestino: '', fechaHoraInicio: '', fechaHoraFin: '', 
-      empresa: '', chofer: '', vehiculo: '', tipoViaje: '', estado: ''
-    },
-    chofer: {
-      nombre: '', apellido: '', dni: '', fechaNacimiento: '', empresa: '', vehiculoAsignado: ''
-    },
-    vehiculo: {
-      patente: '', tipoVehiculo: '', marca: '', modelo: '', año: '', volumen: '', peso: '', empresa: ''
-    },
-    default: {
-      razonSocial: '', cuit: '', domicilio: '', telefono: ''
-    }
-  };
-
-  const getInitialFormData = () => {
-    if (!selectedItem) return initialData[page.includes('deposito') ? 'deposito' : 
-                            page.includes('viaje') ? 'viaje' : 
-                            page.includes('chofer') ? 'chofer' : 
-                            page.includes('vehiculo') ? 'vehiculo' : 'default'];
-
-    if (page.includes('deposito')) {
-      return {
-        ...initialData.deposito,
-        tipo: selectedItem?.tipo || '',
-        horarios: selectedItem?.horarios || '',
-        calle: selectedItem?.localizacion?.calle || '',
-        numero: selectedItem?.localizacion?.número || '',
-        provincia: selectedItem?.localizacion?.provincia || '',
-        pais: selectedItem?.localizacion?.pais || '',
-        coordenadas: selectedItem?.localizacion?.coordenadas || '',
-        nombreContacto: selectedItem?.contacto?.nombre || '',
-        apellidoContacto: selectedItem?.contacto?.apellido || '',
-        dniContacto: selectedItem?.contacto?.dni || '',
-        telefonoContacto: selectedItem?.contacto?.telefono || '',
-        razonSocial: selectedItem?.razonSocial || '',
-        cuit: selectedItem?.cuit || ''
-      };
-    }
-
-    if (page.includes('viaje')) {
-      return {
-        ...initialData.viaje,
-        idViaje: selectedItem?._id || '',
-        depositoOrigen: selectedItem?.origen || '',
-        depositoDestino: selectedItem?.destino || '',
-        fechaHoraInicio: selectedItem?.fechaInicio || '',
-        fechaHoraFin: selectedItem?.fechaFin || '',
-        empresa: selectedItem?.empresaTransportista || '',
-        chofer: selectedItem?.nombreChofer || '',
-        vehiculo: selectedItem?.patenteVehiculo || '',
-        tipoViaje: selectedItem?.tipoViaje || '',
-        estado: selectedItem?.estado || ''
-      };
-    }
-
-    if (page.includes('chofer')) {
-      return {
-        ...initialData.chofer,
-        nombre: selectedItem?.nombre || '',
-        apellido: selectedItem?.apellido || '',
-        dni: selectedItem?.dni || '',
-        fechaNacimiento: selectedItem?.fechaNacimiento || '',
-        empresa: selectedItem?.empresa || '',
-        vehiculoAsignado: selectedItem?.vehiculoAsignado || ''
-      };
-    }
-
-    if (page.includes('vehiculo')) {
-      return {
-        ...initialData.vehiculo,
-        patente: selectedItem?.patente || '',
-        tipoVehiculo: selectedItem?.tipoVehiculo || '',
-        marca: selectedItem?.marca || '',
-        modelo: selectedItem?.modelo || '',
-        año: selectedItem?.año || '',
-        volumen: selectedItem?.volumen || '',
-        peso: selectedItem?.peso || '',
-        empresa: selectedItem?.empresa || ''
-      };
-    }
-
-    return {
-      ...initialData.default,
-      razonSocial: selectedItem?.razonSocial || '',
-      cuit: selectedItem?.cuit || '',
-      domicilio: selectedItem?.domicilioFiscal || '',
-      telefono: selectedItem?.telefono || ''
-    };
-  };
-
-  const [formData, setFormData] = useState(getInitialFormData());
+  const [formData, setFormData] = useState(initialData.default);
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
 
   const isControlled = open !== undefined;
   const currentOpen = isControlled ? open : internalOpen;
-  
+
+  // Determinar el tipo de formulario
+  const formType = useMemo(() => {
+    if (page.includes('deposito')) return 'deposito';
+    if (page.includes('viaje')) return 'viaje';
+    if (page.includes('chofer')) return 'chofer';
+    if (page.includes('vehiculo')) return 'vehiculo';
+    return 'default';
+  }, [page]);
+
+  // Efecto para actualizar formData cuando selectedItem cambia o se abre el popup
+  useEffect(() => {
+    if (currentOpen) {
+      const newFormData = { ...initialData[formType] };
+      
+      if (selectedItem) {
+        if (formType === 'deposito') {
+          newFormData.tipo = selectedItem?.tipo || '';
+          newFormData.horarios = selectedItem?.horarios || '';
+          newFormData.calle = selectedItem?.localizacion?.calle || '';
+          newFormData.numero = selectedItem?.localizacion?.número || '';
+          newFormData.provincia = selectedItem?.localizacion?.provincia || '';
+          newFormData.pais = selectedItem?.localizacion?.pais || '';
+          newFormData.coordenadas = selectedItem?.localizacion?.coordenadas || '';
+          newFormData.nombreContacto = selectedItem?.contacto?.nombre || '';
+          newFormData.apellidoContacto = selectedItem?.contacto?.apellido || '';
+          newFormData.telefonoContacto = selectedItem?.contacto?.telefono || '';
+          newFormData.razonSocial = selectedItem?.razonSocial || '';
+          newFormData.cuit = selectedItem?.cuit || '';
+        } 
+        else if (formType === 'viaje') {
+          newFormData.idViaje = selectedItem?._id || '';
+          newFormData.depositoOrigen = selectedItem?.origen || '';
+          newFormData.depositoDestino = selectedItem?.destino || '';
+          newFormData.fechaHoraInicio = selectedItem?.fechaInicio || '';
+          newFormData.fechaHoraFin = selectedItem?.fechaFin || '';
+          newFormData.empresa = selectedItem?.empresaTransportista || '';
+          newFormData.chofer = selectedItem?.nombreChofer || '';
+          newFormData.vehiculo = selectedItem?.patenteVehiculo || '';
+          newFormData.tipoViaje = selectedItem?.tipoViaje || '';
+          newFormData.estado = selectedItem?.estado || '';
+        }
+        else if (formType === 'chofer') {
+          newFormData.nombre = selectedItem?.nombre || '';
+          newFormData.apellido = selectedItem?.apellido || '';
+          newFormData.cuil = selectedItem?.cuil || '';
+          newFormData.fechaNacimiento = selectedItem?.fechaNacimiento || '';
+          newFormData.empresa = selectedItem?.empresa || '';
+          newFormData.vehiculoAsignado = selectedItem?.vehiculoAsignado || '';
+        }
+        else if (formType === 'vehiculo') {
+          newFormData.patente = selectedItem?.patente || '';
+          newFormData.tipoVehiculo = selectedItem?.tipo_vehiculo || selectedItem?.tipo || ''; 
+          newFormData.marca = selectedItem?.marca || '';
+          newFormData.modelo = selectedItem?.modelo || '';
+          newFormData.año = selectedItem?.año || selectedItem?.anio || ''; 
+          newFormData.volumen = selectedItem?.volumen || '';
+          newFormData.peso = selectedItem?.peso || '';
+          newFormData.empresa = selectedItem?.empresa || '';
+        }
+        else {
+          newFormData.razonSocial = selectedItem?.razonSocial || '';
+          newFormData.cuit = selectedItem?.cuit || '';
+          newFormData.domicilio = selectedItem?.domicilioFiscal || '';
+          newFormData.telefono = selectedItem?.telefono || '';
+        }
+      }
+
+      setFormData(newFormData);
+      setErrors({});
+      setTouched({});
+    }
+  }, [currentOpen, selectedItem, formType]);
+
   const handleClose = () => {
-    setFormData(getInitialFormData());
     setErrors({});
     setTouched({});
     
@@ -131,31 +125,21 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem }) => {
     }
   };
 
-  const getValidationSchema = () => {
-    if (page.includes('deposito')) return validationSchemas.deposito;
-    if (page.includes('viaje')) return validationSchemas.viaje;
-    if (page.includes('chofer')) return validationSchemas.chofer;
-    if (page.includes('vehiculo')) return validationSchemas.vehiculo;
-    return validationSchemas.default;
-  };
-
-  const handleChange = async (e) => {
+  const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    setFormData(prev => ({ ...prev, [name]: value }));
+    
     if (touched[name]) {
-      try {
-        await getValidationSchema().validateAt(name, { [name]: value });
-        setErrors(prev => ({ ...prev, [name]: '' }));
-      } catch (err) {
-        setErrors(prev => ({ ...prev, [name]: err.message }));
-      }
+      validationSchemas[formType].validateAt(name, { [name]: value })
+        .then(() => setErrors(prev => ({ ...prev, [name]: '' })))
+        .catch(err => setErrors(prev => ({ ...prev, [name]: err.message })));
     }
   };
 
   const handleBlur = (e) => {
     const { name } = e.target;
     setTouched(prev => ({ ...prev, [name]: true }));
-    getValidationSchema().validateAt(name, formData)
+    validationSchemas[formType].validateAt(name, formData)
       .then(() => setErrors(prev => ({ ...prev, [name]: '' })))
       .catch(error => setErrors(prev => ({ ...prev, [name]: error.message })));
   };
@@ -163,16 +147,15 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem }) => {
   const handleSubmit = async () => {
     if (page.includes('confirmar-eliminar')) {
       console.log('Eliminando elemento:', selectedItem);
-      // Aqui deberias llamar a tu API para eliminar el elemento
-      // Ejemplo: await deleteViaje(selectedItem._id);
       handleClose();
       return;
     }
 
     const allTouched = Object.keys(formData).reduce((acc, key) => ({ ...acc, [key]: true }), {});
     setTouched(allTouched);
+    
     try {
-      await getValidationSchema().validate(formData, { abortEarly: false });
+      await validationSchemas[formType].validate(formData, { abortEarly: false });
       setErrors({});
       console.log('Submit:', formData);
       handleClose();
@@ -192,19 +175,27 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem }) => {
         </Box>
       );
     }
+    
     if (children) return children;
-    if (page.includes('deposito')) return <DepositoForm formData={formData} handleChange={handleChange} handleBlur={handleBlur} errors={errors} />;
-    if (page.includes('viaje')) return <ViajeForm formData={formData} handleChange={handleChange} handleBlur={handleBlur} errors={errors} />;
-    if (page.includes('chofer')) return <ChoferForm formData={formData} handleChange={handleChange} handleBlur={handleBlur} errors={errors} />;
-    if (page.includes('vehiculo')) return <VehiculoForm formData={formData} handleChange={handleChange} handleBlur={handleBlur} errors={errors} />;
-    if (page.includes('seguimiento')) return <SeguimientoForm formData={formData} />;
-    return <DefaultForm formData={formData} handleChange={handleChange} handleBlur={handleBlur} errors={errors} />;
+    
+    const formProps = { formData, handleChange, handleBlur, errors };
+    
+    switch (formType) {
+      case 'deposito': return <DepositoForm {...formProps} />;
+      case 'viaje': return <ViajeForm {...formProps} />;
+      case 'chofer': return <ChoferForm {...formProps} />;
+      case 'vehiculo': return <VehiculoForm {...formProps} />;
+      case 'seguimiento': return <SeguimientoForm formData={formData} />;
+      default: return <DefaultForm {...formProps} />;
+    }
   };
 
   return (
     <>
       {!isControlled && (
-        <Button fullWidth variant="contained" onClick={() => setInternalOpen(true)}>{buttonName}</Button>
+        <Button fullWidth variant="contained" onClick={() => setInternalOpen(true)}>
+          {buttonName}
+        </Button>
       )}
 
       <Dialog 

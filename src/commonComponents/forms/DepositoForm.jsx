@@ -37,7 +37,7 @@ const DepositoForm = ({ formData, handleChange, handleBlur, errors }) => (
         required 
         margin="dense" 
         name="calle" 
-        label="Dirección" 
+        label="Calle" 
         value={formData.calle} 
         onChange={handleChange}
         onBlur={handleBlur}
@@ -124,21 +124,7 @@ const DepositoForm = ({ formData, handleChange, handleBlur, errors }) => (
         sx={{backgroundColor: grey[50], mb: 1}} 
       />
       {errors.apellidoContacto && <ErrorText>{errors.apellidoContacto}</ErrorText>}
-      
-      <TextField 
-        fullWidth 
-        required 
-        margin="dense" 
-        name="dniContacto" 
-        label="DNI" 
-        value={formData.dniContacto} 
-        onChange={handleChange}
-        onBlur={handleBlur}
-        error={!!errors.dniContacto}
-        sx={{backgroundColor: grey[50], mb: 1}} 
-      />
-      {errors.dniContacto && <ErrorText>{errors.dniContacto}</ErrorText>}
-      
+
       <TextField 
         fullWidth 
         required 

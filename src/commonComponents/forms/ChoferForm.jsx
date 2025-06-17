@@ -31,15 +31,15 @@ const ChoferForm = ({ formData, handleChange, handleBlur, errors }) => (
       />
       {errors.apellido && <ErrorText>{errors.apellido}</ErrorText>}
 
-      <InputLabel required sx={{color: grey[900], fontWeight: 'bold', mt: 2}}>DNI</InputLabel>
+      <InputLabel required sx={{color: grey[900], fontWeight: 'bold', mt: 2}}>CUIL</InputLabel>
       <TextField 
         fullWidth 
         margin="dense" 
-        name="dni" 
-        value={formData.dni} 
+        name="cuil" 
+        value={formData.cuil} 
         onChange={handleChange}
         onBlur={handleBlur}
-        error={!!errors.dni}
+        error={!!errors.cuil}
         sx={{backgroundColor: grey[50]}} 
       />
       {errors.dni && <ErrorText>{errors.dni}</ErrorText>}

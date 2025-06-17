@@ -98,32 +98,32 @@ const ListadoDeViajes = () => {
   };
 
   const handleOpenPopup = async (type, viaje) => {
-    setSelectedViaje(null);
-    setIsDataReady(false);
+  console.log('Fecha original del API:', {
+    inicio_viaje: viaje.inicio_viaje,
+    fin_viaje: viaje.fin_viaje
+  });
 
-    try {
-      const response = await axios.get(`/api/viajes/${viaje.guid_viaje}`);
-      const viajeDetallado = {
-        ...response.data,
-        empresaTransportista: response.data.empresa_asignada?.nombre_empresa,
-        nombreChofer: `${response.data.chofer_asignado?.nombre || ''} ${response.data.chofer_asignado?.apellido || ''}`.trim(),
-        patenteVehiculo: response.data.vehiculo_asignado?.patente
-      };
+  try {
+    const response = await axios.get(`/api/viajes/${viaje.guid_viaje}`);
+    const viajeDetallado = {
+      ...response.data,
+      empresaTransportista: response.data.empresa_asignada?.nombre_empresa,
+      nombreChofer: `${response.data.chofer_asignado?.nombre || ''} ${response.data.chofer_asignado?.apellido || ''}`.trim(),
+      patenteVehiculo: response.data.vehiculo_asignado?.patente,
+      fechaInicio: formatForDateTimeLocal(response.data.inicio_viaje),
+      fechaFin: formatForDateTimeLocal(response.data.fin_viaje)
+    };
 
-      const fechaInicio = response.data.inicio_viaje ? new Date(response.data.inicio_viaje).toISOString().slice(0, 16) : '';
-      const fechaFin = response.data.fin_viaje ? new Date(response.data.fin_viaje).toISOString().slice(0, 16) : '';
+    setSelectedViaje(viajeDetallado);
+  } catch (error) {
+    console.error('Error al obtener detalles del viaje:', error);
+    setSelectedViaje(viaje);
+  }
 
-      setSelectedViaje({ ...viajeDetallado, fechaInicio, fechaFin });
-    } catch (error) {
-      console.error('Error al obtener detalles del viaje:', error);
-      setSelectedViaje(viaje);
-    }
-
-    setPopupType(type);
-    await new Promise(resolve => setTimeout(resolve, 50));
-    setIsDataReady(true);
-    setPopupOpen(true);
-  };
+  setPopupType(type);
+  setIsDataReady(true);
+  setPopupOpen(true);
+};
 
   const columns = [
     { id: 'guid_viaje', label: 'Número', minWidth: 80, align: 'left', render: (value) => value?.toString() || 'N/A' },
