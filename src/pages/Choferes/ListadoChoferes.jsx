@@ -8,6 +8,7 @@ import CreateOutlinedIcon from '@mui/icons-material/CreateOutlined';
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
 import axios from 'axios';
 import { dateFormat } from '../../helpers/dateFormat';
+import ChoferForm from '../../commonComponents/forms/ChoferForm';
 
 const ListadoChoferes = () => {
   const [filtros, setFiltros] = useState({ criterio: 'CUIL', busqueda: '' });
@@ -26,29 +27,33 @@ const ListadoChoferes = () => {
     fetchChoferes();
   }, []);
 
- const fetchChoferes = async () => {
-  try {
-    setLoading(true);
-    const response = await axios.get('/api/choferes');
+  const fetchChoferes = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get('/api/choferes');
 
-    const datosTransformados = response.data.map(item => ({
-      ...item,
-      fechaNacimiento: dateFormat(item.fecha_nacimiento),
-      empresa: item.empresa?.nombre_empresa || '',
-      vehiculoAsignado: item.vehiculo_defecto?.patente || 'Sin vehículo'
-    }));
+      const datosTransformados = response.data.map(item => ({
+        ...item,
+        fechaNacimiento: dateFormat(item.fecha_nacimiento),
+        empresa: item.empresa?.nombre_empresa || '',
+        vehiculoAsignado: item.vehiculo_defecto ? 
+          `${item.vehiculo_defecto.patente} - ${item.vehiculo_defecto.marca} ${item.vehiculo_defecto.modelo}` : 
+          'Sin vehículo',
+        // Mantener referencias a los objetos completos para edición
+        empresaObj: item.empresa || null,
+        vehiculoObj: item.vehiculo_defecto || null
+      }));
 
-    setChoferes(datosTransformados);
-    setChoferesFiltrados(datosTransformados);
-  } catch (err) {
-    setError(`Error al cargar datos: ${err.message}`);
-    console.error('Error fetching choferes:', err);
-  } finally {
-    setLoading(false);
-  }
-};
+      setChoferes(datosTransformados);
+      setChoferesFiltrados(datosTransformados);
+    } catch (err) {
+      setError(`Error al cargar datos: ${err.message}`);
+      console.error('Error fetching choferes:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  // Función para aplicar filtros localmente
   const aplicarFiltros = () => {
     setIsSearching(true);
     try {
@@ -90,40 +95,103 @@ const ListadoChoferes = () => {
     return choferesFiltrados.slice(inicio, inicio + itemsPorPagina);
   };
 
-const handleOpenPopup = async (type, chofer = null) => {
-  setPopupType(type);
-  
-  if (type === 'modificar-chofer' && chofer) {
-    // Usamos directamente los datos de la lista sin consultar al backend
-    setSelectedChofer({
-      ...chofer,
-      nombre: chofer.nombre || '',
-      apellido: chofer.apellido || '',
-      cuil: chofer.cuil || '',
-      fechaNacimiento: chofer.fecha_nacimiento 
-        ? new Date(chofer.fecha_nacimiento).toISOString().split('T')[0] 
-        : '',
-      empresa: chofer.empresa || '',
-      vehiculoAsignado: chofer.vehiculoAsignado || ''
-    });
-  } else {
-    setSelectedChofer(chofer);
-  }
-  
-  setPopupOpen(true);
-};
+  const handleOpenPopup = async (type, chofer = null) => {
+    setPopupType(type);
+    
+    if (type === 'modificar-chofer' && chofer) {
+      try {
+        // Obtener datos frescos del chofer
+        const response = await axios.get(`/api/choferes/${chofer.cuil}`);
+        const choferData = response.data;
+        
+        // Obtener listado de empresas y vehículos disponibles
+        const [empresasResponse, vehiculosResponse] = await Promise.all([
+          axios.get('/api/empresas'),
+          axios.get('/api/vehiculos')
+        ]);
+        
+        setSelectedChofer({
+          ...choferData,
+          nombre: choferData.nombre || '',
+          apellido: choferData.apellido || '',
+          cuil: choferData.cuil || '',
+          fechaNacimiento: choferData.fecha_nacimiento ? new Date(choferData.fecha_nacimiento) : null,
+          empresa: choferData.empresa || null, // Objeto completo de empresa
+          vehiculoAsignado: choferData.vehiculo_defecto || null, // Objeto completo de vehículo
+          empresasDisponibles: empresasResponse.data,
+          vehiculosDisponibles: vehiculosResponse.data
+        });
+      } catch (error) {
+        console.error('Error al cargar datos del chofer:', error);
+        // Usar datos locales si falla la consulta
+        setSelectedChofer({
+          ...chofer,
+          nombre: chofer.nombre || '',
+          apellido: chofer.apellido || '',
+          cuil: chofer.cuil || '',
+          fechaNacimiento: chofer.fecha_nacimiento ? new Date(chofer.fecha_nacimiento) : null,
+          empresa: chofer.empresaObj || null,
+          vehiculoAsignado: chofer.vehiculoObj || null,
+          empresasDisponibles: [],
+          vehiculosDisponibles: []
+        });
+      }
+    } else {
+      try {
+        // Para creación de nuevo chofer
+        const [empresasResponse, vehiculosResponse] = await Promise.all([
+          axios.get('/api/empresas'),
+          axios.get('/api/vehiculos')
+        ]);
+        
+        setSelectedChofer({
+          nombre: '',
+          apellido: '',
+          cuil: '',
+          fechaNacimiento: null,
+          empresa: null,
+          vehiculoAsignado: null,
+          empresasDisponibles: empresasResponse.data,
+          vehiculosDisponibles: vehiculosResponse.data
+        });
+      } catch (error) {
+        console.error('Error al cargar listados:', error);
+        setSelectedChofer({
+          empresasDisponibles: [],
+          vehiculosDisponibles: []
+        });
+      }
+    }
+    
+    setPopupOpen(true);
+  };
 
   const handleDeleteChofer = async (cuil) => {
-  try {
-    await axios.patch(`/api/choferes/${cuil}/delete`);
-    // Recargamos la lista completa desde el backend
-    await fetchChoferes();
-    return { success: true };
-  } catch (error) {
-    console.error('Error al eliminar chofer:', error);
-    return { success: false, error: error.message };
-  }
-};
+    try {
+      await axios.patch(`/api/choferes/${cuil}/delete`);
+      await fetchChoferes();
+      return { success: true };
+    } catch (error) {
+      console.error('Error al eliminar chofer:', error);
+      return { success: false, error: error.message };
+    }
+  };
+
+  const handleSubmitChofer = async (formData) => {
+    try {
+      if (popupType === 'modificar-chofer') {
+        await axios.put(`/api/choferes/${formData.cuil}`, formData);
+      } else {
+        await axios.post('/api/choferes', formData);
+      }
+      await fetchChoferes();
+      setPopupOpen(false);
+      return { success: true };
+    } catch (error) {
+      console.error('Error al guardar chofer:', error);
+      return { success: false, error: error.response?.data?.message || error.message };
+    }
+  };
 
   const columns = [
     { id: 'nombre', label: 'Nombre', minWidth: 120, align: 'left' },
@@ -157,8 +225,10 @@ const handleOpenPopup = async (type, chofer = null) => {
         page={popupType}
         selectedItem={selectedChofer}
         onDelete={popupType === 'confirmar-eliminar' ? handleDeleteChofer : null}
+        onSubmit={popupType === 'modificar-chofer' ? handleSubmitChofer : null}
         buttonName={popupType === 'modificar-chofer' ? 'Modificar Chofer' : popupType === 'confirmar-eliminar' ? 'Eliminar Chofer' : 'Aceptar'}
         message={popupType === 'confirmar-eliminar' ? '¿Está seguro que desea eliminar este chofer?' : ''}
+        FormComponent={popupType === 'modificar-chofer' ? ChoferForm : null}
       />
 
       <Box mb={4}>
