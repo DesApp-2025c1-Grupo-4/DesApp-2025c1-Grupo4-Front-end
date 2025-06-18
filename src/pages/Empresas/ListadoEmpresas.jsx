@@ -82,21 +82,46 @@ const ListadoEmpresas = () => {
   };
 
   const handleOpenPopup = async (type, empresa) => {
-    setSelectedEmpresa(null);
+  setSelectedEmpresa(null);
+  
+  try {
+    const response = await axios.get(`/api/empresas/${empresa.cuit}`);
     
-    try {
-      // Obtener datos frescos del servidor
-      const response = await axios.get(`/api/empresas/${empresa.cuit}`);
-      setSelectedEmpresa(response.data);
-    } catch (error) {
-      console.error('Error al obtener empresa:', error);
-      setSelectedEmpresa(empresa);
+    // Extraer número de calle si está combinado con el nombre
+    let calle = response.data.domicilio_fiscal?.calle || '';
+    let numero = '';
+    
+    // Separar número de calle si está en el mismo campo (ej: "Av. Corrientes 1234")
+    const calleSplit = calle.split(' ');
+    if (calleSplit.length > 1 && !isNaN(calleSplit[calleSplit.length - 1])) {
+      numero = calleSplit.pop();
+      calle = calleSplit.join(' ');
     }
     
-    setPopupType(type);
-    await new Promise(resolve => setTimeout(resolve, 10)); // Pequeño delay
-    setPopupOpen(true);
-  };
+    const empresaTransformada = {
+      nombre_empresa: response.data.nombre_empresa || '',
+      cuit: response.data.cuit || '',
+      datos_contacto: {
+        mail: response.data.datos_contacto?.mail || '',
+        telefono: response.data.datos_contacto?.telefono || ''
+      },
+      domicilio_fiscal: {
+        calle: calle,
+        numero: numero || response.data.domicilio_fiscal?.numero || '',
+        ciudad: response.data.domicilio_fiscal?.ciudad || '',
+        provincia: response.data.domicilio_fiscal?.provincia || ''
+      }
+    };
+    
+    setSelectedEmpresa(empresaTransformada);
+  } catch (error) {
+    console.error('Error al obtener empresa:', error);
+    setSelectedEmpresa(empresa);
+  }
+  
+  setPopupType(type);
+  setPopupOpen(true);
+};
 
   const handleDeleteEmpresa = async (cuit) => {
     try {

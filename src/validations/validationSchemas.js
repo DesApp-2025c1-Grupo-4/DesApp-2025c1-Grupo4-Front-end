@@ -18,7 +18,7 @@ const validationSchemas = {
     razonSocial: Yup.string().required('La razón social es requerida (ej: Logística S.A.)'),
     cuit: Yup.string()
       .required('El CUIT es requerido')
-      .matches(/^\d{2}-\d{8}-\d{1}$/, 'Formato inválido. Debe ser XX-XXXXXXXX-X (ej: 30-12345678-9)')
+      .matches(/^\d{10,11}$/, 'Formato inválido. Debe ser XXXXXXXXXXX (ej: 30123456789)')
   }),
   viaje: Yup.object().shape({
     depositoOrigen: Yup.string().required('Seleccione el depósito de origen (ej: Depósito Norte)'),
@@ -59,7 +59,7 @@ const validationSchemas = {
     razonSocial: Yup.string().required('La razón social es requerida (ej: Transportes del Sur S.A.)'),
     cuit: Yup.string()
       .required('El CUIT es requerido')
-      .matches(/^\d{2}-\d{8}-\d{1}$/, 'Formato inválido. Debe ser XX-XXXXXXXX-X (ej: 30-12345678-9)'),
+      .matches(/^\d{10,11}$/, 'Formato inválido. Debe ser XXXXXXXXXXX (ej: 30123456789)'),
     domicilio: Yup.string().required('El domicilio es requerido (ej: Av. Libertador 1234)'),
     telefono: Yup.string()
       .required('El teléfono es requerido')

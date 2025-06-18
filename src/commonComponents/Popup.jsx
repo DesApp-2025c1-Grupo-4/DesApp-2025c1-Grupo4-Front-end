@@ -9,7 +9,7 @@ import DepositoForm from './forms/DepositoForm';
 import ViajeForm from './forms/ViajeForm';
 import ChoferForm from './forms/ChoferForm';
 import VehiculoForm from './forms/VehiculoForm';
-import DefaultForm from './forms/DefaultForm';
+import EmpresaForm from './forms/EmpresaForm';
 import SeguimientoForm from './forms/SeguimientoForm';
 
 const initialData = {
@@ -101,10 +101,18 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem }) => {
           newFormData.empresa = selectedItem?.empresa || '';
         }
         else {
-          newFormData.razonSocial = selectedItem?.razonSocial || '';
+          newFormData.nombre_empresa = selectedItem?.nombre_empresa || '';
           newFormData.cuit = selectedItem?.cuit || '';
-          newFormData.domicilio = selectedItem?.domicilioFiscal || '';
-          newFormData.telefono = selectedItem?.telefono || '';
+          newFormData.datos_contacto = {
+            mail: selectedItem?.datos_contacto?.mail || '',
+            telefono: selectedItem?.datos_contacto?.telefono || ''
+          };
+          newFormData.domicilio_fiscal = {
+            calle: selectedItem?.domicilio_fiscal?.calle || '',
+            numero: selectedItem?.domicilio_fiscal?.numero || '',
+            ciudad: selectedItem?.domicilio_fiscal?.ciudad || '',
+            provincia: selectedItem?.domicilio_fiscal?.provincia || ''
+          };
         }
       }
 
@@ -186,7 +194,7 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem }) => {
       case 'chofer': return <ChoferForm {...formProps} />;
       case 'vehiculo': return <VehiculoForm {...formProps} />;
       case 'seguimiento': return <SeguimientoForm formData={formData} />;
-      default: return <DefaultForm {...formProps} />;
+      default: return <EmpresaForm {...formProps} />;
     }
   };
 
