@@ -26,27 +26,27 @@ const ListadoChoferes = () => {
     fetchChoferes();
   }, []);
 
-  const fetchChoferes = async () => {
-    try {
-      setLoading(true);
-      const response = await axios.get('/api/choferes');
+ const fetchChoferes = async () => {
+  try {
+    setLoading(true);
+    const response = await axios.get('/api/choferes');
 
-      const datosTransformados = response.data.map(item => ({
-        ...item,
-        fechaNacimiento: dateFormat(item.fecha_nacimiento),
-        empresa: item.empresa?.nombre_empresa || 'Sin empresa',
-        vehiculoAsignado: item.vehiculo_defecto?.patente || 'Sin vehículo'
-      }));
+    const datosTransformados = response.data.map(item => ({
+      ...item,
+      fechaNacimiento: dateFormat(item.fecha_nacimiento),
+      empresa: item.empresa?.nombre_empresa || '',
+      vehiculoAsignado: item.vehiculo_defecto?.patente || 'Sin vehículo'
+    }));
 
-      setChoferes(datosTransformados);
-      setChoferesFiltrados(datosTransformados);
-    } catch (err) {
-      setError(`Error al cargar datos: ${err.message}`);
-      console.error('Error fetching choferes:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+    setChoferes(datosTransformados);
+    setChoferesFiltrados(datosTransformados);
+  } catch (err) {
+    setError(`Error al cargar datos: ${err.message}`);
+    console.error('Error fetching choferes:', err);
+  } finally {
+    setLoading(false);
+  }
+};
 
   // Función para aplicar filtros localmente
   const aplicarFiltros = () => {
@@ -93,55 +93,37 @@ const ListadoChoferes = () => {
 const handleOpenPopup = async (type, chofer = null) => {
   setPopupType(type);
   
-  if (type === 'modificar-chofer' && chofer?.cuil) {
-    try {
-      const response = await axios.get(`/api/choferes/${chofer.cuil}`);
-      const fechaNacimiento = response.data.fecha_nacimiento 
-        ? new Date(response.data.fecha_nacimiento).toISOString().split('T')[0]
-        : '';
-
-      setSelectedChofer({
-        ...response.data,
-        nombre: response.data.nombre || '',
-        apellido: response.data.apellido || '',
-        cuil: response.data.cuil || '',
-        fechaNacimiento: fechaNacimiento, 
-        empresa: response.data.empresa?.nombre || response.data.empresa || '',
-        vehiculoAsignado: response.data.vehiculo?.patente || response.data.vehiculoAsignado || ''
-      });
-    } catch (error) {
-      console.error('Error al cargar datos del chofer:', error);
-      
-      // Formatear fecha también en caso de error
-      const fechaNacimiento = chofer.fecha_nacimiento 
-        ? new Date(chofer.fecha_nacimiento).toISOString().split('T')[0]
-        : '';
-
-      setSelectedChofer({
-        ...chofer,
-        cuil: chofer.cuil || '',
-        fechaNacimiento: fechaNacimiento
-      });
-    } finally {
-      setPopupOpen(true);
-    }
+  if (type === 'modificar-chofer' && chofer) {
+    // Usamos directamente los datos de la lista sin consultar al backend
+    setSelectedChofer({
+      ...chofer,
+      nombre: chofer.nombre || '',
+      apellido: chofer.apellido || '',
+      cuil: chofer.cuil || '',
+      fechaNacimiento: chofer.fecha_nacimiento 
+        ? new Date(chofer.fecha_nacimiento).toISOString().split('T')[0] 
+        : '',
+      empresa: chofer.empresa || '',
+      vehiculoAsignado: chofer.vehiculoAsignado || ''
+    });
   } else {
     setSelectedChofer(chofer);
-    setPopupOpen(true);
   }
+  
+  setPopupOpen(true);
 };
 
   const handleDeleteChofer = async (cuil) => {
-    try {
-      await axios.patch(`/api/choferes/${cuil}/delete`);
-      setChoferes(prev => prev.filter(c => c.cuil !== cuil));
-      setChoferesFiltrados(prev => prev.filter(c => c.cuil !== cuil));
-      return { success: true };
-    } catch (error) {
-      console.error('Error al eliminar chofer:', error);
-      return { success: false, error: error.message };
-    }
-  };
+  try {
+    await axios.patch(`/api/choferes/${cuil}/delete`);
+    // Recargamos la lista completa desde el backend
+    await fetchChoferes();
+    return { success: true };
+  } catch (error) {
+    console.error('Error al eliminar chofer:', error);
+    return { success: false, error: error.message };
+  }
+};
 
   const columns = [
     { id: 'nombre', label: 'Nombre', minWidth: 120, align: 'left' },
