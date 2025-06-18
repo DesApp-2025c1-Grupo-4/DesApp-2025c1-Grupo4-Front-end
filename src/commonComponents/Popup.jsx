@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import {
   Button, Dialog, DialogTitle, DialogContent,
-  DialogActions, Box
+  DialogActions, Box, useTheme, useMediaQuery
 } from '@mui/material';
 import { ROUTE_CONFIG } from '../config/routesConfig';
 import validationSchemas from '../validations/validationSchemas';
@@ -37,6 +37,8 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem }) => {
   const [formData, setFormData] = useState(initialData.default);
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const isControlled = open !== undefined;
   const currentOpen = isControlled ? open : internalOpen;
@@ -177,9 +179,13 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem }) => {
   const renderForm = () => {
     if (page.includes('confirmar-eliminar')) {
       return (
-        <Box>
-          <p>¿Estás seguro que deseas eliminar este elemento?</p>
-          <p>Esta acción no se puede deshacer.</p>
+        <Box textAlign="center">
+          <p style={{ marginBottom: '16px', fontSize: isMobile ? '0.9rem' : '1rem' }}>
+            ¿Estás seguro que deseas eliminar este elemento?
+          </p>
+          <p style={{ color: theme.palette.error.main, fontWeight: 500 }}>
+            Esta acción no se puede deshacer.
+          </p>
         </Box>
       );
     }
@@ -201,7 +207,16 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem }) => {
   return (
     <>
       {!isControlled && (
-        <Button fullWidth variant="contained" onClick={() => setInternalOpen(true)}>
+        <Button 
+          fullWidth 
+          variant="contained" 
+          onClick={() => setInternalOpen(true)}
+          sx={{
+            fontWeight: 500,
+            letterSpacing: 0.5,
+            py: 1.5
+          }}
+        >
           {buttonName}
         </Button>
       )}
@@ -210,55 +225,95 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem }) => {
         open={currentOpen} 
         onClose={handleClose} 
         fullWidth
-        maxWidth="sm"
+        maxWidth="md"
+        fullScreen={isMobile}
         PaperProps={{
           sx: {
-            backgroundColor: page.includes('confirmar-eliminar') ? 'rgba(255, 235, 235, 0.9)' : 'rgba(255, 255, 255, 0.8)',
-            backdropFilter: 'blur(4px)',
-            borderRadius: '8px',
-            p: 2,
-            boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.1)'
+            backgroundColor: page.includes('confirmar-eliminar') 
+              ? 'rgba(255, 235, 235, 0.95)' 
+              : 'rgba(255, 255, 255, 0.95)',
+            backdropFilter: 'blur(8px)',
+            borderRadius: isMobile ? 0 : '12px',
+            p: isMobile ? 1 : 2,
+            boxShadow: '0px 8px 24px rgba(0, 0, 0, 0.1)',
+            minHeight: isMobile ? '100vh' : 'auto',
+            border: page.includes('confirmar-eliminar') 
+              ? `1px solid ${theme.palette.error.light}`
+              : `1px solid ${theme.palette.divider}`
           }
         }}
       >
         <Box sx={{ 
           backgroundColor: 'transparent',
-          borderRadius: '8px',
-          pb: 2 
+          borderRadius: isMobile ? 0 : '8px',
+          pb: 2,
+          pt: isMobile ? 1 : 0
         }}>
-          {!page.includes('confirmar-eliminar') && ROUTE_CONFIG[`/${page}`]?.logo}
+          {!page.includes('confirmar-eliminar') && (
+            <Box sx={{ 
+              display: 'flex', 
+              justifyContent: 'center',
+              mb: 2
+            }}>
+              {ROUTE_CONFIG[`/${page}`]?.logo}
+            </Box>
+          )}
+          
           <DialogTitle sx={{ 
-            fontSize: '1.2rem',
-            fontWeight: 'bold',
-            color: page.includes('confirmar-eliminar') ? 'error.main' : 'inherit'
+            fontSize: isMobile ? '1.1rem' : '1.25rem',
+            fontWeight: 600,
+            color: page.includes('confirmar-eliminar') ? 'error.main' : 'text.primary',
+            textAlign: 'center',
+            px: isMobile ? 1 : 3,
+            pt: isMobile ? 1 : 2,
+            pb: 1
           }}>
             {page.includes('confirmar-eliminar') 
               ? 'Confirmar eliminación' 
               : ROUTE_CONFIG[`/${page}`]?.newButton || buttonName}
           </DialogTitle>
+          
           <Box sx={{ 
             backgroundColor: page.includes('confirmar-eliminar') 
-              ? 'rgba(255, 235, 235, 0.5)' 
-              : 'rgba(245, 245, 245, 0.8)',
+              ? 'rgba(255, 235, 235, 0.3)' 
+              : 'rgba(245, 245, 245, 0.5)',
             borderRadius: '8px',
-            p: 3
+            p: isMobile ? 2 : 3,
+            mx: isMobile ? 0 : 1
           }}>
-            <DialogContent sx={{ py: 2 }}>{renderForm()}</DialogContent>
-            <DialogActions sx={{ px: 3, py: 2 }}>
+            <DialogContent sx={{ 
+              py: 1,
+              px: isMobile ? 0 : 2
+            }}>
+              {renderForm()}
+            </DialogContent>
+            
+            <DialogActions sx={{ 
+              px: isMobile ? 0 : 2,
+              py: 2,
+              justifyContent: 'center'
+            }}>
               <Button 
                 onClick={handleClose} 
                 variant="outlined"
-                sx={{ mr: 2 }}
+                sx={{ 
+                  mr: 2,
+                  minWidth: 100
+                }}
               >
                 Cancelar
               </Button>
               <Button 
                 onClick={handleSubmit} 
-                color={page.includes('confirmar-eliminar') ? 'error' : 'secondary'}
+                color={page.includes('confirmar-eliminar') ? 'error' : 'primary'}
                 variant="contained"
                 disabled={Object.values(errors).some(Boolean) && !page.includes('confirmar-eliminar')}
+                sx={{
+                  minWidth: 100,
+                  fontWeight: 500
+                }}
               >
-                {page.includes('confirmar-eliminar') ? 'Eliminar definitivamente' : 'Guardar'}
+                {page.includes('confirmar-eliminar') ? 'Eliminar' : 'Guardar'}
               </Button>
             </DialogActions>
           </Box>
