@@ -1,8 +1,9 @@
 import {
   Grid, InputLabel, TextField, Autocomplete, Box, Typography, List, ListItem, 
-  ListItemText, CircularProgress, IconButton, Divider, Modal, Button
+  ListItemText, CircularProgress, IconButton, Divider, Modal, Button,
+  Paper, Avatar
 } from '@mui/material';
-import { grey } from "@mui/material/colors";
+import { grey, blue, indigo } from "@mui/material/colors";
 import ErrorText from '../ErrorText';
 import { DatePicker } from '@mui/x-date-pickers';
 import { LocalizationProvider } from '@mui/x-date-pickers';
@@ -10,6 +11,9 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { useEffect, useState } from 'react';
 import SearchIcon from '@mui/icons-material/Search';
 import CloseIcon from '@mui/icons-material/Close';
+import PersonIcon from '@mui/icons-material/Person';
+import BusinessIcon from '@mui/icons-material/Business';
+import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
 import axios from 'axios';
 
 const useDebouncedFetch = (url, paramName, value, setData, setLoading) => {
@@ -47,7 +51,13 @@ const SearchAutocomplete = ({
 
   return (
     <>
-      <InputLabel sx={{ color: grey[900], fontWeight: 'bold', mt: 2 }}>{label}</InputLabel>
+      <InputLabel sx={{ 
+        color: grey[700], 
+        fontWeight: 'bold',
+        mb: 0.5
+      }}>
+        {label}
+      </InputLabel>
       <Autocomplete
         options={options}
         getOptionLabel={getOptionLabel}
@@ -61,9 +71,14 @@ const SearchAutocomplete = ({
           <TextField
             {...params}
             fullWidth
+            size="small"
             margin="dense"
             error={!!error}
-            sx={{ backgroundColor: grey[50] }}
+            sx={{ 
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 2
+              }
+            }}
             placeholder={placeholder}
             InputProps={{
               ...params.InputProps,
@@ -85,20 +100,19 @@ const SearchAutocomplete = ({
 
 const SelectionModal = ({ 
   open, onClose, title, items, onSelect, searchValue, onSearchChange, 
-  loading, getText, getSecondaryText, emptyText 
+  loading, getText, getSecondaryText, emptyText, icon: Icon 
 }) => {
   return (
     <Modal open={open} onClose={onClose}>
-      <Box sx={{
+      <Paper sx={{
         position: 'absolute',
         top: '50%',
         left: '50%',
         transform: 'translate(-50%, -50%)',
         width: 500,
-        bgcolor: 'background.paper',
         boxShadow: 24,
         p: 3,
-        borderRadius: 1,
+        borderRadius: 2,
         maxHeight: '80vh',
         display: 'flex',
         flexDirection: 'column'
@@ -109,8 +123,11 @@ const SelectionModal = ({
           alignItems: 'center',
           mb: 2
         }}>
-          <Typography variant="h6">{title}</Typography>
-          <IconButton onClick={onClose}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            {Icon && <Icon color="primary" />}
+            <Typography variant="h6" color="primary">{title}</Typography>
+          </Box>
+          <IconButton onClick={onClose} size="small">
             <CloseIcon />
           </IconButton>
         </Box>
@@ -120,21 +137,31 @@ const SelectionModal = ({
           value={searchValue}
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder="Buscar..."
+          variant="outlined"
+          size="small"
           InputProps={{
             startAdornment: <SearchIcon sx={{ mr: 1, color: grey[500] }} />,
           }}
-          sx={{ mb: 2 }}
+          sx={{ 
+            mb: 2,
+            '& .MuiOutlinedInput-root': {
+              borderRadius: 2
+            }
+          }}
         />
         
-        <Box sx={{ 
-          flex: 1, 
-          overflow: 'auto', 
-          border: `1px solid ${grey[300]}`, 
-          borderRadius: 1 
-        }}>
+        <Paper 
+          elevation={0}
+          sx={{ 
+            flex: 1, 
+            overflow: 'auto', 
+            border: `1px solid ${grey[200]}`, 
+            borderRadius: 2 
+          }}
+        >
           {loading ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
-              <CircularProgress />
+              <CircularProgress size={24} />
             </Box>
           ) : items.length > 0 ? (
             <List dense>
@@ -146,10 +173,24 @@ const SelectionModal = ({
                     onSelect(item);
                     onClose();
                   }}
+                  sx={{
+                    '&:hover': {
+                      backgroundColor: blue[50]
+                    }
+                  }}
                 >
                   <ListItemText 
-                    primary={getText(item)} 
-                    secondary={getSecondaryText?.(item)} 
+                    primary={
+                      <Typography fontWeight="medium">
+                        {getText(item)}
+                      </Typography>
+                    } 
+                    secondary={
+                      <Typography variant="body2" color="text.secondary">
+                        {getSecondaryText?.(item)}
+                      </Typography>
+                    } 
+                    sx={{ my: 0 }}
                   />
                 </ListItem>
               ))}
@@ -161,16 +202,21 @@ const SelectionModal = ({
               </Typography>
             </Box>
           )}
-        </Box>
+        </Paper>
         
         <Button 
           variant="outlined" 
           onClick={onClose}
-          sx={{ mt: 2, alignSelf: 'flex-end' }}
+          sx={{ 
+            mt: 2, 
+            alignSelf: 'flex-end',
+            borderRadius: 2,
+            textTransform: 'none'
+          }}
         >
           Cancelar
         </Button>
-      </Box>
+      </Paper>
     </Modal>
   );
 };
@@ -181,6 +227,7 @@ const ChoferForm = ({
 }) => {
   const [empresas, setEmpresas] = useState(empresasIniciales);
   const [vehiculosDisponibles, setVehiculosDisponibles] = useState(vehiculos);
+  const [vehiculosFiltrados, setVehiculosFiltrados] = useState(vehiculos);
   const [inputValues, setInputValues] = useState({
     empresa: '', vehiculo: ''
   });
@@ -190,6 +237,17 @@ const ChoferForm = ({
   const [modalStates, setModalStates] = useState({
     empresas: false, vehiculos: false
   });
+
+  // Filtrar vehículos cuando cambia la empresa o los vehículos disponibles
+  useEffect(() => {
+    if (formData.empresa?._id) {
+      setVehiculosFiltrados(
+        vehiculosDisponibles.filter(v => v.empresa?._id === formData.empresa._id)
+      );
+    } else {
+      setVehiculosFiltrados(vehiculosDisponibles);
+    }
+  }, [formData.empresa, vehiculosDisponibles]);
 
   useDebouncedFetch(
     '/api/empresas', 
@@ -223,140 +281,230 @@ const ChoferForm = ({
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
-      <Grid container spacing={2}>
-        <Grid item xs={6}>
-          {isEditing && (
-            <Typography variant="body2" color="textSecondary" sx={{ mb: 1 }}>
-              Editando chofer: {formData.nombre} {formData.apellido}
-            </Typography>
-          )}
-          {['nombre', 'apellido', 'cuil'].map((field, i) => (
-            <Box key={field} sx={{ mt: i ? 2 : 0 }}>
-              <InputLabel required sx={{ 
-                color: grey[900], 
-                fontWeight: 'bold' 
-              }}>
-                {field.charAt(0).toUpperCase() + field.slice(1)}*
-              </InputLabel>
-              <TextField
-                fullWidth
-                margin="dense"
-                name={field}
-                value={formData[field] || ''}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                error={!!errors[field]}
-                placeholder={field === 'cuil' ? 'XX-XXXXXXXX-X' : ''}
-                sx={{ backgroundColor: grey[50] }}
-                InputProps={field === 'cuil' && isEditing ? { readOnly: true } : {}}
-              />
-              {errors[field] && <ErrorText>{errors[field]}</ErrorText>}
-            </Box>
-          ))}
-        </Grid>
-
-        <Grid item xs={6}>
-          <InputLabel required sx={{ 
-            color: grey[900], 
-            fontWeight: 'bold' 
+      <Box sx={{ p: 2 }}>
+        {isEditing && (
+          <Box sx={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: 2, 
+            mb: 1,
+            pt: 1,
           }}>
-            Fecha de Nacimiento*
-          </InputLabel>
-          <DatePicker
-            value={formData.fechaNacimiento || null}
-            onChange={(date) => handleChange({ target: { name: 'fechaNacimiento', value: date } })}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                fullWidth
-                margin="dense"
-                error={!!errors.fechaNacimiento}
-                sx={{ backgroundColor: grey[50] }}
-              />
-            )}
-          />
-          {errors.fechaNacimiento && <ErrorText>{errors.fechaNacimiento}</ErrorText>}
-
-          <Box sx={{ mt: 2 }}>
-            <InputLabel sx={{ color: grey[900], fontWeight: 'bold' }}>Empresa*</InputLabel>
-            <Box sx={{ display: 'flex', gap: 1 }}>
-              <TextField
-                fullWidth
-                margin="dense"
-                value={formData.empresa?.nombre_empresa || ''}
-                placeholder="Empresa seleccionada"
-                sx={{ backgroundColor: grey[50] }}
-                InputProps={{
-                  readOnly: true,
-                }}
-              />
-              <Button 
-                variant="outlined" 
-                onClick={() => toggleModal('empresas')}
-                startIcon={<SearchIcon />}
-              >
-                Buscar
-              </Button>
-            </Box>
-            {errors.empresa && <ErrorText>{errors.empresa}</ErrorText>}
+            <Avatar sx={{ bgcolor: indigo[100] }}>
+              <PersonIcon color="primary" />
+            </Avatar>
+            <Typography variant="h6" color="primary">
+              Modificar Chofer: {formData.nombre} {formData.apellido}
+            </Typography>
           </Box>
+        )}
+        
+        <Grid container spacing={2}>
+          <Grid item xs={12} md={6}>
+            <Typography variant="subtitle1" color="primary" sx={{ mb: 1, fontWeight: 'bold' }}>
+              Información personal
+            </Typography>
+            
+            {['nombre', 'apellido', 'cuil'].map((field) => (
+              <Box key={field} sx={{ mb: 2 }}>
+                <InputLabel required sx={{ 
+                  color: grey[700], 
+                  fontWeight: 'bold',
+                  mb: 0.5
+                }}>
+                  {field.charAt(0).toUpperCase() + field.slice(1)}
+                </InputLabel>
+                <TextField
+                  fullWidth
+                  size="small"
+                  name={field}
+                  value={formData[field] || ''}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  error={!!errors[field]}
+                  placeholder={field === 'cuil' ? 'XX-XXXXXXXX-X' : ''}
+                  sx={{ 
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 2,
+                      '& fieldset': {
+                        borderColor: grey[300]
+                      }
+                    }
+                  }}
+                  InputProps={field === 'cuil' && isEditing ? { readOnly: true } : {}}
+                />
+                {errors[field] && <ErrorText>{errors[field]}</ErrorText>}
+              </Box>
+            ))}
+            
+            <Box sx={{ mb: 2 }}>
+              <InputLabel required sx={{ 
+                color: grey[700], 
+                fontWeight: 'bold',
+                mb: 0.5
+              }}>
+                Fecha de Nacimiento
+              </InputLabel>
+              <DatePicker
+                value={formData.fechaNacimiento || null}
+                onChange={(date) => handleChange({ target: { name: 'fechaNacimiento', value: date } })}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    fullWidth
+                    size="small"
+                    error={!!errors.fechaNacimiento}
+                    sx={{ 
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 2,
+                        '& fieldset': {
+                          borderColor: grey[300]
+                        }
+                      }
+                    }}
+                  />
+                )}
+              />
+              {errors.fechaNacimiento && <ErrorText>{errors.fechaNacimiento}</ErrorText>}
+            </Box>
+          </Grid>
 
-          <SelectionModal
-            open={modalStates.empresas}
-            onClose={() => toggleModal('empresas')}
-            title="Seleccionar Empresa"
-            items={empresas}
-            onSelect={(empresa) => handleChange({ target: { name: "empresa", value: empresa } })}
-            searchValue={inputValues.empresa}
-            onSearchChange={(val) => handleInputChange('empresa', val)}
-            loading={loadingStates.empresas}
-            getText={(item) => item.nombre_empresa}
-            getSecondaryText={(item) => item.cuit && `CUIT: ${item.cuit}`}
-            emptyText="No hay empresas disponibles"
-          />
+          <Grid item xs={12} md={6}>
+            <Typography variant="subtitle1" color="primary" sx={{ mb: 1, fontWeight: 'bold' }}>
+              Información laboral
+            </Typography>
+            
+            <Box sx={{ mb: 2 }}>
+              <InputLabel required sx={{ 
+                color: grey[700], 
+                fontWeight: 'bold',
+                mb: 0.5
+              }}>
+                Empresa
+              </InputLabel>
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  value={formData.empresa?.nombre_empresa || ''}
+                  sx={{ 
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 2,
+                      '& fieldset': {
+                        borderColor: grey[300]
+                      }
+                    }
+                  }}
+                  InputProps={{
+                    readOnly: true,
+                    startAdornment: formData.empresa && (
+                      <BusinessIcon sx={{ mr: 1, color: grey[600] }} />
+                    ),
+                  }}
+                />
+                <IconButton 
+                  onClick={() => toggleModal('empresas')}
+                  sx={{
+                    borderRadius: 2,
+                    border: `1px solid ${grey[300]}`,
+                    backgroundColor: 'background.paper',
+                    '&:hover': {
+                      backgroundColor: grey[100]
+                    }
+                  }}
+                >
+                  <SearchIcon />
+                </IconButton>
+              </Box>
+              {errors.empresa && <ErrorText>{errors.empresa}</ErrorText>}
+            </Box>
 
-          <Box sx={{ mt: 2 }}>
-            <InputLabel sx={{ color: grey[900], fontWeight: 'bold' }}>Vehículo Asignado</InputLabel>
-            <Box sx={{ display: 'flex', gap: 1 }}>
-              <TextField
-                fullWidth
-                margin="dense"
-                value={
-                  !formData.vehiculoAsignado ? '-- Sin asignar --' : 
-                  `${formData.vehiculoAsignado.patente} - ${formData.vehiculoAsignado.marca} ${formData.vehiculoAsignado.modelo}`
+            <SelectionModal
+              open={modalStates.empresas}
+              onClose={() => toggleModal('empresas')}
+              title="Seleccionar Empresa"
+              items={empresas}
+              onSelect={(empresa) => {
+                handleChange({ target: { name: "empresa", value: empresa } });
+                // Limpiar vehículo asignado si no pertenece a la nueva empresa
+                if (formData.vehiculoAsignado && formData.vehiculoAsignado.empresa?._id !== empresa._id) {
+                  handleChange({ target: { name: "vehiculoAsignado", value: null } });
                 }
-                placeholder="Vehículo seleccionado"
-                sx={{ backgroundColor: grey[50] }}
-                InputProps={{
-                  readOnly: true,
-                }}
-              />
-              <Button 
-                variant="outlined" 
-                onClick={() => toggleModal('vehiculos')}
-                startIcon={<SearchIcon />}
-              >
-                Buscar
-              </Button>
-            </Box>
-            {errors.vehiculoAsignado && <ErrorText>{errors.vehiculoAsignado}</ErrorText>}
-          </Box>
+              }}
+              searchValue={inputValues.empresa}
+              onSearchChange={(val) => handleInputChange('empresa', val)}
+              loading={loadingStates.empresas}
+              getText={(item) => item.nombre_empresa}
+              getSecondaryText={(item) => item.cuit && `CUIT: ${item.cuit}`}
+              emptyText="No hay empresas disponibles"
+              icon={BusinessIcon}
+            />
 
-          <SelectionModal
-            open={modalStates.vehiculos}
-            onClose={() => toggleModal('vehiculos')}
-            title="Seleccionar Vehículo"
-            items={[{ _id: 'null', patente: '-- Sin asignar --', marca: '', modelo: '' }, ...vehiculosDisponibles]}
-            onSelect={(vehiculo) => handleVehiculoChange(vehiculo._id === 'null' ? null : vehiculo)}
-            searchValue={inputValues.vehiculo}
-            onSearchChange={(val) => handleInputChange('vehiculo', val)}
-            loading={loadingStates.vehiculos}
-            getText={(item) => item.patente === '-- Sin asignar --' ? item.patente : `${item.patente} - ${item.marca} ${item.modelo}`}
-            getSecondaryText={(item) => item.empresa?.nombre_empresa && `Empresa: ${item.empresa.nombre_empresa}`}
-            emptyText="No hay vehículos disponibles"
-          />
+            <Box sx={{ mb: 2 }}>
+              <InputLabel sx={{ 
+                color: grey[700], 
+                fontWeight: 'bold',
+                mb: 0.5
+              }}>
+                Vehículo Asignado
+              </InputLabel>
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  value={
+                    !formData.vehiculoAsignado ? '-- Sin asignar --' : 
+                    `${formData.vehiculoAsignado.patente} - ${formData.vehiculoAsignado.marca} ${formData.vehiculoAsignado.modelo}`
+                  }
+                  sx={{ 
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 2,
+                      '& fieldset': {
+                        borderColor: grey[300]
+                      }
+                    }
+                  }}
+                  InputProps={{
+                    readOnly: true,
+                    startAdornment: formData.vehiculoAsignado && (
+                      <DirectionsCarIcon sx={{ mr: 1, color: grey[600] }} />
+                    ),
+                  }}
+                />
+                <IconButton 
+                  onClick={() => toggleModal('vehiculos')}
+                  sx={{
+                    borderRadius: 2,
+                    border: `1px solid ${grey[300]}`,
+                    backgroundColor: 'background.paper',
+                    '&:hover': {
+                      backgroundColor: grey[100]
+                    }
+                  }}
+                >
+                  <SearchIcon />
+                </IconButton>
+              </Box>
+              {errors.vehiculoAsignado && <ErrorText>{errors.vehiculoAsignado}</ErrorText>}
+            </Box>
+
+            <SelectionModal
+              open={modalStates.vehiculos}
+              onClose={() => toggleModal('vehiculos')}
+              title="Seleccionar Vehículo"
+              items={[{ _id: 'null', patente: '-- Sin asignar --', marca: '', modelo: '' }, ...vehiculosFiltrados]}
+              onSelect={(vehiculo) => handleVehiculoChange(vehiculo._id === 'null' ? null : vehiculo)}
+              searchValue={inputValues.vehiculo}
+              onSearchChange={(val) => handleInputChange('vehiculo', val)}
+              loading={loadingStates.vehiculos}
+              getText={(item) => item.patente === '-- Sin asignar --' ? item.patente : `${item.patente} - ${item.marca} ${item.modelo}`}
+              getSecondaryText={(item) => item.empresa?.nombre_empresa && `Empresa: ${item.empresa.nombre_empresa}`}
+              emptyText={formData.empresa ? "No hay vehículos disponibles para esta empresa" : "No hay vehículos disponibles"}
+              icon={DirectionsCarIcon}
+            />
+          </Grid>
         </Grid>
-      </Grid>
+      </Box>
     </LocalizationProvider>
   );
 };

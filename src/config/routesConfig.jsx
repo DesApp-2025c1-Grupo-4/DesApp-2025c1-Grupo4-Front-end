@@ -49,7 +49,14 @@ export const ROUTE_CONFIG = {
   '/choferes': {
     title: 'Choferes',
     logo: <PersonOutlinedIcon variant='biggerIcons'/>,
-    returnPath: ''
+    returnPath: '',
+    newButton: 'Registrar Nuevo Chofer'
+  },
+  '/modificar-chofer': {
+    title: 'Modificar Chofer',
+    logo: <PersonOutlinedIcon variant='biggerIcons'/>,
+    returnPath: '/choferes',
+    newButton: 'Modificar Chofer'
   },
   '/depositos': {
     title: 'Red de Depósitos',

@@ -37,9 +37,8 @@ const ListadoChoferes = () => {
         fechaNacimiento: dateFormat(item.fecha_nacimiento),
         empresa: item.empresa?.nombre_empresa || '',
         vehiculoAsignado: item.vehiculo_defecto ? 
-          `${item.vehiculo_defecto.patente} - ${item.vehiculo_defecto.marca} ${item.vehiculo_defecto.modelo}` : 
+          `${item.vehiculo_defecto.patente}` : 
           'Sin vehículo',
-        // Mantener referencias a los objetos completos para edición
         empresaObj: item.empresa || null,
         vehiculoObj: item.vehiculo_defecto || null
       }));

@@ -196,6 +196,7 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem }) => {
       );
     }
     
+    
     if (children) return children;
     
     const formProps = { formData, handleChange, handleBlur, errors };
@@ -264,26 +265,24 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem }) => {
           pb: 2,
           pt: isMobile ? 1 : 0
         }}>
-          {!page.includes('confirmar-eliminar') && (
+          {!page.includes('confirmar-eliminar') && ROUTE_CONFIG[`/${page}`]?.logo && (
             <Box sx={{ 
               display: 'flex', 
               justifyContent: 'center',
               mb: 2,
               pt: 2
             }}>
-              {ROUTE_CONFIG[`/${page}`]?.logo && (
-                <Box sx={{
-                  p: 2,
-                  borderRadius: '50%',
-                  backgroundColor: theme.palette.background.paper,
-                  boxShadow: theme.shadows[2],
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                  {ROUTE_CONFIG[`/${page}`]?.logo}
-                </Box>
-              )}
+              <Box sx={{
+                p: 2,
+                borderRadius: '50%',
+                backgroundColor: theme.palette.background.paper,
+                boxShadow: theme.shadows[2],
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                {ROUTE_CONFIG[`/${page}`]?.logo}
+              </Box>
             </Box>
           )}
           
