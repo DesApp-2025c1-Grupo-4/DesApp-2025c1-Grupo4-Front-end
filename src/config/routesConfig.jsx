@@ -18,21 +18,21 @@ export const ROUTE_CONFIG = {
     returnPath: '/listado-viajes'
   },
   '/registrar-viaje': {
-    title: 'Registrar Viajes',
+    title: 'Registrar Viaje',
     logo: <MapOutlinedIcon variant='biggerIcons'/>,
-    returnPath: '/registro-viajes',
+    returnPath: '/listado-viajes',
     newButton: 'Registrar Nuevo Viaje'
   },  
   '/modificar-viaje': {
     title: 'Modificar Viaje',
     logo: <MapOutlinedIcon variant='biggerIcons'/>,
-    returnPath: '/registro-viajes',
-    newButton: 'Modificar Viaje Existente'
+    returnPath: '/listado-viajes',
+    newButton: 'Guardar Cambios'
   },
   '/seguimiento': {
     title: 'Seguimiento',
     logo: <MapOutlinedIcon variant='biggerIcons'/>,
-    returnPath: '/registro-viajes',
+    returnPath: '/listado-viajes',
     newButton: 'Nuevo Seguimiento'
   },
   '/empresas': {
@@ -41,10 +41,35 @@ export const ROUTE_CONFIG = {
     returnPath: '',
     newButton: 'Registrar nueva Empresa'
   },
+  '/registrar-empresa': {
+    title: 'Registrar Empresa',
+    logo: <LanguageOutlinedIcon variant='biggerIcons'/>,
+    returnPath: '/empresas',
+    newButton: 'Guardar Empresa'
+  },
+  '/modificar-empresa': {
+    title: 'Modificar Empresa',
+    logo: <LanguageOutlinedIcon variant='biggerIcons'/>,
+    returnPath: '/empresas',
+    newButton: 'Guardar Cambios'
+  },
   '/vehiculos': {
     title: 'Flota de Vehículos',
     logo: <LocalShippingOutlinedIcon variant='biggerIcons'/>,
-    returnPath: ''
+    returnPath: '',
+    newButton: 'Registrar Nuevo Vehículo'
+  },
+  '/registrar-vehiculo': {
+    title: 'Registrar Vehículo',
+    logo: <LocalShippingOutlinedIcon variant='biggerIcons'/>,
+    returnPath: '/vehiculos',
+    newButton: 'Guardar Vehículo'
+  },
+  '/modificar-vehiculo': {
+    title: 'Modificar Vehículo',
+    logo: <LocalShippingOutlinedIcon variant='biggerIcons'/>,
+    returnPath: '/vehiculos',
+    newButton: 'Guardar Cambios'
   },
   '/choferes': {
     title: 'Choferes',
@@ -52,16 +77,35 @@ export const ROUTE_CONFIG = {
     returnPath: '',
     newButton: 'Registrar Nuevo Chofer'
   },
+  '/registrar-chofer': {
+    title: 'Registrar Chofer',
+    logo: <PersonOutlinedIcon variant='biggerIcons'/>,
+    returnPath: '/choferes',
+    newButton: 'Guardar Chofer'
+  },
   '/modificar-chofer': {
     title: 'Modificar Chofer',
     logo: <PersonOutlinedIcon variant='biggerIcons'/>,
     returnPath: '/choferes',
-    newButton: 'Modificar Chofer'
+    newButton: 'Guardar Cambios'
   },
   '/depositos': {
     title: 'Red de Depósitos',
     logo: <Inventory2OutlinedIcon variant='biggerIcons'/>,
-    returnPath: ''
+    returnPath: '',
+    newButton: 'Registrar Nuevo Depósito'
+  },
+  '/registrar-deposito': {
+    title: 'Registrar Depósito',
+    logo: <Inventory2OutlinedIcon variant='biggerIcons'/>,
+    returnPath: '/depositos',
+    newButton: 'Guardar Depósito'
+  },
+  '/modificar-deposito': {
+    title: 'Modificar Depósito',
+    logo: <Inventory2OutlinedIcon variant='biggerIcons'/>,
+    returnPath: '/depositos',
+    newButton: 'Guardar Cambios'
   },
   '/reportes': {
     title: 'Reportes',

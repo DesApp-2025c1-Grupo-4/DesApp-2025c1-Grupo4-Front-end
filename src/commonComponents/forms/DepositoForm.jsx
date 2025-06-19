@@ -1,174 +1,383 @@
-import { Grid, InputLabel, TextField } from '@mui/material';
-import { grey } from "@mui/material/colors";
+import { Grid, InputLabel, TextField, Box, Typography, Paper, Avatar } from '@mui/material';
+import { grey, indigo } from "@mui/material/colors";
 import ErrorText from '../ErrorText';
+import BusinessIcon from '@mui/icons-material/Business';
 
-const DepositoForm = ({ formData, handleChange, handleBlur, errors }) => (
-  <Grid container spacing={2}>
-    <Grid item xs={6}>
-      <InputLabel required sx={{color: grey[900], fontWeight: 'bold'}}>Tipo de Depósito</InputLabel>
-      <TextField 
-        fullWidth 
-        margin="dense" 
-        name="tipo" 
-        value={formData.tipo} 
-        onChange={handleChange}
-        onBlur={handleBlur}
-        error={!!errors.tipo}
-        sx={{backgroundColor: grey[50]}} 
-      />
-      {errors.tipo && <ErrorText>{errors.tipo}</ErrorText>}
+const DepositoForm = ({ formData, handleChange, handleBlur, errors, isEditing = false }) => (
+  <Box>
+    {isEditing && (
+      <Box sx={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        gap: 2, 
+        mb: 3,
+      }}>
+        <Avatar sx={{ bgcolor: indigo[100] }}>
+          <BusinessIcon color="primary" />
+        </Avatar>
+        <Typography variant="h6" color="primary">
+          Modificar Depósito: {formData.tipo}
+        </Typography>
+      </Box>
+    )}
+    
+    <Grid container spacing={3}>
+      {/* Columna 1: Información del Depósito */}
+      <Grid item xs={12} md={4}>
+        <Typography variant="subtitle1" color="primary" sx={{ mb: 2, fontWeight: 'bold' }}>
+          Información del Depósito
+        </Typography>
+        
+        <Box sx={{ mb: 2 }}>
+          <InputLabel required sx={{ 
+            color: grey[700], 
+            fontWeight: 'bold',
+            mb: 0.5
+          }}>
+            Tipo de Depósito
+          </InputLabel>
+          <TextField
+            fullWidth
+            size="small"
+            name="tipo"
+            value={formData.tipo || ''}
+            onChange={handleChange}
+            onBlur={handleBlur}
+            error={!!errors.tipo}
+            sx={{ 
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 2,
+                '& fieldset': {
+                  borderColor: grey[300]
+                }
+              }
+            }}
+          />
+          {errors.tipo && <ErrorText>{errors.tipo}</ErrorText>}
+        </Box>
 
-      <InputLabel required sx={{color: grey[900], fontWeight: 'bold', mt: 2}}>Franja Horaria</InputLabel>
-      <TextField 
-        fullWidth 
-        margin="dense" 
-        name="horarios" 
-        value={formData.horarios} 
-        onChange={handleChange}
-        onBlur={handleBlur}
-        error={!!errors.horarios}
-        sx={{backgroundColor: grey[50]}} 
-      />
-      {errors.horarios && <ErrorText>{errors.horarios}</ErrorText>}
+        <Box sx={{ mb: 2 }}>
+          <InputLabel required sx={{ 
+            color: grey[700], 
+            fontWeight: 'bold',
+            mb: 0.5
+          }}>
+            Franja Horaria
+          </InputLabel>
+          <TextField
+            fullWidth
+            size="small"
+            name="horarios"
+            value={formData.horarios || ''}
+            onChange={handleChange}
+            onBlur={handleBlur}
+            error={!!errors.horarios}
+            sx={{ 
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 2,
+                '& fieldset': {
+                  borderColor: grey[300]
+                }
+              }
+            }}
+          />
+          {errors.horarios && <ErrorText>{errors.horarios}</ErrorText>}
+        </Box>
 
-      <InputLabel sx={{color: grey[900], fontWeight: 'bold', mt: 2}}>Localización</InputLabel>
-      <TextField 
-        fullWidth 
-        required 
-        margin="dense" 
-        name="calle" 
-        label="Calle" 
-        value={formData.calle} 
-        onChange={handleChange}
-        onBlur={handleBlur}
-        error={!!errors.calle}
-        sx={{backgroundColor: grey[50], mb: 1}} 
-      />
-      {errors.calle && <ErrorText>{errors.calle}</ErrorText>}
-      
-      <TextField 
-        fullWidth 
-        margin="dense" 
-        name="numero" 
-        label="Número" 
-        value={formData.numero} 
-        onChange={handleChange}
-        sx={{backgroundColor: grey[50], mb: 1}} 
-      />
-      
-      <TextField 
-        fullWidth 
-        required 
-        margin="dense" 
-        name="provincia" 
-        label="Provincia/Estado" 
-        value={formData.provincia} 
-        onChange={handleChange}
-        onBlur={handleBlur}
-        error={!!errors.provincia}
-        sx={{backgroundColor: grey[50], mb: 1}} 
-      />
-      {errors.provincia && <ErrorText>{errors.provincia}</ErrorText>}
-      
-      <TextField 
-        fullWidth 
-        required 
-        margin="dense" 
-        name="pais" 
-        label="País" 
-        value={formData.pais} 
-        onChange={handleChange}
-        onBlur={handleBlur}
-        error={!!errors.pais}
-        sx={{backgroundColor: grey[50], mb: 1}} 
-      />
-      {errors.pais && <ErrorText>{errors.pais}</ErrorText>}
-      
-      <TextField 
-        fullWidth 
-        margin="dense" 
-        name="coordenadas" 
-        label="Coordenadas (opcional)" 
-        value={formData.coordenadas} 
-        onChange={handleChange}
-        sx={{backgroundColor: grey[50]}} 
-      />
+        <Typography variant="subtitle1" color="primary" sx={{ mb: 2, fontWeight: 'bold' }}>
+          Información Legal
+        </Typography>
+
+        <Box sx={{ mb: 2 }}>
+          <InputLabel required sx={{ 
+            color: grey[700], 
+            fontWeight: 'bold',
+            mb: 0.5
+          }}>
+            Razón Social
+          </InputLabel>
+          <TextField
+            fullWidth
+            size="small"
+            name="razonSocial"
+            value={formData.razonSocial || ''}
+            onChange={handleChange}
+            onBlur={handleBlur}
+            error={!!errors.razonSocial}
+            sx={{ 
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 2,
+                '& fieldset': {
+                  borderColor: grey[300]
+                }
+              }
+            }}
+          />
+          {errors.razonSocial && <ErrorText>{errors.razonSocial}</ErrorText>}
+        </Box>
+
+        <Box sx={{ mb: 2 }}>
+          <InputLabel required sx={{ 
+            color: grey[700], 
+            fontWeight: 'bold',
+            mb: 0.5
+          }}>
+            CUIT/RUT
+          </InputLabel>
+          <TextField
+            fullWidth
+            size="small"
+            name="cuit"
+            value={formData.cuit || ''}
+            onChange={handleChange}
+            onBlur={handleBlur}
+            error={!!errors.cuit}
+            sx={{ 
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 2,
+                '& fieldset': {
+                  borderColor: grey[300]
+                }
+              }
+            }}
+          />
+          {errors.cuit && <ErrorText>{errors.cuit}</ErrorText>}
+        </Box>
+      </Grid>
+
+      {/* Columna 2: Información de Contacto */}
+      <Grid item xs={12} md={4}>
+        <Typography variant="subtitle1" color="primary" sx={{ mb: 2, fontWeight: 'bold' }}>
+          Información de Contacto
+        </Typography>
+
+        <Box sx={{ mb: 2 }}>
+          <InputLabel required sx={{ 
+            color: grey[700], 
+            fontWeight: 'bold',
+            mb: 0.5
+          }}>
+            Nombre
+          </InputLabel>
+          <TextField
+            fullWidth
+            size="small"
+            name="nombreContacto"
+            value={formData.nombreContacto || ''}
+            onChange={handleChange}
+            onBlur={handleBlur}
+            error={!!errors.nombreContacto}
+            sx={{ 
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 2,
+                '& fieldset': {
+                  borderColor: grey[300]
+                }
+              }
+            }}
+          />
+          {errors.nombreContacto && <ErrorText>{errors.nombreContacto}</ErrorText>}
+        </Box>
+
+        <Box sx={{ mb: 2 }}>
+          <InputLabel required sx={{ 
+            color: grey[700], 
+            fontWeight: 'bold',
+            mb: 0.5
+          }}>
+            Apellido
+          </InputLabel>
+          <TextField
+            fullWidth
+            size="small"
+            name="apellidoContacto"
+            value={formData.apellidoContacto || ''}
+            onChange={handleChange}
+            onBlur={handleBlur}
+            error={!!errors.apellidoContacto}
+            sx={{ 
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 2,
+                '& fieldset': {
+                  borderColor: grey[300]
+                }
+              }
+            }}
+          />
+          {errors.apellidoContacto && <ErrorText>{errors.apellidoContacto}</ErrorText>}
+        </Box>
+
+        <Box sx={{ mb: 2 }}>
+          <InputLabel required sx={{ 
+            color: grey[700], 
+            fontWeight: 'bold',
+            mb: 0.5
+          }}>
+            Teléfono
+          </InputLabel>
+          <TextField
+            fullWidth
+            size="small"
+            name="telefonoContacto"
+            value={formData.telefonoContacto || ''}
+            onChange={handleChange}
+            onBlur={handleBlur}
+            error={!!errors.telefonoContacto}
+            sx={{ 
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 2,
+                '& fieldset': {
+                  borderColor: grey[300]
+                }
+              }
+            }}
+          />
+          {errors.telefonoContacto && <ErrorText>{errors.telefonoContacto}</ErrorText>}
+        </Box>
+      </Grid>
+
+      {/* Columna 3: Ubicación */}
+      <Grid item xs={12} md={4}>
+        <Typography variant="subtitle1" color="primary" sx={{ mb: 2, fontWeight: 'bold' }}>
+          Ubicación
+        </Typography>
+
+        <Box sx={{ mb: 2 }}>
+          <InputLabel required sx={{ 
+            color: grey[700], 
+            fontWeight: 'bold',
+            mb: 0.5
+          }}>
+            Calle
+          </InputLabel>
+          <TextField
+            fullWidth
+            size="small"
+            name="calle"
+            value={formData.calle || ''}
+            onChange={handleChange}
+            onBlur={handleBlur}
+            error={!!errors.calle}
+            sx={{ 
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 2,
+                '& fieldset': {
+                  borderColor: grey[300]
+                }
+              }
+            }}
+          />
+          {errors.calle && <ErrorText>{errors.calle}</ErrorText>}
+        </Box>
+
+        <Box sx={{ mb: 2 }}>
+          <InputLabel sx={{ 
+            color: grey[700], 
+            fontWeight: 'bold',
+            mb: 0.5
+          }}>
+            Número
+          </InputLabel>
+          <TextField
+            fullWidth
+            size="small"
+            name="numero"
+            value={formData.numero || ''}
+            onChange={handleChange}
+            sx={{ 
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 2,
+                '& fieldset': {
+                  borderColor: grey[300]
+                }
+              }
+            }}
+          />
+        </Box>
+
+        <Box sx={{ mb: 2 }}>
+          <InputLabel required sx={{ 
+            color: grey[700], 
+            fontWeight: 'bold',
+            mb: 0.5
+          }}>
+            Provincia/Estado
+          </InputLabel>
+          <TextField
+            fullWidth
+            size="small"
+            name="provincia"
+            value={formData.provincia || ''}
+            onChange={handleChange}
+            onBlur={handleBlur}
+            error={!!errors.provincia}
+            sx={{ 
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 2,
+                '& fieldset': {
+                  borderColor: grey[300]
+                }
+              }
+            }}
+          />
+          {errors.provincia && <ErrorText>{errors.provincia}</ErrorText>}
+        </Box>
+
+        <Box sx={{ mb: 2 }}>
+          <InputLabel required sx={{ 
+            color: grey[700], 
+            fontWeight: 'bold',
+            mb: 0.5
+          }}>
+            País
+          </InputLabel>
+          <TextField
+            fullWidth
+            size="small"
+            name="pais"
+            value={formData.pais || ''}
+            onChange={handleChange}
+            onBlur={handleBlur}
+            error={!!errors.pais}
+            sx={{ 
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 2,
+                '& fieldset': {
+                  borderColor: grey[300]
+                }
+              }
+            }}
+          />
+          {errors.pais && <ErrorText>{errors.pais}</ErrorText>}
+        </Box>
+
+        <Box sx={{ mb: 2 }}>
+          <InputLabel sx={{ 
+            color: grey[700], 
+            fontWeight: 'bold',
+            mb: 0.5
+          }}>
+            Coordenadas (opcional)
+          </InputLabel>
+          <TextField
+            fullWidth
+            size="small"
+            name="coordenadas"
+            value={formData.coordenadas || ''}
+            onChange={handleChange}
+            sx={{ 
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 2,
+                '& fieldset': {
+                  borderColor: grey[300]
+                }
+              }
+            }}
+          />
+        </Box>
+      </Grid>
     </Grid>
-
-    <Grid item xs={6}>
-      <InputLabel sx={{color: grey[900], fontWeight: 'bold'}}>Personal de Contacto</InputLabel>
-      <TextField 
-        fullWidth 
-        required 
-        margin="dense" 
-        name="nombreContacto" 
-        label="Nombre" 
-        value={formData.nombreContacto} 
-        onChange={handleChange}
-        onBlur={handleBlur}
-        error={!!errors.nombreContacto}
-        sx={{backgroundColor: grey[50], mb: 1}} 
-      />
-      {errors.nombreContacto && <ErrorText>{errors.nombreContacto}</ErrorText>}
-      
-      <TextField 
-        fullWidth 
-        required 
-        margin="dense" 
-        name="apellidoContacto" 
-        label="Apellido" 
-        value={formData.apellidoContacto} 
-        onChange={handleChange}
-        onBlur={handleBlur}
-        error={!!errors.apellidoContacto}
-        sx={{backgroundColor: grey[50], mb: 1}} 
-      />
-      {errors.apellidoContacto && <ErrorText>{errors.apellidoContacto}</ErrorText>}
-
-      <TextField 
-        fullWidth 
-        required 
-        margin="dense" 
-        name="telefonoContacto" 
-        label="Teléfono" 
-        value={formData.telefonoContacto} 
-        onChange={handleChange}
-        onBlur={handleBlur}
-        error={!!errors.telefonoContacto}
-        sx={{backgroundColor: grey[50]}} 
-      />
-      {errors.telefonoContacto && <ErrorText>{errors.telefonoContacto}</ErrorText>}
-
-      <InputLabel sx={{color: grey[900], fontWeight: 'bold', mt: 2}}>Información Legal</InputLabel>
-      <TextField 
-        fullWidth 
-        required 
-        margin="dense" 
-        name="razonSocial" 
-        label="Razón Social" 
-        value={formData.razonSocial} 
-        onChange={handleChange}
-        onBlur={handleBlur}
-        error={!!errors.razonSocial}
-        sx={{backgroundColor: grey[50], mb: 1}} 
-      />
-      {errors.razonSocial && <ErrorText>{errors.razonSocial}</ErrorText>}
-      
-      <TextField 
-        fullWidth 
-        required 
-        margin="dense" 
-        name="cuit" 
-        label="CUIT/RUT" 
-        value={formData.cuit} 
-        onChange={handleChange}
-        onBlur={handleBlur}
-        error={!!errors.cuit}
-        sx={{backgroundColor: grey[50]}} 
-      />
-      {errors.cuit && <ErrorText>{errors.cuit}</ErrorText>}
-    </Grid>
-  </Grid>
+  </Box>
 );
 
 export default DepositoForm;
