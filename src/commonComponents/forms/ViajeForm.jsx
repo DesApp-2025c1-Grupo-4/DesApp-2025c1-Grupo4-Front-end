@@ -86,8 +86,18 @@ const iconButtonSx = {
 };
 
 const SelectionModal = ({
-  open, onClose, title, items, onSelect, searchValue, onSearchChange,
-  loading, getText, getSecondaryText, getThirdText, emptyText, icon: Icon
+  open,
+  onClose,
+  title,
+  items,
+  onSelect,
+  searchValue,
+  onSearchChange,
+  loading,
+  getText,
+  getSecondaryText,
+  emptyText,
+  icon: Icon
 }) => {
   return (
     <Modal open={open} onClose={onClose}>
@@ -96,7 +106,7 @@ const SelectionModal = ({
         top: '50%',
         left: '50%',
         transform: 'translate(-50%, -50%)',
-        width: 800, // Más ancho para acomodar 3 columnas
+        width: 500,
         boxShadow: 24,
         p: 3,
         borderRadius: 2,
@@ -124,47 +134,20 @@ const SelectionModal = ({
           value={searchValue}
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder="Buscar..."
-          variant="outlined"
           size="small"
           InputProps={{
             startAdornment: <SearchIcon sx={{ mr: 1, color: grey[500] }} />,
           }}
-          sx={{
-            mb: 2,
-            '& .MuiOutlinedInput-root': {
-              borderRadius: 2
-            }
-          }}
+          sx={{ mb: 2, ...fieldSx }}
         />
 
-        <Paper
-          elevation={0}
-          sx={{
-            flex: 1,
-            overflow: 'auto',
-            border: `1px solid ${grey[200]}`,
-            borderRadius: 2
-          }}
-        >
+        <Paper elevation={0} sx={{ flex: 1, overflow: 'auto', border: `1px solid ${grey[200]}`, borderRadius: 2 }}>
           {loading ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
               <CircularProgress size={24} />
             </Box>
           ) : items.length > 0 ? (
             <List dense>
-              <ListItem sx={{ backgroundColor: grey[100], fontWeight: 'bold' }}>
-                <Grid container spacing={2}>
-                  <Grid item xs={4}>
-                    <Typography variant="subtitle2">Principal</Typography>
-                  </Grid>
-                  <Grid item xs={4}>
-                    <Typography variant="subtitle2">Secundario</Typography>
-                  </Grid>
-                  <Grid item xs={4}>
-                    <Typography variant="subtitle2">Detalle</Typography>
-                  </Grid>
-                </Grid>
-              </ListItem>
               {items.map((item) => (
                 <ListItem
                   key={item._id}
@@ -179,23 +162,14 @@ const SelectionModal = ({
                     }
                   }}
                 >
-                  <Grid container spacing={2}>
-                    <Grid item xs={4}>
-                      <Typography fontWeight="medium">
-                        {getText(item)}
-                      </Typography>
-                    </Grid>
-                    <Grid item xs={4}>
+                  <ListItemText
+                    primary={<Typography fontWeight="medium">{getText(item)}</Typography>}
+                    secondary={
                       <Typography variant="body2" color="text.secondary">
                         {getSecondaryText?.(item)}
                       </Typography>
-                    </Grid>
-                    <Grid item xs={4}>
-                      <Typography variant="body2" color="text.secondary">
-                        {getThirdText?.(item)}
-                      </Typography>
-                    </Grid>
-                  </Grid>
+                    }
+                  />
                 </ListItem>
               ))}
             </List>
@@ -228,16 +202,20 @@ const SelectionModal = ({
 const ViajeForm = ({ formData = {}, handleChange, handleBlur, errors, isEditing = false }) => {
   // Normalización de datos
   const normalizedFormData = {
-    ...formData,
-    tipoViaje: formData.tipo_viaje || formData.tipoViaje,
-    fechaInicio: formData.inicio_viaje || formData.fechaInicio,
-    fechaFin: formData.fin_viaje || formData.fechaFin,
-    depositoOrigen: formData.deposito_origen || formData.depositoOrigen,
-    depositoDestino: formData.deposito_destino || formData.depositoDestino,
-    empresaTransportista: formData.empresa_asignada || formData.empresaTransportista || null,
-    choferAsignado: formData.chofer_asignado || formData.choferAsignado,
-    vehiculoAsignado: formData.vehiculo_asignado || formData.vehiculoAsignado
-  };
+  ...formData,
+  tipoViaje: formData.tipo_viaje || formData.tipoViaje,
+  fechaInicio: formData.inicio_viaje || formData.fechaInicio,
+  fechaFin: formData.fin_viaje || formData.fechaFin,
+  depositoOrigen: formData.deposito_origen || formData.depositoOrigen,
+  depositoDestino: formData.deposito_destino || formData.depositoDestino,
+  empresaTransportista: formData.empresa_asignada || formData.empresaTransportista || null,
+  choferAsignado: formData.chofer_asignado || formData.choferAsignado,
+  // Asegurar que vehiculoAsignado incluya tanto el del viaje como el del chofer
+  vehiculoAsignado: formData.vehiculo_asignado || 
+                   (formData.chofer_asignado?.vehiculo_defecto) || 
+                   formData.vehiculoAsignado || 
+                   null
+};
 
   // Estados para búsquedas
   const [empresas, setEmpresas] = useState([]);
@@ -305,16 +283,21 @@ const ViajeForm = ({ formData = {}, handleChange, handleBlur, errors, isEditing 
     setModalStates(prev => ({ ...prev, [key]: !prev[key] }));
 
   const handleChoferChange = (chofer) => {
-    handleChange({ target: { name: "choferAsignado", value: chofer } });
-    if (chofer?.vehiculoAsignado) {
-      handleChange({ target: { name: "vehiculoAsignado", value: chofer.vehiculoAsignado } });
-      handleInputChange('vehiculo', chofer.vehiculoAsignado.patente);
-      if (chofer.vehiculoAsignado.empresa) {
-        handleChange({ target: { name: "empresaTransportista", value: chofer.vehiculoAsignado.empresa } });
-        handleInputChange('empresa', chofer.vehiculoAsignado.empresa.nombre_empresa);
-      }
+  handleChange({ target: { name: "choferAsignado", value: chofer } });
+  // Verificar si el chofer tiene vehículo asignado
+  if (chofer?.vehiculo_defecto) {
+    handleChange({ target: { name: "vehiculoAsignado", value: chofer.vehiculo_defecto } });
+    handleInputChange('vehiculo', chofer.vehiculo_defecto.patente);
+    if (chofer.vehiculo_defecto.empresa) {
+      handleChange({ target: { name: "empresaTransportista", value: chofer.vehiculo_defecto.empresa } });
+      handleInputChange('empresa', chofer.vehiculo_defecto.empresa.nombre_empresa);
     }
-  };
+  } else {
+    // Limpiar vehículo si el chofer no tiene uno asignado
+    handleChange({ target: { name: "vehiculoAsignado", value: null } });
+    handleInputChange('vehiculo', '');
+  }
+};
 
   const handleVehiculoChange = (vehiculo) => {
     handleChange({ target: { name: "vehiculoAsignado", value: vehiculo } });

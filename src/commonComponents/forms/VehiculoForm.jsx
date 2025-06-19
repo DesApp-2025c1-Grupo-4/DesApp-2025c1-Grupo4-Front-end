@@ -172,22 +172,33 @@ const VehiculoForm = ({ formData, handleChange, handleBlur, errors, isEditing = 
           <InputField label="Capacidad (Peso)" name="peso" value={formData.peso} onChange={handleChange} onBlur={handleBlur} error={errors.peso} type="number" helperText={isEditing ? `Actual: ${formData.pesoOriginal || 'N/D'}` : undefined} endAdornment={<span>kg</span>} />
           <InputField label="Año" name="año" value={formData.año} onChange={handleChange} onBlur={handleBlur} error={errors.año} type="number" placeholder={`Ej: ${new Date().getFullYear()}`} inputProps={{ min: 1900, max: new Date().getFullYear() + 1 }} />
 
-          <Box sx={{ mb: 2 }}>
-            <InputLabel required sx={{ color: grey[700], fontWeight: 'bold', mb: 0.5 }}>Empresa</InputLabel>
-            <Box sx={{ display: 'flex', gap: 1 }}>
-              <TextField
-                fullWidth
-                size="small"
-                value={formData.empresa ? formData.empresa.nombre_empresa : ''}
-                sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, '& fieldset': { borderColor: grey[300] } } }}
-                InputProps={{ readOnly: true, startAdornment: formData.empresa && (<BusinessIcon sx={{ mr: 1, color: grey[600] }} />) }}
-              />
-              <IconButton onClick={() => toggleModal('empresas')} sx={{ borderRadius: 2, border: `1px solid ${grey[300]}`, backgroundColor: 'background.paper', '&:hover': { backgroundColor: grey[100] } }}>
-                <SearchIcon />
-              </IconButton>
-            </Box>
-            {errors.empresa && <ErrorText>{errors.empresa}</ErrorText>}
-          </Box>
+          
+<Box sx={{ mb: 2 }}>
+  <InputLabel required sx={{ color: grey[700], fontWeight: 'bold', mb: 0.5 }}>Empresa</InputLabel>
+  <Box sx={{ display: 'flex', gap: 1 }}>
+    <TextField
+      fullWidth
+      size="small"
+      value={formData.empresa?.nombre_empresa || 'Sin empresa asignada'}
+      sx={{ 
+        '& .MuiOutlinedInput-root': { 
+          borderRadius: 2, 
+          '& fieldset': { borderColor: grey[300] } 
+        } 
+      }}
+      InputProps={{ 
+        readOnly: true,
+        startAdornment: formData.empresa && (
+          <BusinessIcon sx={{ mr: 1, color: grey[600] }} />
+        )
+      }}
+    />
+    <IconButton onClick={() => toggleModal('empresas')}>
+      <SearchIcon />
+    </IconButton>
+  </Box>
+  {errors.empresa && <ErrorText>{errors.empresa}</ErrorText>}
+</Box>
 
           <SelectionModal
             open={modalStates.empresas}

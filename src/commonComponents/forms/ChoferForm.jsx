@@ -1,4 +1,7 @@
-import { Grid, InputLabel, TextField, Autocomplete, Box, Typography, List, ListItem, ListItemText, CircularProgress, IconButton, Divider, Modal, Button, Paper, Avatar } from '@mui/material';
+import {
+  Grid, InputLabel, TextField, Autocomplete, Box, Typography, List, ListItem,
+  ListItemText, CircularProgress, IconButton, Divider, Modal, Button, Paper, Avatar
+} from '@mui/material';
 import { grey, blue, indigo } from "@mui/material/colors";
 import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
@@ -7,6 +10,7 @@ import { Search, Close, Person, Business, DirectionsCar } from '@mui/icons-mater
 import axios from 'axios';
 import ErrorText from '../ErrorText';
 
+// Subcomponentes reutilizables
 const FieldContainer = ({ label, children, error }) => (
   <Box sx={{ mb: 2 }}>
     <InputLabel required sx={{ color: grey[700], fontWeight: 'bold', mb: 0.5 }}>
@@ -18,14 +22,25 @@ const FieldContainer = ({ label, children, error }) => (
 );
 
 const IconButtonStyled = ({ onClick, icon: Icon }) => (
-  <IconButton onClick={onClick} sx={{ borderRadius: 2, border: `1px solid ${grey[300]}`, backgroundColor: 'background.paper', '&:hover': { backgroundColor: grey[100] } }}>
+  <IconButton
+    onClick={onClick}
+    sx={{
+      borderRadius: 2,
+      border: `1px solid ${grey[300]}`,
+      backgroundColor: 'background.paper',
+      '&:hover': { backgroundColor: grey[100] }
+    }}
+  >
     <Icon />
   </IconButton>
 );
 
 const styles = {
   field: {
-    '& .MuiOutlinedInput-root': { borderRadius: 2, '& fieldset': { borderColor: grey[300] } }
+    '& .MuiOutlinedInput-root': {
+      borderRadius: 2,
+      '& fieldset': { borderColor: grey[300] }
+    }
   },
   modalPaper: {
     position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
@@ -33,6 +48,7 @@ const styles = {
   }
 };
 
+// Hook reutilizable para búsqueda con debounce
 const useDebouncedFetch = (url, paramName, value, setData, setLoading) => {
   useEffect(() => {
     const timer = setTimeout(async () => {
@@ -52,7 +68,11 @@ const useDebouncedFetch = (url, paramName, value, setData, setLoading) => {
   }, [value]);
 };
 
-const SelectionModal = ({ open, onClose, title, items, onSelect, searchValue, onSearchChange, loading, getText, getSecondaryText, emptyText, icon: Icon }) => (
+// Modal genérico de selección
+const SelectionModal = ({
+  open, onClose, title, items, onSelect, searchValue, onSearchChange,
+  loading, getText, getSecondaryText, emptyText, icon: Icon
+}) => (
   <Modal open={open} onClose={onClose}>
     <Paper sx={styles.modalPaper}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
@@ -65,31 +85,50 @@ const SelectionModal = ({ open, onClose, title, items, onSelect, searchValue, on
 
       <TextField
         fullWidth value={searchValue} onChange={(e) => onSearchChange(e.target.value)}
-        placeholder="Buscar..." size="small" InputProps={{ startAdornment: <Search sx={{ mr: 1, color: grey[500] }} /> }}
+        placeholder="Buscar..." size="small"
+        InputProps={{ startAdornment: <Search sx={{ mr: 1, color: grey[500] }} /> }}
         sx={{ mb: 2, ...styles.field }}
       />
 
       <Paper elevation={0} sx={{ flex: 1, overflow: 'auto', border: `1px solid ${grey[200]}`, borderRadius: 2 }}>
-        {loading ? <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}><CircularProgress size={24} /></Box> :
-          items.length > 0 ? (
-            <List dense>
-              {items.map((item) => (
-                <ListItem key={item._id} button onClick={() => { onSelect(item); onClose(); }} sx={{ '&:hover': { backgroundColor: blue[50] } }}>
-                  <ListItemText
-                    primary={<Typography fontWeight="medium">{getText(item)}</Typography>}
-                    secondary={getSecondaryText?.(item) && <Typography variant="body2" color="text.secondary">{getSecondaryText(item)}</Typography>}
-                  />
-                </ListItem>
-              ))}
-            </List>
-          ) : <Box sx={{ p: 3, textAlign: 'center' }}><Typography variant="body2" color="textSecondary">{emptyText}</Typography></Box>
-        }
+        {loading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+            <CircularProgress size={24} />
+          </Box>
+        ) : items.length > 0 ? (
+          <List dense>
+            {items.map((item) => (
+              <ListItem
+                key={item._id} button
+                onClick={() => { onSelect(item); onClose(); }}
+                sx={{ '&:hover': { backgroundColor: blue[50] } }}
+              >
+                <ListItemText
+                  primary={<Typography fontWeight="medium">{getText(item)}</Typography>}
+                  secondary={getSecondaryText?.(item) && (
+                    <Typography variant="body2" color="text.secondary">
+                      {getSecondaryText(item)}
+                    </Typography>
+                  )}
+                />
+              </ListItem>
+            ))}
+          </List>
+        ) : (
+          <Box sx={{ p: 3, textAlign: 'center' }}>
+            <Typography variant="body2" color="textSecondary">{emptyText}</Typography>
+          </Box>
+        )}
       </Paper>
-      <Button variant="outlined" onClick={onClose} sx={{ mt: 2, alignSelf: 'flex-end', borderRadius: 2, textTransform: 'none' }}>Cancelar</Button>
+
+      <Button variant="outlined" onClick={onClose} sx={{ mt: 2, alignSelf: 'flex-end', borderRadius: 2, textTransform: 'none' }}>
+        Cancelar
+      </Button>
     </Paper>
   </Modal>
 );
 
+// Componente principal
 const ChoferForm = ({ formData, handleChange, handleBlur, errors, empresas: empresasIniciales = [], vehiculos = [], isEditing = false }) => {
   const [empresas, setEmpresas] = useState(empresasIniciales);
   const [vehiculosDisponibles, setVehiculosDisponibles] = useState(vehiculos);
@@ -100,7 +139,14 @@ const ChoferForm = ({ formData, handleChange, handleBlur, errors, empresas: empr
   useDebouncedFetch('/api/empresas', 'nombre', inputValues.empresa, setEmpresas, (loading) => setLoadingStates(prev => ({ ...prev, empresas: loading })));
   useDebouncedFetch('/api/vehiculos', 'patente', inputValues.vehiculo, setVehiculosDisponibles, (loading) => setLoadingStates(prev => ({ ...prev, vehiculos: loading })));
 
-  const handleVehiculoChange = (vehiculo) => {
+  const onEmpresaSelect = (empresa) => {
+    handleChange({ target: { name: "empresa", value: empresa } });
+    if (formData.vehiculoAsignado?.empresa?._id !== empresa._id) {
+      handleChange({ target: { name: "vehiculoAsignado", value: null } });
+    }
+  };
+
+  const onVehiculoSelect = (vehiculo) => {
     handleChange({ target: { name: "vehiculoAsignado", value: vehiculo } });
     if (vehiculo?.empresa) {
       handleChange({ target: { name: "empresa", value: vehiculo.empresa } });
@@ -119,20 +165,19 @@ const ChoferForm = ({ formData, handleChange, handleBlur, errors, empresas: empr
         )}
 
         <Grid container spacing={2}>
+          {/* Información Personal */}
           <Grid item xs={12} md={6}>
             <Typography variant="subtitle1" color="primary" sx={{ mb: 1, fontWeight: 'bold' }}>Información personal</Typography>
-            
             {['nombre', 'apellido', 'cuil'].map((field) => (
               <FieldContainer key={field} label={field.charAt(0).toUpperCase() + field.slice(1)} error={errors[field]}>
                 <TextField
                   fullWidth size="small" name={field} value={formData[field] || ''}
                   onChange={handleChange} onBlur={handleBlur} error={!!errors[field]}
-                  placeholder={field === 'cuil' ? 'XX-XXXXXXXX-X' : ''} readOnly={field === 'cuil' && isEditing}
-                  sx={styles.field}
+                  placeholder={field === 'cuil' ? 'XX-XXXXXXXX-X' : ''}
+                  readOnly={field === 'cuil' && isEditing} sx={styles.field}
                 />
               </FieldContainer>
             ))}
-
             <FieldContainer label="Fecha de Nacimiento" error={errors.fechaNacimiento}>
               <DatePicker
                 value={formData.fechaNacimiento || null}
@@ -142,6 +187,7 @@ const ChoferForm = ({ formData, handleChange, handleBlur, errors, empresas: empr
             </FieldContainer>
           </Grid>
 
+          {/* Información Laboral */}
           <Grid item xs={12} md={6}>
             <Typography variant="subtitle1" color="primary" sx={{ mb: 1, fontWeight: 'bold' }}>Información laboral</Typography>
 
@@ -149,7 +195,11 @@ const ChoferForm = ({ formData, handleChange, handleBlur, errors, empresas: empr
               <Box sx={{ display: 'flex', gap: 1 }}>
                 <TextField
                   fullWidth size="small" value={formData.empresa?.nombre_empresa || ''}
-                  sx={styles.field} InputProps={{ readOnly: true, startAdornment: formData.empresa && <Business sx={{ mr: 1, color: grey[600] }} /> }}
+                  sx={styles.field}
+                  InputProps={{
+                    readOnly: true,
+                    startAdornment: formData.empresa && <Business sx={{ mr: 1, color: grey[600] }} />
+                  }}
                 />
                 <IconButtonStyled onClick={() => setModalStates(prev => ({ ...prev, empresas: !prev.empresas }))} icon={Search} />
               </Box>
@@ -158,9 +208,17 @@ const ChoferForm = ({ formData, handleChange, handleBlur, errors, empresas: empr
             <FieldContainer label="Vehículo Asignado" error={errors.vehiculoAsignado}>
               <Box sx={{ display: 'flex', gap: 1 }}>
                 <TextField
-                  fullWidth size="small" value={formData.vehiculoAsignado ? 
-                    `${formData.vehiculoAsignado.patente} - ${formData.vehiculoAsignado.marca} ${formData.vehiculoAsignado.modelo}` : '-- Sin asignar --'}
-                  sx={styles.field} InputProps={{ readOnly: true, startAdornment: formData.vehiculoAsignado && <DirectionsCar sx={{ mr: 1, color: grey[600] }} /> }}
+                  fullWidth size="small"
+                  value={
+                    formData.vehiculoAsignado
+                      ? `${formData.vehiculoAsignado.patente} - ${[formData.vehiculoAsignado.marca, formData.vehiculoAsignado.modelo].filter(Boolean).join(' ')}`
+                      : '-- Sin asignar --'
+                  }
+                  sx={styles.field}
+                  InputProps={{
+                    readOnly: true,
+                    startAdornment: formData.vehiculoAsignado && <DirectionsCar sx={{ mr: 1, color: grey[600] }} />
+                  }}
                 />
                 <IconButtonStyled onClick={() => setModalStates(prev => ({ ...prev, vehiculos: !prev.vehiculos }))} icon={Search} />
               </Box>
@@ -168,27 +226,29 @@ const ChoferForm = ({ formData, handleChange, handleBlur, errors, empresas: empr
           </Grid>
         </Grid>
 
+        {/* Modales */}
         <SelectionModal
           open={modalStates.empresas} onClose={() => setModalStates(prev => ({ ...prev, empresas: !prev.empresas }))}
           title="Seleccionar Empresa" items={empresas} loading={loadingStates.empresas}
-          onSelect={(empresa) => {
-            handleChange({ target: { name: "empresa", value: empresa } });
-            if (formData.vehiculoAsignado?.empresa?._id !== empresa._id) {
-              handleChange({ target: { name: "vehiculoAsignado", value: null } });
-            }
-          }}
+          onSelect={onEmpresaSelect}
           searchValue={inputValues.empresa} onSearchChange={(val) => setInputValues(prev => ({ ...prev, empresa: val }))}
-          getText={(item) => item.nombre_empresa} getSecondaryText={(item) => item.cuit && `CUIT: ${item.cuit}`}
-          emptyText="No hay empresas disponibles" icon={Business}
+          getText={(item) => item.nombre_empresa}
+          getSecondaryText={(item) => item.cuit && `CUIT: ${item.cuit}`}
+          emptyText="No hay empresas disponibles"
+          icon={Business}
         />
 
         <SelectionModal
           open={modalStates.vehiculos} onClose={() => setModalStates(prev => ({ ...prev, vehiculos: !prev.vehiculos }))}
-          title="Seleccionar Vehículo" items={[{ _id: 'null', patente: '-- Sin asignar --' }, ...vehiculosDisponibles]} 
-          loading={loadingStates.vehiculos} onSelect={handleVehiculoChange}
+          title="Seleccionar Vehículo"
+          items={[{ _id: 'null', patente: '-- Sin asignar --' }, ...vehiculosDisponibles]}
+          loading={loadingStates.vehiculos}
+          onSelect={onVehiculoSelect}
           searchValue={inputValues.vehiculo} onSearchChange={(val) => setInputValues(prev => ({ ...prev, vehiculo: val }))}
-          getText={(item) => item.patente} getSecondaryText={(item) => item.empresa?.nombre_empresa && `Empresa: ${item.empresa.nombre_empresa}`}
-          emptyText={formData.empresa ? "No hay vehículos para esta empresa" : "No hay vehículos disponibles"} icon={DirectionsCar}
+          getText={(item) => item.patente}
+          getSecondaryText={(item) => item.empresa?.nombre_empresa && `Empresa: ${item.empresa.nombre_empresa}`}
+          emptyText={formData.empresa ? "No hay vehículos para esta empresa" : "No hay vehículos disponibles"}
+          icon={DirectionsCar}
         />
       </Box>
     </LocalizationProvider>

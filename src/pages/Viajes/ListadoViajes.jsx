@@ -70,11 +70,13 @@ const ListadoDeViajes = () => {
           numeroViaje: item.guid_vieje?.toString() || item._id?.toString() || 'N/A',
           empresaTransportista: item.empresa_asignada?.nombre_empresa || 'Sin empresa',
           nombreChofer: `${item.chofer_asignado?.nombre || ''} ${item.chofer_asignado?.apellido || ''}`.trim() || 'Sin chofer',
-          patenteVehiculo: item.vehiculo_asignado?.patente || 'Sin patente',
+          // Añadir esta línea para incluir el vehículo asignado del chofer
+          vehiculoChofer: item.chofer_asignado?.vehiculo_defecto?.patente || 'Sin vehículo',
+          patenteVehiculo: item.vehiculo_asignado?.patente || item.chofer_asignado?.vehiculo_defecto?.patente || 'Sin patente',
           fechaInicio: formatDate(item.inicio_viaje),
           fechaFin: formatDate(item.fin_viaje),
           tipo_viaje: item.tipo_viaje || 
-                     (item.deposito_origen?.localizacion?.pais === 'Argentina' && 
+                    (item.deposito_origen?.localizacion?.pais === 'Argentina' && 
                       item.deposito_destino?.localizacion?.pais === 'Argentina' ? 'Nacional' : 'Internacional'),
           origen: item.deposito_origen?.localizacion?.direccion || 'Sin origen',
           destino: item.deposito_destino?.localizacion?.direccion || 'Sin destino',
@@ -131,30 +133,28 @@ const ListadoDeViajes = () => {
   
   if (type === 'modificar-viaje' && viaje) {
     try {
-      // Obtener datos frescos del viaje con todas las relaciones pobladas
-      const response = await axios.get(`/api/viajes/${viaje._id}`, {
-        params: { populate: 'empresa_asignada,chofer_asignado,vehiculo_asignado,deposito_origen,deposito_destino' }
-      });
-      const viajeData = response.data;
+      // Obtener datos frescos del viaje (sin populate adicional)
+      const response = await axios.get(`/api/viajes/${viaje._id}`);
+      
+      // Usar los datos transformados que ya vienen del listado
+      const viajeExistente = viajes.find(v => v._id === viaje._id);
+      
       setSelectedViaje({
-      ...viajeData,
-      _id: viajeData._id, 
-      depositoOrigen: viajeData.deposito_origen,
-      depositoDestino: viajeData.deposito_destino,
-      fechaInicio: viajeData.inicio_viaje,
-      fechaFin: viajeData.fin_viaje,
-      empresaTransportista: viajeData.empresa_asignada,
-      choferAsignado: viajeData.chofer_asignado,
-      vehiculoAsignado: viajeData.vehiculo_asignado,
-      tipoViaje: viajeData.tipo_viaje || 
-                (viajeData.deposito_origen?.localizacion?.pais === 'Argentina' && 
-                viajeData.deposito_destino?.localizacion?.pais === 'Argentina' ? 'Internacional' : 'Nacional')
-    });
+        _id: viajeExistente._id,
+        depositoOrigen: viajeExistente.deposito_origen,
+        depositoDestino: viajeExistente.deposito_destino,
+        fechaInicio: viajeExistente.inicio_viaje,
+        fechaFin: viajeExistente.fin_viaje,
+        empresaTransportista: viajeExistente.empresa_asignada,
+        choferAsignado: viajeExistente.chofer_asignado,
+        vehiculoAsignado: viajeExistente.vehiculo_asignado,
+        tipoViaje: viajeExistente.tipo_viaje
+      });
     } catch (error) {
       console.error('Error al cargar datos del viaje:', error);
+      // Usar datos locales como fallback
       setSelectedViaje({
-        ...viaje,
-        idViaje: viaje._id,
+        _id: viaje._id,
         depositoOrigen: viaje.deposito_origen,
         depositoDestino: viaje.deposito_destino,
         fechaInicio: viaje.inicio_viaje,
