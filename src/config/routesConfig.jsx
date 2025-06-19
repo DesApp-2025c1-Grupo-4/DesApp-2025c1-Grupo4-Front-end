@@ -13,7 +13,7 @@ export const ROUTE_CONFIG = {
     returnPath: ''
   },
   '/listado-viajes': {
-    title: 'Registro de Viajes',
+    title: 'Listado de Viajes',
     logo: <MapOutlinedIcon variant='biggerIcons'/>,
     returnPath: '/listado-viajes'
   },
@@ -27,7 +27,7 @@ export const ROUTE_CONFIG = {
     title: 'Modificar Viaje',
     logo: <MapOutlinedIcon variant='biggerIcons'/>,
     returnPath: '/listado-viajes',
-    newButton: 'Guardar Cambios'
+    newButton: 'Modificar Viaje'
   },
   '/seguimiento': {
     title: 'Seguimiento',
@@ -45,13 +45,13 @@ export const ROUTE_CONFIG = {
     title: 'Registrar Empresa',
     logo: <LanguageOutlinedIcon variant='biggerIcons'/>,
     returnPath: '/empresas',
-    newButton: 'Guardar Empresa'
+    newButton: 'Registrar Empresa'
   },
   '/modificar-empresa': {
     title: 'Modificar Empresa',
     logo: <LanguageOutlinedIcon variant='biggerIcons'/>,
     returnPath: '/empresas',
-    newButton: 'Guardar Cambios'
+    newButton: 'Modificar Empresa'
   },
   '/vehiculos': {
     title: 'Flota de Vehículos',
@@ -63,13 +63,13 @@ export const ROUTE_CONFIG = {
     title: 'Registrar Vehículo',
     logo: <LocalShippingOutlinedIcon variant='biggerIcons'/>,
     returnPath: '/vehiculos',
-    newButton: 'Guardar Vehículo'
+    newButton: 'Registrar Vehículo'
   },
   '/modificar-vehiculo': {
     title: 'Modificar Vehículo',
     logo: <LocalShippingOutlinedIcon variant='biggerIcons'/>,
     returnPath: '/vehiculos',
-    newButton: 'Guardar Cambios'
+    newButton: 'Modificar Vehiculo'
   },
   '/choferes': {
     title: 'Choferes',
@@ -81,13 +81,13 @@ export const ROUTE_CONFIG = {
     title: 'Registrar Chofer',
     logo: <PersonOutlinedIcon variant='biggerIcons'/>,
     returnPath: '/choferes',
-    newButton: 'Guardar Chofer'
+    newButton: 'Registrar Chofer'
   },
   '/modificar-chofer': {
     title: 'Modificar Chofer',
     logo: <PersonOutlinedIcon variant='biggerIcons'/>,
     returnPath: '/choferes',
-    newButton: 'Guardar Cambios'
+    newButton: 'Modificar Chofer'
   },
   '/depositos': {
     title: 'Red de Depósitos',
@@ -99,13 +99,13 @@ export const ROUTE_CONFIG = {
     title: 'Registrar Depósito',
     logo: <Inventory2OutlinedIcon variant='biggerIcons'/>,
     returnPath: '/depositos',
-    newButton: 'Guardar Depósito'
+    newButton: 'Registrar Depósito'
   },
   '/modificar-deposito': {
     title: 'Modificar Depósito',
     logo: <Inventory2OutlinedIcon variant='biggerIcons'/>,
     returnPath: '/depositos',
-    newButton: 'Guardar Cambios'
+    newButton: 'Modificar Depósito'
   },
   '/reportes': {
     title: 'Reportes',

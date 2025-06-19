@@ -1,13 +1,17 @@
 import {
-  Grid, InputLabel, TextField, Autocomplete, Box, Typography, List, ListItem, 
-  ListItemText, CircularProgress, IconButton, Collapse, Divider, MenuItem, 
-  Select, FormControl
+  Grid, InputLabel, TextField, Autocomplete, Box, Typography, List, ListItem,
+  ListItemText, CircularProgress, IconButton, Divider, Modal, Button,
+  Paper, Avatar, Select, MenuItem, FormControl
 } from '@mui/material';
-import { grey } from "@mui/material/colors";
+import { grey, blue, indigo } from "@mui/material/colors";
 import ErrorText from '../ErrorText';
 import { useEffect, useState } from 'react';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import SearchIcon from '@mui/icons-material/Search';
+import CloseIcon from '@mui/icons-material/Close';
+import BusinessIcon from '@mui/icons-material/Business';
+import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
+import PersonIcon from '@mui/icons-material/Person';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
 import axios from 'axios';
 
 const useDebouncedFetch = (url, paramName, value, setData, setLoading) => {
@@ -32,86 +36,194 @@ const useDebouncedFetch = (url, paramName, value, setData, setLoading) => {
   }, [value]);
 };
 
-const SearchAutocomplete = ({
-  label, placeholder, value, inputValue, onInputChange, onChange,
-  options, getOptionLabel, loading, error, noOptionsText
-}) => {
-  const getResolvedValue = () => 
-    !value ? null : typeof value === 'string' ? options.find(opt => opt._id === value) || null : value;
-
-  return (
-    <>
-      <InputLabel sx={{ color: grey[900], fontWeight: 'bold', mt: 2 }}>{label}</InputLabel>
-      <Autocomplete
-        options={options}
-        getOptionLabel={getOptionLabel}
-        inputValue={inputValue || ''}
-        onInputChange={(_, newValue) => onInputChange(newValue)}
-        value={getResolvedValue()}
-        onChange={(_, newValue) => onChange(newValue || null)}
-        loading={loading}
-        isOptionEqualToValue={(option, value) => option?._id === value?._id}
-        renderInput={(params) => (
-          <TextField
-            {...params}
-            fullWidth
-            margin="dense"
-            error={!!error}
-            sx={{ backgroundColor: grey[50] }}
-            placeholder={placeholder}
-            InputProps={{
-              ...params.InputProps,
-              endAdornment: (
-                <>
-                  {loading && <CircularProgress color="inherit" size={20} />}
-                  {params.InputProps.endAdornment}
-                </>
-              ),
-            }}
-          />
-        )}
-        noOptionsText={noOptionsText}
-      />
-      {error && <ErrorText>{error}</ErrorText>}
-    </>
-  );
-};
-
-const CollapsibleList = ({ 
-  open, onToggle, label, items, onItemClick, emptyText, getText, getSecondaryText 
+const LabeledTextField = ({
+  name, label, value, onChange, onBlur, error, readOnly = false, placeholder = '', type = 'text'
 }) => (
   <Box sx={{ mb: 2 }}>
-    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-      <InputLabel sx={{ color: grey[900], fontWeight: 'bold', mt: 2 }}>{label}</InputLabel>
-      <IconButton size="small" onClick={onToggle} sx={{ mt: 1.5 }}>
-        {open ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-        <Typography variant="caption" sx={{ ml: 0.5 }}>
-          {open ? 'Ocultar listado' : `Ver ${label.toLowerCase()}`}
-        </Typography>
-      </IconButton>
-    </Box>
-    <Collapse in={open}>
-      <Box sx={{ mt: 2, maxHeight: 200, overflow: 'auto', border: `1px solid ${grey[300]}`, borderRadius: 1 }}>
-        <Typography variant="subtitle2" sx={{ p: 1, backgroundColor: grey[100], fontWeight: 'bold' }}>
-          {label} disponibles ({items.length})
-        </Typography>
-        <Divider />
-        <List dense>
-          {items.length > 0 ? items.map((item) => (
-            <ListItem key={item._id} button onClick={() => onItemClick(item)}>
-              <ListItemText 
-                primary={getText(item)} 
-                secondary={getSecondaryText?.(item)} 
-              />
-            </ListItem>
-          )) : (
-            <ListItem><ListItemText primary={emptyText} /></ListItem>
-          )}
-        </List>
-      </Box>
-    </Collapse>
+    <InputLabel required sx={{ color: grey[700], fontWeight: 'bold', mb: 0.5 }}>
+      {label}
+    </InputLabel>
+    <TextField
+      fullWidth
+      size="small"
+      name={name}
+      type={type}
+      value={value || ''}
+      onChange={onChange}
+      onBlur={onBlur}
+      error={!!error}
+      placeholder={placeholder}
+      InputProps={readOnly ? { readOnly: true } : {}}
+      sx={{
+        '& .MuiOutlinedInput-root': {
+          borderRadius: 2,
+          '& fieldset': {
+            borderColor: grey[300]
+          }
+        }
+      }}
+    />
+    {error && <ErrorText>{error}</ErrorText>}
   </Box>
 );
+
+const fieldSx = {
+  '& .MuiOutlinedInput-root': {
+    borderRadius: 2,
+    '& fieldset': {
+      borderColor: grey[300]
+    }
+  }
+};
+
+const iconButtonSx = {
+  borderRadius: 2,
+  border: `1px solid ${grey[300]}`,
+  backgroundColor: 'background.paper',
+  '&:hover': {
+    backgroundColor: grey[100]
+  }
+};
+
+const SelectionModal = ({
+  open, onClose, title, items, onSelect, searchValue, onSearchChange,
+  loading, getText, getSecondaryText, getThirdText, emptyText, icon: Icon
+}) => {
+  return (
+    <Modal open={open} onClose={onClose}>
+      <Paper sx={{
+        position: 'absolute',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        width: 800, // Más ancho para acomodar 3 columnas
+        boxShadow: 24,
+        p: 3,
+        borderRadius: 2,
+        maxHeight: '80vh',
+        display: 'flex',
+        flexDirection: 'column'
+      }}>
+        <Box sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          mb: 2
+        }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            {Icon && <Icon color="primary" />}
+            <Typography variant="h6" color="primary">{title}</Typography>
+          </Box>
+          <IconButton onClick={onClose} size="small">
+            <CloseIcon />
+          </IconButton>
+        </Box>
+
+        <TextField
+          fullWidth
+          value={searchValue}
+          onChange={(e) => onSearchChange(e.target.value)}
+          placeholder="Buscar..."
+          variant="outlined"
+          size="small"
+          InputProps={{
+            startAdornment: <SearchIcon sx={{ mr: 1, color: grey[500] }} />,
+          }}
+          sx={{
+            mb: 2,
+            '& .MuiOutlinedInput-root': {
+              borderRadius: 2
+            }
+          }}
+        />
+
+        <Paper
+          elevation={0}
+          sx={{
+            flex: 1,
+            overflow: 'auto',
+            border: `1px solid ${grey[200]}`,
+            borderRadius: 2
+          }}
+        >
+          {loading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+              <CircularProgress size={24} />
+            </Box>
+          ) : items.length > 0 ? (
+            <List dense>
+              <ListItem sx={{ backgroundColor: grey[100], fontWeight: 'bold' }}>
+                <Grid container spacing={2}>
+                  <Grid item xs={4}>
+                    <Typography variant="subtitle2">Principal</Typography>
+                  </Grid>
+                  <Grid item xs={4}>
+                    <Typography variant="subtitle2">Secundario</Typography>
+                  </Grid>
+                  <Grid item xs={4}>
+                    <Typography variant="subtitle2">Detalle</Typography>
+                  </Grid>
+                </Grid>
+              </ListItem>
+              {items.map((item) => (
+                <ListItem
+                  key={item._id}
+                  button
+                  onClick={() => {
+                    onSelect(item);
+                    onClose();
+                  }}
+                  sx={{
+                    '&:hover': {
+                      backgroundColor: blue[50]
+                    }
+                  }}
+                >
+                  <Grid container spacing={2}>
+                    <Grid item xs={4}>
+                      <Typography fontWeight="medium">
+                        {getText(item)}
+                      </Typography>
+                    </Grid>
+                    <Grid item xs={4}>
+                      <Typography variant="body2" color="text.secondary">
+                        {getSecondaryText?.(item)}
+                      </Typography>
+                    </Grid>
+                    <Grid item xs={4}>
+                      <Typography variant="body2" color="text.secondary">
+                        {getThirdText?.(item)}
+                      </Typography>
+                    </Grid>
+                  </Grid>
+                </ListItem>
+              ))}
+            </List>
+          ) : (
+            <Box sx={{ p: 3, textAlign: 'center' }}>
+              <Typography variant="body2" color="textSecondary">
+                {emptyText}
+              </Typography>
+            </Box>
+          )}
+        </Paper>
+
+        <Button
+          variant="outlined"
+          onClick={onClose}
+          sx={{
+            mt: 2,
+            alignSelf: 'flex-end',
+            borderRadius: 2,
+            textTransform: 'none'
+          }}
+        >
+          Cancelar
+        </Button>
+      </Paper>
+    </Modal>
+  );
+};
 
 const ViajeForm = ({ formData = {}, handleChange, handleBlur, errors, isEditing = false }) => {
   // Normalización de datos
@@ -122,7 +234,7 @@ const ViajeForm = ({ formData = {}, handleChange, handleBlur, errors, isEditing 
     fechaFin: formData.fin_viaje || formData.fechaFin,
     depositoOrigen: formData.deposito_origen || formData.depositoOrigen,
     depositoDestino: formData.deposito_destino || formData.depositoDestino,
-    empresaTransportista: formData.empresa_asignada || formData.empresaTransportista,
+    empresaTransportista: formData.empresa_asignada || formData.empresaTransportista || null,
     choferAsignado: formData.chofer_asignado || formData.choferAsignado,
     vehiculoAsignado: formData.vehiculo_asignado || formData.vehiculoAsignado
   };
@@ -143,7 +255,7 @@ const ViajeForm = ({ formData = {}, handleChange, handleBlur, errors, isEditing 
     depositosOrigen: false, depositosDestino: false
   });
   
-  const [showLists, setShowLists] = useState({
+  const [modalStates, setModalStates] = useState({
     empresas: false, choferes: false, vehiculos: false,
     depositosOrigen: false, depositosDestino: false
   });
@@ -186,12 +298,11 @@ const ViajeForm = ({ formData = {}, handleChange, handleBlur, errors, isEditing 
     }
   }, [isEditing]);
 
-  // Handlers optimizados
   const handleInputChange = (key, value) => 
     setInputValues(prev => ({ ...prev, [key]: value }));
 
-  const toggleList = (key) => 
-    setShowLists(prev => ({ ...prev, [key]: !prev[key] }));
+  const toggleModal = (key) => 
+    setModalStates(prev => ({ ...prev, [key]: !prev[key] }));
 
   const handleChoferChange = (chofer) => {
     handleChange({ target: { name: "choferAsignado", value: chofer } });
@@ -235,220 +346,320 @@ const ViajeForm = ({ formData = {}, handleChange, handleBlur, errors, isEditing 
   };
 
   return (
-    <Grid container spacing={2}>
-      <Grid item xs={6}>
-        {isEditing && (
-          <Typography variant="body2" color="textSecondary" sx={{ mb: 1 }}>
-            Editando viaje: {normalizedFormData?.idViaje || 'Nuevo viaje'}
+    <Box sx={{ p: 2 }}>
+      {isEditing && (
+        <Box sx={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 2,
+          mb: 2,
+          pt: 1,
+        }}>
+          <Avatar sx={{ bgcolor: indigo[100] }}>
+            <DirectionsCarIcon color="primary" />
+          </Avatar>
+          <Typography variant="h6" color="primary">
+            {normalizedFormData?.idViaje ? `Editando Viaje: ${normalizedFormData.idViaje}` : 'Nuevo Viaje'}
           </Typography>
-        )}
+        </Box>
+      )}
 
-        <SearchAutocomplete
-          label="Depósito de Origen*"
-          placeholder="Buscar depósito..."
-          value={normalizedFormData.depositoOrigen}
-          inputValue={inputValues.depositoOrigen}
-          onInputChange={(val) => handleInputChange('depositoOrigen', val)}
-          onChange={(val) => handleChange({ target: { name: "depositoOrigen", value: val } })}
-          options={depositosOrigen}
-          getOptionLabel={(opt) => opt?.localizacion?.direccion || ''}
-          loading={loadingStates.depositosOrigen}
-          error={errors.depositoOrigen}
-          noOptionsText={inputValues.depositoOrigen.length > 0 ? "No se encontraron depósitos" : "Escriba al menos 3 caracteres"}
-        />
+      <Grid container spacing={2}>
+        <Grid item xs={12} md={6}>
+          <Typography variant="subtitle1" color="primary" sx={{ mb: 2, fontWeight: 'bold' }}>
+            Información del Viaje
+          </Typography>
 
-        <CollapsibleList
-          open={showLists.depositosOrigen}
-          onToggle={() => toggleList('depositosOrigen')}
-          label="Depósitos Origen"
-          items={depositosOrigen}
-          onItemClick={(deposito) => {
-            handleChange({ target: { name: "depositoOrigen", value: deposito } });
-            toggleList('depositosOrigen');
-          }}
-          emptyText="No hay depósitos disponibles"
-          getText={(item) => item.localizacion?.direccion}
-          getSecondaryText={(item) => `${item.localizacion?.ciudad}, ${item.localizacion?.pais}`}
-        />
-
-        <SearchAutocomplete
-          label="Depósito de Destino*"
-          placeholder="Buscar depósito..."
-          value={normalizedFormData.depositoDestino}
-          inputValue={inputValues.depositoDestino}
-          onInputChange={(val) => handleInputChange('depositoDestino', val)}
-          onChange={(val) => {
-            if (normalizedFormData.depositoOrigen?._id === val?._id) {
-              handleChange({ target: { name: "depositoDestino", value: null } });
-              handleInputChange('depositoDestino', '');
-              return;
-            }
-            handleChange({ target: { name: "depositoDestino", value: val } });
-          }}
-          options={depositosDestino}
-          getOptionLabel={(opt) => opt?.localizacion?.direccion || ''}
-          loading={loadingStates.depositosDestino}
-          error={errors.depositoDestino}
-          noOptionsText={inputValues.depositoDestino.length > 0 ? "No se encontraron depósitos" : "Escriba al menos 3 caracteres"}
-        />
-
-        <CollapsibleList
-          open={showLists.depositosDestino}
-          onToggle={() => toggleList('depositosDestino')}
-          label="Depósitos Destino"
-          items={depositosDestino}
-          onItemClick={(deposito) => {
-            if (normalizedFormData.depositoOrigen?._id !== deposito?._id) {
-              handleChange({ target: { name: "depositoDestino", value: deposito } });
-              toggleList('depositosDestino');
-            }
-          }}
-          emptyText="No hay depósitos disponibles"
-          getText={(item) => item.localizacion?.direccion}
-          getSecondaryText={(item) => `${item.localizacion?.ciudad}, ${item.localizacion?.pais}`}
-        />
-
-        <InputLabel required sx={{ color: grey[900], fontWeight: 'bold', pt: 2 }}>
-          Fecha y Hora de Inicio*
-        </InputLabel>
-        <TextField 
-          fullWidth 
-          margin="dense" 
-          name="fechaInicio" 
-          type="datetime-local" 
-          value={formatForDateTimeLocal(normalizedFormData.fechaInicio)} 
-          onChange={handleChange}
-          onBlur={handleBlur}
-          error={!!errors.fechaInicio}
-          InputLabelProps={{ shrink: true }}
-          sx={{ backgroundColor: grey[50] }} 
-        />
-        {errors.fechaInicio && <ErrorText>{errors.fechaInicio}</ErrorText>}
-      </Grid>
-
-      <Grid item xs={6}>
-        <InputLabel sx={{ color: grey[900], fontWeight: 'bold' }}>
-          Fecha y Hora de Fin
-        </InputLabel>
-        <TextField 
-          fullWidth 
-          margin="dense" 
-          name="fechaFin" 
-          type="datetime-local" 
-          value={formatForDateTimeLocal(normalizedFormData.fechaFin)} 
-          onChange={handleChange}
-          InputLabelProps={{ shrink: true }}
-          sx={{ backgroundColor: grey[50] }} 
-        />
-
-        <SearchAutocomplete
-          label="Empresa Transportista*"
-          placeholder="Buscar empresa..."
-          value={normalizedFormData.empresaTransportista}
-          inputValue={inputValues.empresa}
-          onInputChange={(val) => handleInputChange('empresa', val)}
-          onChange={(val) => handleChange({ target: { name: "empresaTransportista", value: val } })}
-          options={empresas}
-          getOptionLabel={(opt) => opt?.nombre_empresa || ''}
-          loading={loadingStates.empresas}
-          error={errors.empresaTransportista}
-          noOptionsText={inputValues.empresa.length > 0 ? "No se encontraron empresas" : "Escriba al menos 3 caracteres"}
-        />
-
-        <CollapsibleList
-          open={showLists.empresas}
-          onToggle={() => toggleList('empresas')}
-          label="Empresas"
-          items={empresas}
-          onItemClick={(empresa) => {
-            handleChange({ target: { name: "empresaTransportista", value: empresa } });
-            toggleList('empresas');
-          }}
-          emptyText="No hay empresas disponibles"
-          getText={(item) => item.nombre_empresa}
-        />
-
-        <SearchAutocomplete
-          label="Chofer Asignado*"
-          placeholder="Buscar chofer..."
-          value={normalizedFormData.choferAsignado}
-          inputValue={inputValues.chofer}
-          onInputChange={(val) => handleInputChange('chofer', val)}
-          onChange={handleChoferChange}
-          options={choferes}
-          getOptionLabel={(opt) => 
-            !opt ? '' : `${opt.nombre || ''} ${opt.apellido || ''}`.trim() + 
-            (opt.vehiculoAsignado ? ` (Vehículo: ${opt.vehiculoAsignado.patente})` : '')
-          }
-          loading={loadingStates.choferes}
-          error={errors.choferAsignado}
-          noOptionsText={inputValues.chofer.length > 0 ? "No se encontraron choferes" : "Escriba al menos 3 caracteres"}
-        />
-
-        <CollapsibleList
-          open={showLists.choferes}
-          onToggle={() => toggleList('choferes')}
-          label="Choferes"
-          items={choferes}
-          onItemClick={(chofer) => {
-            handleChoferChange(chofer);
-            toggleList('choferes');
-          }}
-          emptyText="No hay choferes disponibles"
-          getText={(item) => `${item.nombre} ${item.apellido}`}
-          getSecondaryText={(item) => item.vehiculoAsignado?.patente && `Vehículo: ${item.vehiculoAsignado.patente}`}
-        />
-
-        <SearchAutocomplete
-          label="Vehículo Asignado*"
-          placeholder="Buscar vehículo..."
-          value={normalizedFormData.vehiculoAsignado}
-          inputValue={inputValues.vehiculo}
-          onInputChange={(val) => handleInputChange('vehiculo', val)}
-          onChange={handleVehiculoChange}
-          options={vehiculos}
-          getOptionLabel={(opt) => 
-            !opt ? '' : `${opt.patente} - ${opt.marca} ${opt.modelo}` + 
-            (opt.empresa ? ` (Empresa: ${opt.empresa.nombre_empresa})` : '')
-          }
-          loading={loadingStates.vehiculos}
-          error={errors.vehiculoAsignado}
-          noOptionsText={inputValues.vehiculo.length > 0 ? "No se encontraron vehículos" : "Escriba al menos 3 caracteres"}
-        />
-
-        <CollapsibleList
-          open={showLists.vehiculos}
-          onToggle={() => toggleList('vehiculos')}
-          label="Vehículos"
-          items={vehiculos}
-          onItemClick={(vehiculo) => {
-            handleVehiculoChange(vehiculo);
-            toggleList('vehiculos');
-          }}
-          emptyText="No hay vehículos disponibles"
-          getText={(item) => `${item.patente} - ${item.marca} ${item.modelo}`}
-          getSecondaryText={(item) => item.empresa?.nombre_empresa && `Empresa: ${item.empresa.nombre_empresa}`}
-        />
-
-        <FormControl fullWidth sx={{ mt: 2 }}>
-          <InputLabel required sx={{ color: grey[900], fontWeight: 'bold' }}>
-            Tipo de Viaje*
-          </InputLabel>
-          <Select
-            value={normalizedFormData.tipoViaje || ''}
+          <LabeledTextField
+            name="fechaInicio"
+            label="Fecha y Hora de Inicio"
+            type="datetime-local"
+            value={formatForDateTimeLocal(normalizedFormData.fechaInicio)}
             onChange={handleChange}
-            name="tipoViaje"
-            error={!!errors.tipoViaje}
-            sx={{ backgroundColor: grey[50] }}
-          >
-            <MenuItem value="" disabled>Seleccione un tipo</MenuItem>
-            <MenuItem value="Nacional">Nacional</MenuItem>
-            <MenuItem value="Internacional">Internacional</MenuItem>
-          </Select>
-          {errors.tipoViaje && <ErrorText>{errors.tipoViaje}</ErrorText>}
-        </FormControl>
+            onBlur={handleBlur}
+            error={errors.fechaInicio}
+            InputLabelProps={{ shrink: true }}
+          />
+
+          <LabeledTextField
+            name="fechaFin"
+            label="Fecha y Hora de Fin"
+            type="datetime-local"
+            value={formatForDateTimeLocal(normalizedFormData.fechaFin)}
+            onChange={handleChange}
+            InputLabelProps={{ shrink: true }}
+          />
+
+          <Box sx={{ mb: 2 }}>
+            <InputLabel required sx={{ color: grey[700], fontWeight: 'bold', mb: 0.5 }}>
+              Depósito de Origen
+            </InputLabel>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <TextField
+                fullWidth
+                size="small"
+                value={normalizedFormData.depositoOrigen?.localizacion?.direccion || ''}
+                sx={fieldSx}
+                InputProps={{
+                  readOnly: true,
+                  startAdornment: normalizedFormData.depositoOrigen && (
+                    <LocationOnIcon sx={{ mr: 1, color: grey[600] }} />
+                  ),
+                }}
+              />
+              <IconButton
+                onClick={() => toggleModal('depositosOrigen')}
+                sx={iconButtonSx}
+              >
+                <SearchIcon />
+              </IconButton>
+            </Box>
+            {errors.depositoOrigen && <ErrorText>{errors.depositoOrigen}</ErrorText>}
+          </Box>
+
+          <SelectionModal
+            open={modalStates.depositosOrigen}
+            onClose={() => toggleModal('depositosOrigen')}
+            title="Seleccionar Depósito de Origen"
+            items={depositosOrigen}
+            onSelect={(deposito) => {
+              handleChange({ target: { name: "depositoOrigen", value: deposito } });
+              if (normalizedFormData.depositoDestino?._id === deposito._id) {
+                handleChange({ target: { name: "depositoDestino", value: null } });
+              }
+            }}
+            searchValue={inputValues.depositoOrigen}
+            onSearchChange={(val) => handleInputChange('depositoOrigen', val)}
+            loading={loadingStates.depositosOrigen}
+            getText={(item) => item.localizacion?.direccion}
+            getSecondaryText={(item) => `${item.localizacion?.ciudad}, ${item.localizacion?.pais}`}
+            getThirdText={(item) => `Capacidad: ${item.capacidad}`}
+            emptyText="No hay depósitos disponibles"
+            icon={LocationOnIcon}
+          />
+
+          <Box sx={{ mb: 2 }}>
+            <InputLabel required sx={{ color: grey[700], fontWeight: 'bold', mb: 0.5 }}>
+              Depósito de Destino
+            </InputLabel>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <TextField
+                fullWidth
+                size="small"
+                value={normalizedFormData.depositoDestino?.localizacion?.direccion || ''}
+                sx={fieldSx}
+                InputProps={{
+                  readOnly: true,
+                  startAdornment: normalizedFormData.depositoDestino && (
+                    <LocationOnIcon sx={{ mr: 1, color: grey[600] }} />
+                  ),
+                }}
+              />
+              <IconButton
+                onClick={() => toggleModal('depositosDestino')}
+                sx={iconButtonSx}
+              >
+                <SearchIcon />
+              </IconButton>
+            </Box>
+            {errors.depositoDestino && <ErrorText>{errors.depositoDestino}</ErrorText>}
+          </Box>
+
+          <SelectionModal
+            open={modalStates.depositosDestino}
+            onClose={() => toggleModal('depositosDestino')}
+            title="Seleccionar Depósito de Destino"
+            items={depositosDestino.filter(d => d._id !== normalizedFormData.depositoOrigen?._id)}
+            onSelect={(deposito) => {
+              handleChange({ target: { name: "depositoDestino", value: deposito } });
+            }}
+            searchValue={inputValues.depositoDestino}
+            onSearchChange={(val) => handleInputChange('depositoDestino', val)}
+            loading={loadingStates.depositosDestino}
+            getText={(item) => item.localizacion?.direccion}
+            getSecondaryText={(item) => `${item.localizacion?.ciudad}, ${item.localizacion?.pais}`}
+            getThirdText={(item) => `Capacidad: ${item.capacidad}`}
+            emptyText="No hay depósitos disponibles"
+            icon={LocationOnIcon}
+          />
+
+          <FormControl fullWidth sx={{ mb: 2 }}>
+            <InputLabel required sx={{ color: grey[700], fontWeight: 'bold' }}>
+              Tipo de Viaje
+            </InputLabel>
+            <Select
+              value={normalizedFormData.tipoViaje || ''}
+              onChange={handleChange}
+              name="tipoViaje"
+              error={!!errors.tipoViaje}
+              sx={{
+                ...fieldSx,
+                '& .MuiSelect-select': {
+                  py: 1.2
+                }
+              }}
+            >
+              <MenuItem value="" disabled>Seleccione un tipo</MenuItem>
+              <MenuItem value="Nacional">Nacional</MenuItem>
+              <MenuItem value="Internacional">Internacional</MenuItem>
+            </Select>
+            {errors.tipoViaje && <ErrorText>{errors.tipoViaje}</ErrorText>}
+          </FormControl>
+        </Grid>
+
+        <Grid item xs={12} md={6}>
+          <Typography variant="subtitle1" color="primary" sx={{ mb: 2, fontWeight: 'bold' }}>
+            Información de Transporte
+          </Typography>
+
+          <Box sx={{ mb: 2 }}>
+            <InputLabel required sx={{ color: grey[700], fontWeight: 'bold', mb: 0.5 }}>
+              Empresa Transportista
+            </InputLabel>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <TextField
+                fullWidth
+                size="small"
+                value={normalizedFormData.empresaTransportista?.nombre_empresa || ''}
+                sx={fieldSx}
+                InputProps={{
+                  readOnly: true,
+                  startAdornment: normalizedFormData.empresaTransportista && (
+                    <BusinessIcon sx={{ mr: 1, color: grey[600] }} />
+                  ),
+                }}
+              />
+              <IconButton
+                onClick={() => toggleModal('empresas')}
+                sx={iconButtonSx}
+              >
+                <SearchIcon />
+              </IconButton>
+            </Box>
+            {errors.empresaTransportista && <ErrorText>{errors.empresaTransportista}</ErrorText>}
+          </Box>
+
+          <SelectionModal
+            open={modalStates.empresas}
+            onClose={() => toggleModal('empresas')}
+            title="Seleccionar Empresa Transportista"
+            items={empresas}
+            onSelect={(empresa) => {
+              handleChange({ target: { name: "empresaTransportista", value: empresa } });
+              // Limpiar chofer y vehículo si no pertenecen a esta empresa
+              if (normalizedFormData.choferAsignado?.empresa?._id !== empresa._id) {
+                handleChange({ target: { name: "choferAsignado", value: null } });
+              }
+              if (normalizedFormData.vehiculoAsignado?.empresa?._id !== empresa._id) {
+                handleChange({ target: { name: "vehiculoAsignado", value: null } });
+              }
+            }}
+            searchValue={inputValues.empresa}
+            onSearchChange={(val) => handleInputChange('empresa', val)}
+            loading={loadingStates.empresas}
+            getText={(item) => item.nombre_empresa}
+            getSecondaryText={(item) => `CUIT: ${item.cuit}`}
+            getThirdText={(item) => `Tel: ${item.telefono}`}
+            emptyText="No hay empresas disponibles"
+            icon={BusinessIcon}
+          />
+
+          <Box sx={{ mb: 2 }}>
+            <InputLabel required sx={{ color: grey[700], fontWeight: 'bold', mb: 0.5 }}>
+              Chofer Asignado
+            </InputLabel>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <TextField
+                fullWidth
+                size="small"
+                value={
+                  !normalizedFormData.choferAsignado ? '' :
+                    `${normalizedFormData.choferAsignado.nombre} ${normalizedFormData.choferAsignado.apellido}` +
+                    (normalizedFormData.choferAsignado.vehiculoAsignado ? 
+                      ` (${normalizedFormData.choferAsignado.vehiculoAsignado.patente})` : '')
+                }
+                sx={fieldSx}
+                InputProps={{
+                  readOnly: true,
+                  startAdornment: normalizedFormData.choferAsignado && (
+                    <PersonIcon sx={{ mr: 1, color: grey[600] }} />
+                  ),
+                }}
+              />
+              <IconButton
+                onClick={() => toggleModal('choferes')}
+                sx={iconButtonSx}
+              >
+                <SearchIcon />
+              </IconButton>
+            </Box>
+            {errors.choferAsignado && <ErrorText>{errors.choferAsignado}</ErrorText>}
+          </Box>
+
+          <SelectionModal
+            open={modalStates.choferes}
+            onClose={() => toggleModal('choferes')}
+            title="Seleccionar Chofer"
+            items={choferes}
+            onSelect={handleChoferChange}
+            searchValue={inputValues.chofer}
+            onSearchChange={(val) => handleInputChange('chofer', val)}
+            loading={loadingStates.choferes}
+            getText={(item) => `${item.nombre} ${item.apellido}`}
+            getSecondaryText={(item) => `CUIL: ${item.cuil}`}
+            getThirdText={(item) => item.vehiculoAsignado ? `Vehículo: ${item.vehiculoAsignado.patente}` : 'Sin vehículo asignado'}
+            emptyText="No hay choferes disponibles"
+            icon={PersonIcon}
+          />
+
+          <Box sx={{ mb: 2 }}>
+            <InputLabel required sx={{ color: grey[700], fontWeight: 'bold', mb: 0.5 }}>
+              Vehículo Asignado
+            </InputLabel>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <TextField
+                fullWidth
+                size="small"
+                value={
+                  !normalizedFormData.vehiculoAsignado ? '' :
+                    `${normalizedFormData.vehiculoAsignado.patente} - ${normalizedFormData.vehiculoAsignado.marca} ${normalizedFormData.vehiculoAsignado.modelo}`
+                }
+                sx={fieldSx}
+                InputProps={{
+                  readOnly: true,
+                  startAdornment: normalizedFormData.vehiculoAsignado && (
+                    <DirectionsCarIcon sx={{ mr: 1, color: grey[600] }} />
+                  ),
+                }}
+              />
+              <IconButton
+                onClick={() => toggleModal('vehiculos')}
+                sx={iconButtonSx}
+              >
+                <SearchIcon />
+              </IconButton>
+            </Box>
+            {errors.vehiculoAsignado && <ErrorText>{errors.vehiculoAsignado}</ErrorText>}
+          </Box>
+
+          <SelectionModal
+            open={modalStates.vehiculos}
+            onClose={() => toggleModal('vehiculos')}
+            title="Seleccionar Vehículo"
+            items={vehiculos}
+            onSelect={handleVehiculoChange}
+            searchValue={inputValues.vehiculo}
+            onSearchChange={(val) => handleInputChange('vehiculo', val)}
+            loading={loadingStates.vehiculos}
+            getText={(item) => `${item.patente} - ${item.marca} ${item.modelo}`}
+            getSecondaryText={(item) => item.empresa ? `Empresa: ${item.empresa.nombre_empresa}` : 'Sin empresa'}
+            getThirdText={(item) => `Capacidad: ${item.capacidad}`}
+            emptyText="No hay vehículos disponibles"
+            icon={DirectionsCarIcon}
+          />
+        </Grid>
       </Grid>
-    </Grid>
+    </Box>
   );
 };
 

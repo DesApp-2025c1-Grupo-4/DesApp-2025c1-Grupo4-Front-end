@@ -1,5 +1,5 @@
 import {
-  Grid, InputLabel, TextField, Autocomplete, Box, Typography, List, ListItem, 
+  Grid, InputLabel, TextField, Autocomplete, Box, Typography, List, ListItem,
   ListItemText, CircularProgress, IconButton, Divider, Modal, Button,
   Paper, Avatar
 } from '@mui/material';
@@ -42,17 +42,49 @@ const useDebouncedFetch = (url, paramName, value, setData, setLoading) => {
   }, [value]);
 };
 
+const LabeledTextField = ({
+  name, label, value, onChange, onBlur, error, readOnly = false, placeholder = ''
+}) => (
+  <Box sx={{ mb: 2 }}>
+    <InputLabel required sx={{ color: grey[700], fontWeight: 'bold', mb: 0.5 }}>
+      {label}
+    </InputLabel>
+    <TextField
+      fullWidth
+      size="small"
+      name={name}
+      value={value || ''}
+      onChange={onChange}
+      onBlur={onBlur}
+      error={!!error}
+      placeholder={placeholder}
+      InputProps={readOnly ? { readOnly: true } : {}}
+      sx={{
+        '& .MuiOutlinedInput-root': {
+          borderRadius: 2,
+          '& fieldset': {
+            borderColor: grey[300]
+          }
+        }
+      }}
+    />
+    {error && <ErrorText>{error}</ErrorText>}
+  </Box>
+);
+
 const SearchAutocomplete = ({
   label, placeholder, value, inputValue, onInputChange, onChange,
   options, getOptionLabel, loading, error, noOptionsText
 }) => {
-  const getResolvedValue = () => 
-    !value ? null : typeof value === 'string' ? options.find(opt => opt._id === value) || null : value;
+  const getResolvedValue = () => {
+    if (!value || typeof value !== 'string') return value || null;
+    return options.find(opt => opt._id === value) || null;
+  };
 
   return (
     <>
-      <InputLabel sx={{ 
-        color: grey[700], 
+      <InputLabel sx={{
+        color: grey[700],
         fontWeight: 'bold',
         mb: 0.5
       }}>
@@ -74,7 +106,7 @@ const SearchAutocomplete = ({
             size="small"
             margin="dense"
             error={!!error}
-            sx={{ 
+            sx={{
               '& .MuiOutlinedInput-root': {
                 borderRadius: 2
               }
@@ -98,9 +130,9 @@ const SearchAutocomplete = ({
   );
 };
 
-const SelectionModal = ({ 
-  open, onClose, title, items, onSelect, searchValue, onSearchChange, 
-  loading, getText, getSecondaryText, emptyText, icon: Icon 
+const SelectionModal = ({
+  open, onClose, title, items, onSelect, searchValue, onSearchChange,
+  loading, getText, getSecondaryText, emptyText, icon: Icon
 }) => {
   return (
     <Modal open={open} onClose={onClose}>
@@ -117,9 +149,9 @@ const SelectionModal = ({
         display: 'flex',
         flexDirection: 'column'
       }}>
-        <Box sx={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
+        <Box sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
           alignItems: 'center',
           mb: 2
         }}>
@@ -131,7 +163,7 @@ const SelectionModal = ({
             <CloseIcon />
           </IconButton>
         </Box>
-        
+
         <TextField
           fullWidth
           value={searchValue}
@@ -142,21 +174,21 @@ const SelectionModal = ({
           InputProps={{
             startAdornment: <SearchIcon sx={{ mr: 1, color: grey[500] }} />,
           }}
-          sx={{ 
+          sx={{
             mb: 2,
             '& .MuiOutlinedInput-root': {
               borderRadius: 2
             }
           }}
         />
-        
-        <Paper 
+
+        <Paper
           elevation={0}
-          sx={{ 
-            flex: 1, 
-            overflow: 'auto', 
-            border: `1px solid ${grey[200]}`, 
-            borderRadius: 2 
+          sx={{
+            flex: 1,
+            overflow: 'auto',
+            border: `1px solid ${grey[200]}`,
+            borderRadius: 2
           }}
         >
           {loading ? (
@@ -166,9 +198,9 @@ const SelectionModal = ({
           ) : items.length > 0 ? (
             <List dense>
               {items.map((item) => (
-                <ListItem 
-                  key={item._id} 
-                  button 
+                <ListItem
+                  key={item._id}
+                  button
                   onClick={() => {
                     onSelect(item);
                     onClose();
@@ -179,17 +211,17 @@ const SelectionModal = ({
                     }
                   }}
                 >
-                  <ListItemText 
+                  <ListItemText
                     primary={
                       <Typography fontWeight="medium">
                         {getText(item)}
                       </Typography>
-                    } 
+                    }
                     secondary={
                       <Typography variant="body2" color="text.secondary">
                         {getSecondaryText?.(item)}
                       </Typography>
-                    } 
+                    }
                     sx={{ my: 0 }}
                   />
                 </ListItem>
@@ -203,12 +235,12 @@ const SelectionModal = ({
             </Box>
           )}
         </Paper>
-        
-        <Button 
-          variant="outlined" 
+
+        <Button
+          variant="outlined"
           onClick={onClose}
-          sx={{ 
-            mt: 2, 
+          sx={{
+            mt: 2,
             alignSelf: 'flex-end',
             borderRadius: 2,
             textTransform: 'none'
@@ -219,6 +251,24 @@ const SelectionModal = ({
       </Paper>
     </Modal>
   );
+};
+
+const fieldSx = {
+  '& .MuiOutlinedInput-root': {
+    borderRadius: 2,
+    '& fieldset': {
+      borderColor: grey[300]
+    }
+  }
+};
+
+const iconButtonSx = {
+  borderRadius: 2,
+  border: `1px solid ${grey[300]}`,
+  backgroundColor: 'background.paper',
+  '&:hover': {
+    backgroundColor: grey[100]
+  }
 };
 
 const ChoferForm = ({
@@ -238,7 +288,6 @@ const ChoferForm = ({
     empresas: false, vehiculos: false
   });
 
-  // Filtrar vehículos cuando cambia la empresa o los vehículos disponibles
   useEffect(() => {
     if (formData.empresa?._id) {
       setVehiculosFiltrados(
@@ -250,25 +299,25 @@ const ChoferForm = ({
   }, [formData.empresa, vehiculosDisponibles]);
 
   useDebouncedFetch(
-    '/api/empresas', 
-    'nombre', 
-    inputValues.empresa, 
-    setEmpresas, 
+    '/api/empresas',
+    'nombre',
+    inputValues.empresa,
+    setEmpresas,
     (loading) => setLoadingStates(prev => ({ ...prev, empresas: loading }))
   );
 
   useDebouncedFetch(
-    '/api/vehiculos', 
-    'patente', 
-    inputValues.vehiculo, 
-    setVehiculosDisponibles, 
+    '/api/vehiculos',
+    'patente',
+    inputValues.vehiculo,
+    setVehiculosDisponibles,
     (loading) => setLoadingStates(prev => ({ ...prev, vehiculos: loading }))
   );
 
-  const handleInputChange = (key, value) => 
+  const handleInputChange = (key, value) =>
     setInputValues(prev => ({ ...prev, [key]: value }));
 
-  const toggleModal = (key) => 
+  const toggleModal = (key) =>
     setModalStates(prev => ({ ...prev, [key]: !prev[key] }));
 
   const handleVehiculoChange = (vehiculo) => {
@@ -283,10 +332,10 @@ const ChoferForm = ({
     <LocalizationProvider dateAdapter={AdapterDateFns}>
       <Box sx={{ p: 2 }}>
         {isEditing && (
-          <Box sx={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: 2, 
+          <Box sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 2,
             mb: 1,
             pt: 1,
           }}>
@@ -298,48 +347,30 @@ const ChoferForm = ({
             </Typography>
           </Box>
         )}
-        
+
         <Grid container spacing={2}>
           <Grid item xs={12} md={6}>
             <Typography variant="subtitle1" color="primary" sx={{ mb: 1, fontWeight: 'bold' }}>
               Información personal
             </Typography>
-            
+
             {['nombre', 'apellido', 'cuil'].map((field) => (
-              <Box key={field} sx={{ mb: 2 }}>
-                <InputLabel required sx={{ 
-                  color: grey[700], 
-                  fontWeight: 'bold',
-                  mb: 0.5
-                }}>
-                  {field.charAt(0).toUpperCase() + field.slice(1)}
-                </InputLabel>
-                <TextField
-                  fullWidth
-                  size="small"
-                  name={field}
-                  value={formData[field] || ''}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  error={!!errors[field]}
-                  placeholder={field === 'cuil' ? 'XX-XXXXXXXX-X' : ''}
-                  sx={{ 
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: 2,
-                      '& fieldset': {
-                        borderColor: grey[300]
-                      }
-                    }
-                  }}
-                  InputProps={field === 'cuil' && isEditing ? { readOnly: true } : {}}
-                />
-                {errors[field] && <ErrorText>{errors[field]}</ErrorText>}
-              </Box>
+              <LabeledTextField
+                key={field}
+                name={field}
+                label={field.charAt(0).toUpperCase() + field.slice(1)}
+                value={formData[field]}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                error={errors[field]}
+                placeholder={field === 'cuil' ? 'XX-XXXXXXXX-X' : ''}
+                readOnly={field === 'cuil' && isEditing}
+              />
             ))}
-            
+
             <Box sx={{ mb: 2 }}>
-              <InputLabel required sx={{ 
-                color: grey[700], 
+              <InputLabel required sx={{
+                color: grey[700],
                 fontWeight: 'bold',
                 mb: 0.5
               }}>
@@ -354,14 +385,7 @@ const ChoferForm = ({
                     fullWidth
                     size="small"
                     error={!!errors.fechaNacimiento}
-                    sx={{ 
-                      '& .MuiOutlinedInput-root': {
-                        borderRadius: 2,
-                        '& fieldset': {
-                          borderColor: grey[300]
-                        }
-                      }
-                    }}
+                    sx={fieldSx}
                   />
                 )}
               />
@@ -373,10 +397,10 @@ const ChoferForm = ({
             <Typography variant="subtitle1" color="primary" sx={{ mb: 1, fontWeight: 'bold' }}>
               Información laboral
             </Typography>
-            
+
             <Box sx={{ mb: 2 }}>
-              <InputLabel required sx={{ 
-                color: grey[700], 
+              <InputLabel required sx={{
+                color: grey[700],
                 fontWeight: 'bold',
                 mb: 0.5
               }}>
@@ -387,14 +411,7 @@ const ChoferForm = ({
                   fullWidth
                   size="small"
                   value={formData.empresa?.nombre_empresa || ''}
-                  sx={{ 
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: 2,
-                      '& fieldset': {
-                        borderColor: grey[300]
-                      }
-                    }
-                  }}
+                  sx={fieldSx}
                   InputProps={{
                     readOnly: true,
                     startAdornment: formData.empresa && (
@@ -402,16 +419,9 @@ const ChoferForm = ({
                     ),
                   }}
                 />
-                <IconButton 
+                <IconButton
                   onClick={() => toggleModal('empresas')}
-                  sx={{
-                    borderRadius: 2,
-                    border: `1px solid ${grey[300]}`,
-                    backgroundColor: 'background.paper',
-                    '&:hover': {
-                      backgroundColor: grey[100]
-                    }
-                  }}
+                  sx={iconButtonSx}
                 >
                   <SearchIcon />
                 </IconButton>
@@ -426,7 +436,6 @@ const ChoferForm = ({
               items={empresas}
               onSelect={(empresa) => {
                 handleChange({ target: { name: "empresa", value: empresa } });
-                // Limpiar vehículo asignado si no pertenece a la nueva empresa
                 if (formData.vehiculoAsignado && formData.vehiculoAsignado.empresa?._id !== empresa._id) {
                   handleChange({ target: { name: "vehiculoAsignado", value: null } });
                 }
@@ -441,8 +450,8 @@ const ChoferForm = ({
             />
 
             <Box sx={{ mb: 2 }}>
-              <InputLabel sx={{ 
-                color: grey[700], 
+              <InputLabel sx={{
+                color: grey[700],
                 fontWeight: 'bold',
                 mb: 0.5
               }}>
@@ -453,17 +462,10 @@ const ChoferForm = ({
                   fullWidth
                   size="small"
                   value={
-                    !formData.vehiculoAsignado ? '-- Sin asignar --' : 
-                    `${formData.vehiculoAsignado.patente} - ${formData.vehiculoAsignado.marca} ${formData.vehiculoAsignado.modelo}`
+                    !formData.vehiculoAsignado ? '-- Sin asignar --' :
+                      `${formData.vehiculoAsignado.patente} - ${formData.vehiculoAsignado.marca} ${formData.vehiculoAsignado.modelo}`
                   }
-                  sx={{ 
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: 2,
-                      '& fieldset': {
-                        borderColor: grey[300]
-                      }
-                    }
-                  }}
+                  sx={fieldSx}
                   InputProps={{
                     readOnly: true,
                     startAdornment: formData.vehiculoAsignado && (
@@ -471,16 +473,9 @@ const ChoferForm = ({
                     ),
                   }}
                 />
-                <IconButton 
+                <IconButton
                   onClick={() => toggleModal('vehiculos')}
-                  sx={{
-                    borderRadius: 2,
-                    border: `1px solid ${grey[300]}`,
-                    backgroundColor: 'background.paper',
-                    '&:hover': {
-                      backgroundColor: grey[100]
-                    }
-                  }}
+                  sx={iconButtonSx}
                 >
                   <SearchIcon />
                 </IconButton>

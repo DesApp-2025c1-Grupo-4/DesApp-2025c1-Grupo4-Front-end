@@ -136,85 +136,47 @@ const ListadoDeViajes = () => {
         params: { populate: 'empresa_asignada,chofer_asignado,vehiculo_asignado,deposito_origen,deposito_destino' }
       });
       const viajeData = response.data;
-      
-      // Obtener listados necesarios
-      const [empresasResponse, choferesResponse, vehiculosResponse, depositosResponse] = await Promise.all([
-        axios.get('/api/empresas'),
-        axios.get('/api/choferes'),
-        axios.get('/api/vehiculos'),
-        axios.get('/api/depositos')
-      ]);
-      
       setSelectedViaje({
-        ...viajeData,
-        idViaje: viajeData._id,
-        depositoOrigen: viajeData.deposito_origen,
-        depositoDestino: viajeData.deposito_destino,
-        fechaInicio: viajeData.inicio_viaje,
-        fechaFin: viajeData.fin_viaje,
-        empresaTransportista: viajeData.empresa_asignada,
-        choferAsignado: viajeData.chofer_asignado,
-        vehiculoAsignado: viajeData.vehiculo_asignado,
-        tipoViaje: viajeData.tipo_viaje,
-        empresasDisponibles: empresasResponse.data,
-        choferesDisponibles: choferesResponse.data,
-        vehiculosDisponibles: vehiculosResponse.data,
-        depositosDisponibles: depositosResponse.data
-      });
+      ...viajeData,
+      _id: viajeData._id, 
+      depositoOrigen: viajeData.deposito_origen,
+      depositoDestino: viajeData.deposito_destino,
+      fechaInicio: viajeData.inicio_viaje,
+      fechaFin: viajeData.fin_viaje,
+      empresaTransportista: viajeData.empresa_asignada,
+      choferAsignado: viajeData.chofer_asignado,
+      vehiculoAsignado: viajeData.vehiculo_asignado,
+      tipoViaje: viajeData.tipo_viaje || 
+                (viajeData.deposito_origen?.localizacion?.pais === 'Argentina' && 
+                viajeData.deposito_destino?.localizacion?.pais === 'Argentina' ? 'Internacional' : 'Nacional')
+    });
     } catch (error) {
       console.error('Error al cargar datos del viaje:', error);
-      // Usar datos locales si falla la consulta
       setSelectedViaje({
         ...viaje,
         idViaje: viaje._id,
-        depositoOrigen: viaje.origen,
-        depositoDestino: viaje.destino,
-        fechaInicio: viaje.fechaHoraInicio,
-        fechaFin: viaje.fechaHoraFin,
-        empresaTransportista: viaje.empresa,
-        choferAsignado: viaje.chofer,
-        vehiculoAsignado: viaje.vehiculo,
-        tipoViaje: viaje.tipo,
-        empresasDisponibles: [],
-        choferesDisponibles: [],
-        vehiculosDisponibles: [],
-        depositosDisponibles: []
+        depositoOrigen: viaje.deposito_origen,
+        depositoDestino: viaje.deposito_destino,
+        fechaInicio: viaje.inicio_viaje,
+        fechaFin: viaje.fin_viaje,
+        empresaTransportista: viaje.empresa_asignada,
+        choferAsignado: viaje.chofer_asignado,
+        vehiculoAsignado: viaje.vehiculo_asignado,
+        tipoViaje: viaje.tipo_viaje
       });
     }
   } else {
-    try {
-      // Para creación de nuevo viaje
-      const [empresasResponse, choferesResponse, vehiculosResponse, depositosResponse] = await Promise.all([
-        axios.get('/api/empresas'),
-        axios.get('/api/choferes'),
-        axios.get('/api/vehiculos'),
-        axios.get('/api/depositos')
-      ]);
-      
-      setSelectedViaje({
-        idViaje: '',
-        depositoOrigen: null,
-        depositoDestino: null,
-        fechaInicio: '',
-        fechaFin: '',
-        empresaTransportista: null,
-        choferAsignado: null,
-        vehiculoAsignado: null,
-        tipoViaje: '',
-        empresasDisponibles: empresasResponse.data,
-        choferesDisponibles: choferesResponse.data,
-        vehiculosDisponibles: vehiculosResponse.data,
-        depositosDisponibles: depositosResponse.data
-      });
-    } catch (error) {
-      console.error('Error al cargar listados:', error);
-      setSelectedViaje({
-        empresasDisponibles: [],
-        choferesDisponibles: [],
-        vehiculosDisponibles: [],
-        depositosDisponibles: []
-      });
-    }
+    setSelectedViaje({
+      idViaje: '',
+      depositoOrigen: null,
+      depositoDestino: null,
+      fechaInicio: '',
+      fechaFin: '',
+      empresaTransportista: null,
+      choferAsignado: null,
+      vehiculoAsignado: null,
+      tipoViaje: ''
+    });
   }
   
   setPopupOpen(true);
