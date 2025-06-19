@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import {
   Button, Dialog, DialogTitle, DialogContent,
-  DialogActions, Box, useTheme, useMediaQuery
+  DialogActions, Box, useTheme, useMediaQuery, Typography
 } from '@mui/material';
 import { ROUTE_CONFIG } from '../config/routesConfig';
 import validationSchemas from '../validations/validationSchemas';
@@ -43,7 +43,6 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem }) => {
   const isControlled = open !== undefined;
   const currentOpen = isControlled ? open : internalOpen;
 
-  // Determinar el tipo de formulario
   const formType = useMemo(() => {
     if (page.includes('deposito')) return 'deposito';
     if (page.includes('viaje')) return 'viaje';
@@ -52,7 +51,6 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem }) => {
     return 'default';
   }, [page]);
 
-  // Efecto para actualizar formData cuando selectedItem cambia o se abre el popup
   useEffect(() => {
     if (currentOpen) {
       const newFormData = { ...initialData[formType] };
@@ -84,7 +82,7 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem }) => {
           newFormData.tipoViaje = selectedItem?.tipoViaje || selectedItem?.tipo_viaje || '';
           newFormData.estado = selectedItem?.estado || '';
         }
-                else if (formType === 'chofer') {
+        else if (formType === 'chofer') {
           newFormData.nombre = selectedItem?.nombre || '';
           newFormData.apellido = selectedItem?.apellido || '';
           newFormData.cuil = selectedItem?.cuil || '';
@@ -179,13 +177,21 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem }) => {
   const renderForm = () => {
     if (page.includes('confirmar-eliminar')) {
       return (
-        <Box textAlign="center">
-          <p style={{ marginBottom: '16px', fontSize: isMobile ? '0.9rem' : '1rem' }}>
+        <Box textAlign="center" sx={{ py: 2 }}>
+          <Typography variant="body1" sx={{ 
+            mb: 3,
+            fontSize: isMobile ? '1rem' : '1.1rem',
+            color: 'text.secondary'
+          }}>
             ¿Estás seguro que deseas eliminar este elemento?
-          </p>
-          <p style={{ color: theme.palette.error.main, fontWeight: 500 }}>
+          </Typography>
+          <Typography variant="subtitle1" sx={{ 
+            color: theme.palette.error.main,
+            fontWeight: 600,
+            fontSize: isMobile ? '1rem' : '1.1rem'
+          }}>
             Esta acción no se puede deshacer.
-          </p>
+          </Typography>
         </Box>
       );
     }
@@ -212,9 +218,17 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem }) => {
           variant="contained" 
           onClick={() => setInternalOpen(true)}
           sx={{
-            fontWeight: 500,
+            fontWeight: 600,
             letterSpacing: 0.5,
-            py: 1.5
+            py: 1.5,
+            fontSize: '0.875rem',
+            textTransform: 'none',
+            boxShadow: theme.shadows[2],
+            '&:hover': {
+              boxShadow: theme.shadows[4],
+              backgroundColor: theme.palette.primary.dark
+            },
+            transition: 'all 0.3s ease'
           }}
         >
           {buttonName}
@@ -230,22 +244,23 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem }) => {
         PaperProps={{
           sx: {
             backgroundColor: page.includes('confirmar-eliminar') 
-              ? 'rgba(255, 235, 235, 0.95)' 
-              : 'rgba(255, 255, 255, 0.95)',
-            backdropFilter: 'blur(8px)',
-            borderRadius: isMobile ? 0 : '12px',
-            p: isMobile ? 1 : 2,
-            boxShadow: '0px 8px 24px rgba(0, 0, 0, 0.1)',
+              ? 'rgba(255, 235, 235, 0.97)' 
+              : 'rgba(255, 255, 255, 0.97)',
+            backdropFilter: 'blur(12px)',
+            borderRadius: isMobile ? 0 : '16px',
+            p: isMobile ? 1 : 3,
+            boxShadow: theme.shadows[10],
             minHeight: isMobile ? '100vh' : 'auto',
             border: page.includes('confirmar-eliminar') 
               ? `1px solid ${theme.palette.error.light}`
-              : `1px solid ${theme.palette.divider}`
+              : `1px solid ${theme.palette.divider}`,
+            overflow: 'hidden'
           }
         }}
       >
         <Box sx={{ 
           backgroundColor: 'transparent',
-          borderRadius: isMobile ? 0 : '8px',
+          borderRadius: isMobile ? 0 : '12px',
           pb: 2,
           pt: isMobile ? 1 : 0
         }}>
@@ -253,20 +268,36 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem }) => {
             <Box sx={{ 
               display: 'flex', 
               justifyContent: 'center',
-              mb: 2
+              mb: 2,
+              pt: 2
             }}>
-              {ROUTE_CONFIG[`/${page}`]?.logo}
+              {ROUTE_CONFIG[`/${page}`]?.logo && (
+                <Box sx={{
+                  p: 2,
+                  borderRadius: '50%',
+                  backgroundColor: theme.palette.background.paper,
+                  boxShadow: theme.shadows[2],
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  {ROUTE_CONFIG[`/${page}`]?.logo}
+                </Box>
+              )}
             </Box>
           )}
           
           <DialogTitle sx={{ 
-            fontSize: isMobile ? '1.1rem' : '1.25rem',
-            fontWeight: 600,
-            color: page.includes('confirmar-eliminar') ? 'error.main' : 'text.primary',
+            fontSize: isMobile ? '1.25rem' : '1.5rem',
+            fontWeight: 700,
+            color: page.includes('confirmar-eliminar') 
+              ? theme.palette.error.main 
+              : theme.palette.primary.main,
             textAlign: 'center',
             px: isMobile ? 1 : 3,
             pt: isMobile ? 1 : 2,
-            pb: 1
+            pb: 1,
+            letterSpacing: '0.5px'
           }}>
             {page.includes('confirmar-eliminar') 
               ? 'Confirmar eliminación' 
@@ -277,13 +308,18 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem }) => {
             backgroundColor: page.includes('confirmar-eliminar') 
               ? 'rgba(255, 235, 235, 0.3)' 
               : 'rgba(245, 245, 245, 0.5)',
-            borderRadius: '8px',
+            borderRadius: '12px',
             p: isMobile ? 2 : 3,
-            mx: isMobile ? 0 : 1
+            mx: isMobile ? 0 : 1,
+            border: `1px solid ${theme.palette.divider}`,
+            boxShadow: theme.shadows[1]
           }}>
             <DialogContent sx={{ 
               py: 1,
-              px: isMobile ? 0 : 2
+              px: isMobile ? 0 : 2,
+              '&.MuiDialogContent-root': {
+                paddingTop: '16px'
+              }
             }}>
               {renderForm()}
             </DialogContent>
@@ -291,14 +327,20 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem }) => {
             <DialogActions sx={{ 
               px: isMobile ? 0 : 2,
               py: 2,
-              justifyContent: 'center'
+              justifyContent: 'center',
+              gap: 2
             }}>
               <Button 
                 onClick={handleClose} 
                 variant="outlined"
                 sx={{ 
-                  mr: 2,
-                  minWidth: 100
+                  minWidth: 120,
+                  py: 1.5,
+                  borderRadius: '8px',
+                  borderWidth: '2px',
+                  '&:hover': {
+                    borderWidth: '2px'
+                  }
                 }}
               >
                 Cancelar
@@ -309,8 +351,14 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem }) => {
                 variant="contained"
                 disabled={Object.values(errors).some(Boolean) && !page.includes('confirmar-eliminar')}
                 sx={{
-                  minWidth: 100,
-                  fontWeight: 500
+                  minWidth: 120,
+                  fontWeight: 600,
+                  py: 1.5,
+                  borderRadius: '8px',
+                  boxShadow: 'none',
+                  '&:hover': {
+                    boxShadow: theme.shadows[2]
+                  }
                 }}
               >
                 {page.includes('confirmar-eliminar') ? 'Eliminar' : 'Guardar'}
