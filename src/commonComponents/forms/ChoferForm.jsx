@@ -1,13 +1,13 @@
-import { 
-  Grid, 
-  InputLabel, 
-  TextField, 
-  Autocomplete, 
-  Box, 
-  Typography, 
-  List, 
-  ListItem, 
-  ListItemText, 
+import {
+  Grid,
+  InputLabel,
+  TextField,
+  Autocomplete,
+  Box,
+  Typography,
+  List,
+  ListItem,
+  ListItemText,
   CircularProgress,
   IconButton,
   Collapse,
@@ -23,156 +23,156 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import axios from 'axios';
 
-const ChoferForm = ({ 
-  formData, 
-  handleChange, 
-  handleBlur, 
-  errors, 
-  empresas: empresasIniciales = [], 
-  vehiculos = [],
-  isEditing = false
+const useDebouncedFetch = (url, paramName, value, setData, setLoading) => {
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const response = await axios.get(url, {
+          params: { [paramName]: value }
+        });
+        setData(response.data);
+      } catch (error) {
+        console.error(`Error al cargar ${url}:`, error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const timer = setTimeout(() => {
+      if (value.length > 2 || value.length === 0) {
+        fetchData();
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [value]);
+};
+
+const SearchAutocomplete = ({
+  label, placeholder, value, inputValue, onInputChange, onChange,
+  options, getOptionLabel, loading, error, noOptionsText
+}) => (
+  <>
+    <InputLabel sx={{ color: grey[900], fontWeight: 'bold', mt: 2 }}>{label}</InputLabel>
+    <Autocomplete
+      options={options}
+      getOptionLabel={getOptionLabel}
+      inputValue={inputValue}
+      onInputChange={(_, newValue) => onInputChange(newValue)}
+      value={value}
+      onChange={(_, newValue) => onChange(newValue || null)}
+      loading={loading}
+      renderInput={(params) => (
+        <TextField
+          {...params}
+          fullWidth
+          margin="dense"
+          error={!!error}
+          sx={{ backgroundColor: grey[50] }}
+          placeholder={placeholder}
+          InputProps={{
+            ...params.InputProps,
+            endAdornment: (
+              <>
+                {loading ? <CircularProgress color="inherit" size={20} /> : null}
+                {params.InputProps.endAdornment}
+              </>
+            ),
+          }}
+        />
+      )}
+      noOptionsText={noOptionsText}
+    />
+    {error && <ErrorText>{error}</ErrorText>}
+  </>
+);
+
+const CollapsibleList = ({ open, onToggle, label, items, onItemClick, emptyText, getText }) => (
+  <Box sx={{ mb: 2 }}>
+    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <InputLabel sx={{ color: grey[900], fontWeight: 'bold', mt: 2 }}>{label}</InputLabel>
+      <IconButton size="small" onClick={onToggle} sx={{ mt: 1.5 }}>
+        {open ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+        <Typography variant="caption" sx={{ ml: 0.5 }}>
+          {open ? 'Ocultar listado' : `Ver ${label.toLowerCase()}`}
+        </Typography>
+      </IconButton>
+    </Box>
+    <Collapse in={open}>
+      <Box sx={{ mt: 2, maxHeight: 200, overflow: 'auto', border: `1px solid ${grey[300]}`, borderRadius: 1 }}>
+        <Typography variant="subtitle2" sx={{ p: 1, backgroundColor: grey[100], fontWeight: 'bold' }}>
+          {label} disponibles ({items.length})
+        </Typography>
+        <Divider />
+        <List dense>
+          {items.length > 0 ? (
+            items.map((item) => (
+              <ListItem key={item._id} button onClick={() => onItemClick(item)}>
+                <ListItemText primary={getText(item)} />
+              </ListItem>
+            ))
+          ) : (
+            <ListItem>
+              <ListItemText primary={emptyText} />
+            </ListItem>
+          )}
+        </List>
+      </Box>
+    </Collapse>
+  </Box>
+);
+
+const ChoferForm = ({
+  formData, handleChange, handleBlur, errors,
+  empresas: empresasIniciales = [], vehiculos = [], isEditing = false
 }) => {
-  const [showEmpresasList, setShowEmpresasList] = useState(false);
-  const [showVehiculosList, setShowVehiculosList] = useState(false);
   const [empresas, setEmpresas] = useState(empresasIniciales);
   const [vehiculosDisponibles, setVehiculosDisponibles] = useState(vehiculos);
   const [inputValueEmpresa, setInputValueEmpresa] = useState('');
   const [inputValueVehiculo, setInputValueVehiculo] = useState('');
   const [loadingEmpresas, setLoadingEmpresas] = useState(false);
   const [loadingVehiculos, setLoadingVehiculos] = useState(false);
+  const [showEmpresasList, setShowEmpresasList] = useState(false);
+  const [showVehiculosList, setShowVehiculosList] = useState(false);
 
-  // Cargar empresas del backend
-  useEffect(() => {
-    const fetchEmpresas = async () => {
-      setLoadingEmpresas(true);
-      try {
-        const response = await axios.get('/api/empresas', {
-          params: { nombre: inputValueEmpresa }
-        });
-        setEmpresas(response.data);
-      } catch (error) {
-        console.error('Error al cargar empresas:', error);
-      } finally {
-        setLoadingEmpresas(false);
-      }
-    };
-
-    const timer = setTimeout(() => {
-      if (inputValueEmpresa.length > 2 || inputValueEmpresa.length === 0) {
-        fetchEmpresas();
-      }
-    }, 500);
-
-    return () => clearTimeout(timer);
-  }, [inputValueEmpresa]);
-
-  // Cargar vehículos del backend
-  useEffect(() => {
-    const fetchVehiculos = async () => {
-      setLoadingVehiculos(true);
-      try {
-        const response = await axios.get('/api/vehiculos', {
-          params: { patente: inputValueVehiculo }
-        });
-        setVehiculosDisponibles(response.data);
-      } catch (error) {
-        console.error('Error al cargar vehículos:', error);
-      } finally {
-        setLoadingVehiculos(false);
-      }
-    };
-
-    const timer = setTimeout(() => {
-      if (inputValueVehiculo.length > 2 || inputValueVehiculo.length === 0) {
-        fetchVehiculos();
-      }
-    }, 500);
-
-    return () => clearTimeout(timer);
-  }, [inputValueVehiculo]);
-
-  // Valores actuales
-  const empresaActual = formData.empresa || null;
-  const vehiculoActual = formData.vehiculoAsignado || null;
+  useDebouncedFetch('/api/empresas', 'nombre', inputValueEmpresa, setEmpresas, setLoadingEmpresas);
+  useDebouncedFetch('/api/vehiculos', 'patente', inputValueVehiculo, setVehiculosDisponibles, setLoadingVehiculos);
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
       <Grid container spacing={2}>
-        {/* Columna Izquierda: Datos básicos */}
         <Grid item xs={6}>
           {isEditing && (
             <Typography variant="body2" color="textSecondary" sx={{ mb: 1 }}>
               Editando chofer: {formData.nombre} {formData.apellido}
             </Typography>
           )}
-
-          {/* Nombre */}
-          <InputLabel required sx={{ color: grey[900], fontWeight: 'bold' }}>
-            Nombre*
-          </InputLabel>
-          <TextField
-            fullWidth
-            margin="dense"
-            name="nombre"
-            value={formData.nombre || ''}
-            onChange={handleChange}
-            onBlur={handleBlur}
-            error={!!errors.nombre}
-            sx={{ backgroundColor: grey[50] }}
-          />
-          {errors.nombre && <ErrorText>{errors.nombre}</ErrorText>}
-
-          {/* Apellido */}
-          <InputLabel required sx={{ color: grey[900], fontWeight: 'bold', mt: 2 }}>
-            Apellido*
-          </InputLabel>
-          <TextField
-            fullWidth
-            margin="dense"
-            name="apellido"
-            value={formData.apellido || ''}
-            onChange={handleChange}
-            onBlur={handleBlur}
-            error={!!errors.apellido}
-            sx={{ backgroundColor: grey[50] }}
-          />
-          {errors.apellido && <ErrorText>{errors.apellido}</ErrorText>}
-
-          {/* CUIL */}
-          <InputLabel required sx={{ color: grey[900], fontWeight: 'bold', mt: 2 }}>
-            CUIL*
-          </InputLabel>
-          <TextField
-            fullWidth
-            margin="dense"
-            name="cuil"
-            value={formData.cuil || ''}
-            onChange={handleChange}
-            onBlur={handleBlur}
-            error={!!errors.cuil}
-            placeholder="XX-XXXXXXXX-X"
-            sx={{ backgroundColor: grey[50] }}
-            InputProps={{
-              readOnly: isEditing,
-            }}
-          />
-          {errors.cuil && <ErrorText>{errors.cuil}</ErrorText>}
+          {['nombre', 'apellido', 'cuil'].map((field, i) => (
+            <Box key={field} sx={{ mt: i ? 2 : 0 }}>
+              <InputLabel required sx={{ color: grey[900], fontWeight: 'bold' }}>{field.charAt(0).toUpperCase() + field.slice(1)}*</InputLabel>
+              <TextField
+                fullWidth
+                margin="dense"
+                name={field}
+                value={formData[field] || ''}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                error={!!errors[field]}
+                placeholder={field === 'cuil' ? 'XX-XXXXXXXX-X' : ''}
+                sx={{ backgroundColor: grey[50] }}
+                InputProps={field === 'cuil' && isEditing ? { readOnly: true } : {}}
+              />
+              {errors[field] && <ErrorText>{errors[field]}</ErrorText>}
+            </Box>
+          ))}
         </Grid>
 
-        {/* Columna Derecha: Datos adicionales */}
         <Grid item xs={6}>
-          {/* Fecha de Nacimiento */}
-          <InputLabel required sx={{ color: grey[900], fontWeight: 'bold' }}>
-            Fecha de Nacimiento*
-          </InputLabel>
+          <InputLabel required sx={{ color: grey[900], fontWeight: 'bold' }}>Fecha de Nacimiento*</InputLabel>
           <DatePicker
             value={formData.fechaNacimiento || null}
-            onChange={(date) => handleChange({
-              target: {
-                name: 'fechaNacimiento',
-                value: date
-              }
-            })}
+            onChange={(date) => handleChange({ target: { name: 'fechaNacimiento', value: date } })}
             renderInput={(params) => (
               <TextField
                 {...params}
@@ -185,203 +185,59 @@ const ChoferForm = ({
           />
           {errors.fechaNacimiento && <ErrorText>{errors.fechaNacimiento}</ErrorText>}
 
-          {/* Empresa */}
-          <Box sx={{ mb: 2 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <InputLabel required sx={{ color: grey[900], fontWeight: 'bold', mt: 2 }}>
-                Empresa*
-              </InputLabel>
-              <IconButton 
-                size="small" 
-                onClick={() => setShowEmpresasList(!showEmpresasList)}
-                sx={{ mt: 1.5 }}
-              >
-                {showEmpresasList ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-                <Typography variant="caption" sx={{ ml: 0.5 }}>
-                  {showEmpresasList ? 'Ocultar listado' : 'Ver empresas'}
-                </Typography>
-              </IconButton>
-            </Box>
+          <SearchAutocomplete
+            label="Empresa*"
+            placeholder="Buscar empresa..."
+            value={formData.empresa || null}
+            inputValue={inputValueEmpresa}
+            onInputChange={setInputValueEmpresa}
+            onChange={(val) => handleChange({ target: { name: "empresa", value: val } })}
+            options={empresas}
+            getOptionLabel={(opt) => opt?.nombre_empresa || ''}
+            loading={loadingEmpresas}
+            error={errors.empresa}
+            noOptionsText={inputValueEmpresa.length > 0 ? "No se encontraron empresas" : "Escriba al menos 3 caracteres"}
+          />
 
-            <Autocomplete
-              options={empresas}
-              getOptionLabel={(option) => option?.nombre_empresa || ''}
-              inputValue={inputValueEmpresa}
-              onInputChange={(_, newValue) => setInputValueEmpresa(newValue)}
-              value={empresaActual}
-              onChange={(_, newValue) => {
-                handleChange({
-                  target: {
-                    name: "empresa",
-                    value: newValue || null
-                  }
-                });
-              }}
-              loading={loadingEmpresas}
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  fullWidth
-                  margin="dense"
-                  error={!!errors.empresa}
-                  sx={{ backgroundColor: grey[50] }}
-                  placeholder="Buscar empresa..."
-                  InputProps={{
-                    ...params.InputProps,
-                    endAdornment: (
-                      <>
-                        {loadingEmpresas ? <CircularProgress color="inherit" size={20} /> : null}
-                        {params.InputProps.endAdornment}
-                      </>
-                    ),
-                  }}
-                />
-              )}
-              noOptionsText={
-                inputValueEmpresa.length > 0 
-                  ? "No se encontraron empresas" 
-                  : "Escriba al menos 3 caracteres"
-              }
-            />
-            {errors.empresa && <ErrorText>{errors.empresa}</ErrorText>}
+          <CollapsibleList
+            open={showEmpresasList}
+            onToggle={() => setShowEmpresasList(!showEmpresasList)}
+            label="Empresas"
+            items={empresas}
+            onItemClick={(empresa) => {
+              handleChange({ target: { name: "empresa", value: empresa } });
+              setShowEmpresasList(false);
+            }}
+            emptyText="No hay empresas disponibles"
+            getText={(item) => item.nombre_empresa}
+          />
 
-            <Collapse in={showEmpresasList}>
-              <Box sx={{ mt: 2, maxHeight: 200, overflow: 'auto', border: `1px solid ${grey[300]}`, borderRadius: 1 }}>
-                <Typography variant="subtitle2" sx={{ p: 1, backgroundColor: grey[100], fontWeight: 'bold' }}>
-                  Empresas disponibles ({empresas.length})
-                </Typography>
-                <Divider />
-                <List dense>
-                  {empresas.length > 0 ? (
-                    empresas.map((empresa) => (
-                      <ListItem 
-                        key={empresa._id} 
-                        button
-                        onClick={() => {
-                          handleChange({
-                            target: {
-                              name: "empresa",
-                              value: empresa
-                            }
-                          });
-                          setShowEmpresasList(false);
-                        }}
-                      >
-                        <ListItemText primary={empresa.nombre_empresa} />
-                      </ListItem>
-                    ))
-                  ) : (
-                    <ListItem>
-                      <ListItemText primary="No hay empresas disponibles" />
-                    </ListItem>
-                  )}
-                </List>
-              </Box>
-            </Collapse>
-          </Box>
+          <SearchAutocomplete
+            label="Vehículo Asignado"
+            placeholder="Buscar vehículo..."
+            value={formData.vehiculoAsignado || null}
+            inputValue={inputValueVehiculo}
+            onInputChange={setInputValueVehiculo}
+            onChange={(val) => handleChange({ target: { name: "vehiculoAsignado", value: val } })}
+            options={vehiculosDisponibles}
+            getOptionLabel={(opt) => opt?.patente || '-- Sin asignar --'}
+            loading={loadingVehiculos}
+            error={errors.vehiculoAsignado}
+            noOptionsText={inputValueVehiculo.length > 0 ? "No se encontraron vehículos" : "Escriba al menos 3 caracteres"}
+          />
 
-          {/* Vehículo Asignado */}
-          <Box sx={{ mb: 2 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <InputLabel sx={{ color: grey[900], fontWeight: 'bold', mt: 2 }}>
-                Vehículo Asignado
-              </InputLabel>
-              <IconButton 
-                size="small" 
-                onClick={() => setShowVehiculosList(!showVehiculosList)}
-                sx={{ mt: 1.5 }}
-              >
-                {showVehiculosList ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-                <Typography variant="caption" sx={{ ml: 0.5 }}>
-                  {showVehiculosList ? 'Ocultar listado' : 'Ver vehículos'}
-                </Typography>
-              </IconButton>
-            </Box>
-
-            <Autocomplete
-              options={vehiculosDisponibles}
-              getOptionLabel={(option) => option?.patente || '-- Sin asignar --'}
-              inputValue={inputValueVehiculo}
-              onInputChange={(_, newValue) => setInputValueVehiculo(newValue)}
-              value={vehiculoActual}
-              onChange={(_, newValue) => {
-                handleChange({
-                  target: {
-                    name: "vehiculoAsignado",
-                    value: newValue || null
-                  }
-                });
-              }}
-              loading={loadingVehiculos}
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  fullWidth
-                  margin="dense"
-                  sx={{ backgroundColor: grey[50] }}
-                  placeholder="Buscar vehículo..."
-                  InputProps={{
-                    ...params.InputProps,
-                    endAdornment: (
-                      <>
-                        {loadingVehiculos ? <CircularProgress color="inherit" size={20} /> : null}
-                        {params.InputProps.endAdornment}
-                      </>
-                    ),
-                  }}
-                />
-              )}
-              noOptionsText={
-                inputValueVehiculo.length > 0 
-                  ? "No se encontraron vehículos" 
-                  : "Escriba al menos 3 caracteres"
-              }
-            />
-
-            <Collapse in={showVehiculosList}>
-              <Box sx={{ mt: 2, maxHeight: 200, overflow: 'auto', border: `1px solid ${grey[300]}`, borderRadius: 1 }}>
-                <Typography variant="subtitle2" sx={{ p: 1, backgroundColor: grey[100], fontWeight: 'bold' }}>
-                  Vehículos disponibles ({vehiculosDisponibles.length})
-                </Typography>
-                <Divider />
-                <List dense>
-                  <ListItem 
-                    button
-                    onClick={() => {
-                      handleChange({
-                        target: {
-                          name: "vehiculoAsignado",
-                          value: null
-                        }
-                      });
-                      setShowVehiculosList(false);
-                    }}
-                  >
-                    <ListItemText primary="-- Sin asignar --" />
-                  </ListItem>
-                  {vehiculosDisponibles.map((vehiculo) => (
-                    <ListItem 
-                      key={vehiculo._id} 
-                      button
-                      onClick={() => {
-                        handleChange({
-                          target: {
-                            name: "vehiculoAsignado",
-                            value: vehiculo
-                          }
-                        });
-                        setShowVehiculosList(false);
-                      }}
-                    >
-                      <ListItemText 
-                        primary={`${vehiculo.patente} - ${vehiculo.marca} ${vehiculo.modelo}`} 
-                      />
-                    </ListItem>
-                  ))}
-                </List>
-              </Box>
-            </Collapse>
-          </Box>
+          <CollapsibleList
+            open={showVehiculosList}
+            onToggle={() => setShowVehiculosList(!showVehiculosList)}
+            label="Vehículos"
+            items={[{ _id: 'null', patente: '-- Sin asignar --', marca: '', modelo: '' }, ...vehiculosDisponibles]}
+            onItemClick={(vehiculo) => {
+              handleChange({ target: { name: "vehiculoAsignado", value: vehiculo._id === 'null' ? null : vehiculo } });
+              setShowVehiculosList(false);
+            }}
+            emptyText="No hay vehículos disponibles"
+            getText={(item) => item.patente === '-- Sin asignar --' ? item.patente : `${item.patente} - ${item.marca} ${item.modelo}`}
+          />
         </Grid>
       </Grid>
     </LocalizationProvider>

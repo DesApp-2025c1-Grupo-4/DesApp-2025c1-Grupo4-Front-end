@@ -74,17 +74,17 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem }) => {
         } 
         else if (formType === 'viaje') {
           newFormData.idViaje = selectedItem?._id || '';
-          newFormData.depositoOrigen = selectedItem?.origen || '';
-          newFormData.depositoDestino = selectedItem?.destino || '';
-          newFormData.fechaHoraInicio = selectedItem?.fechaInicio || '';
-          newFormData.fechaHoraFin = selectedItem?.fechaFin || '';
-          newFormData.empresa = selectedItem?.empresaTransportista || '';
-          newFormData.chofer = selectedItem?.nombreChofer || '';
-          newFormData.vehiculo = selectedItem?.patenteVehiculo || '';
-          newFormData.tipoViaje = selectedItem?.tipoViaje || '';
+          newFormData.depositoOrigen = selectedItem?.depositoOrigen || selectedItem?.origen || null;
+          newFormData.depositoDestino = selectedItem?.depositoDestino || selectedItem?.destino || null;
+          newFormData.fechaInicio = selectedItem?.fechaInicio || selectedItem?.inicio_viaje || '';
+          newFormData.fechaFin = selectedItem?.fechaFin || selectedItem?.fin_viaje || '';
+          newFormData.empresaTransportista = selectedItem?.empresaTransportista || selectedItem?.empresa_asignada || null;
+          newFormData.choferAsignado = selectedItem?.choferAsignado || selectedItem?.chofer_asignado || null;
+          newFormData.vehiculoAsignado = selectedItem?.vehiculoAsignado || selectedItem?.vehiculo_asignado || null;
+          newFormData.tipoViaje = selectedItem?.tipoViaje || selectedItem?.tipo_viaje || '';
           newFormData.estado = selectedItem?.estado || '';
         }
-        else if (formType === 'chofer') {
+                else if (formType === 'chofer') {
           newFormData.nombre = selectedItem?.nombre || '';
           newFormData.apellido = selectedItem?.apellido || '';
           newFormData.cuil = selectedItem?.cuil || '';

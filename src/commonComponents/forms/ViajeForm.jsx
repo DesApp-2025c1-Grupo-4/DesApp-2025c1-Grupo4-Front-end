@@ -1,20 +1,7 @@
-import { 
-  Grid, 
-  InputLabel, 
-  TextField, 
-  Autocomplete, 
-  Box, 
-  Typography, 
-  List, 
-  ListItem, 
-  ListItemText, 
-  CircularProgress,
-  IconButton,
-  Collapse,
-  Divider,
-  MenuItem,
-  Select,
-  FormControl
+import {
+  Grid, InputLabel, TextField, Autocomplete, Box, Typography, List, ListItem, 
+  ListItemText, CircularProgress, IconButton, Collapse, Divider, MenuItem, 
+  Select, FormControl
 } from '@mui/material';
 import { grey } from "@mui/material/colors";
 import ErrorText from '../ErrorText';
@@ -23,180 +10,220 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import axios from 'axios';
 
-const ViajeForm = ({ 
-  formData: initialFormData, 
-  handleChange, 
-  handleBlur, 
-  errors, 
-  isEditing = false 
+const useDebouncedFetch = (url, paramName, value, setData, setLoading) => {
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const response = await axios.get(url, { params: { [paramName]: value } });
+        setData(response.data);
+      } catch (error) {
+        console.error(`Error al cargar ${url}:`, error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const timer = setTimeout(() => {
+      if (value.length > 2 || value.length === 0) fetchData();
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [value]);
+};
+
+const SearchAutocomplete = ({
+  label, placeholder, value, inputValue, onInputChange, onChange,
+  options, getOptionLabel, loading, error, noOptionsText
 }) => {
-  // Estados para los listados
+  const getResolvedValue = () => 
+    !value ? null : typeof value === 'string' ? options.find(opt => opt._id === value) || null : value;
+
+  return (
+    <>
+      <InputLabel sx={{ color: grey[900], fontWeight: 'bold', mt: 2 }}>{label}</InputLabel>
+      <Autocomplete
+        options={options}
+        getOptionLabel={getOptionLabel}
+        inputValue={inputValue || ''}
+        onInputChange={(_, newValue) => onInputChange(newValue)}
+        value={getResolvedValue()}
+        onChange={(_, newValue) => onChange(newValue || null)}
+        loading={loading}
+        isOptionEqualToValue={(option, value) => option?._id === value?._id}
+        renderInput={(params) => (
+          <TextField
+            {...params}
+            fullWidth
+            margin="dense"
+            error={!!error}
+            sx={{ backgroundColor: grey[50] }}
+            placeholder={placeholder}
+            InputProps={{
+              ...params.InputProps,
+              endAdornment: (
+                <>
+                  {loading && <CircularProgress color="inherit" size={20} />}
+                  {params.InputProps.endAdornment}
+                </>
+              ),
+            }}
+          />
+        )}
+        noOptionsText={noOptionsText}
+      />
+      {error && <ErrorText>{error}</ErrorText>}
+    </>
+  );
+};
+
+const CollapsibleList = ({ 
+  open, onToggle, label, items, onItemClick, emptyText, getText, getSecondaryText 
+}) => (
+  <Box sx={{ mb: 2 }}>
+    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <InputLabel sx={{ color: grey[900], fontWeight: 'bold', mt: 2 }}>{label}</InputLabel>
+      <IconButton size="small" onClick={onToggle} sx={{ mt: 1.5 }}>
+        {open ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+        <Typography variant="caption" sx={{ ml: 0.5 }}>
+          {open ? 'Ocultar listado' : `Ver ${label.toLowerCase()}`}
+        </Typography>
+      </IconButton>
+    </Box>
+    <Collapse in={open}>
+      <Box sx={{ mt: 2, maxHeight: 200, overflow: 'auto', border: `1px solid ${grey[300]}`, borderRadius: 1 }}>
+        <Typography variant="subtitle2" sx={{ p: 1, backgroundColor: grey[100], fontWeight: 'bold' }}>
+          {label} disponibles ({items.length})
+        </Typography>
+        <Divider />
+        <List dense>
+          {items.length > 0 ? items.map((item) => (
+            <ListItem key={item._id} button onClick={() => onItemClick(item)}>
+              <ListItemText 
+                primary={getText(item)} 
+                secondary={getSecondaryText?.(item)} 
+              />
+            </ListItem>
+          )) : (
+            <ListItem><ListItemText primary={emptyText} /></ListItem>
+          )}
+        </List>
+      </Box>
+    </Collapse>
+  </Box>
+);
+
+const ViajeForm = ({ formData = {}, handleChange, handleBlur, errors, isEditing = false }) => {
+  // Normalización de datos
+  const normalizedFormData = {
+    ...formData,
+    tipoViaje: formData.tipo_viaje || formData.tipoViaje,
+    fechaInicio: formData.inicio_viaje || formData.fechaInicio,
+    fechaFin: formData.fin_viaje || formData.fechaFin,
+    depositoOrigen: formData.deposito_origen || formData.depositoOrigen,
+    depositoDestino: formData.deposito_destino || formData.depositoDestino,
+    empresaTransportista: formData.empresa_asignada || formData.empresaTransportista,
+    choferAsignado: formData.chofer_asignado || formData.choferAsignado,
+    vehiculoAsignado: formData.vehiculo_asignado || formData.vehiculoAsignado
+  };
+
+  // Estados para búsquedas
   const [empresas, setEmpresas] = useState([]);
   const [choferes, setChoferes] = useState([]);
   const [vehiculos, setVehiculos] = useState([]);
-  const [depositos, setDepositos] = useState([]);
+  const [depositosOrigen, setDepositosOrigen] = useState([]);
+  const [depositosDestino, setDepositosDestino] = useState([]);
   
-  // Estados para mostrar/ocultar listados
-  const [showEmpresasList, setShowEmpresasList] = useState(false);
-  const [showChoferesList, setShowChoferesList] = useState(false);
-  const [showVehiculosList, setShowVehiculosList] = useState(false);
-  const [showDepositosList, setShowDepositosList] = useState(false);
+  const [inputValues, setInputValues] = useState({
+    empresa: '', chofer: '', vehiculo: '', depositoOrigen: '', depositoDestino: ''
+  });
   
-  // Estados para valores de búsqueda
-  const [inputValueEmpresa, setInputValueEmpresa] = useState('');
-  const [inputValueChofer, setInputValueChofer] = useState('');
-  const [inputValueVehiculo, setInputValueVehiculo] = useState('');
-  const [inputValueDeposito, setInputValueDeposito] = useState('');
-
-  // Estados para carga
-  const [loadingEmpresas, setLoadingEmpresas] = useState(false);
-  const [loadingChoferes, setLoadingChoferes] = useState(false);
-  const [loadingVehiculos, setLoadingVehiculos] = useState(false);
-  const [loadingDepositos, setLoadingDepositos] = useState(false);
-
-  // Normalización de datos iniciales
-  const [formData, setFormData] = useState(() => {
-    const normalized = {
-      ...initialFormData,
-      // Asegurar compatibilidad con diferentes nombres de campos
-      empresaTransportista: initialFormData?.empresaTransportista || initialFormData?.empresa_asignada || null,
-      choferAsignado: initialFormData?.choferAsignado || initialFormData?.chofer_asignado || null,
-      vehiculoAsignado: initialFormData?.vehiculoAsignado || initialFormData?.vehiculo_asignado || null,
-      depositoOrigen: initialFormData?.depositoOrigen || initialFormData?.deposito_origen || null,
-      depositoDestino: initialFormData?.depositoDestino || initialFormData?.deposito_destino || null,
-      tipoViaje: initialFormData?.tipoViaje || initialFormData?.tipo_viaje || '',
-      fechaInicio: initialFormData?.fechaInicio || initialFormData?.inicio_viaje || '',
-      fechaFin: initialFormData?.fechaFin || initialFormData?.fin_viaje || ''
-    };
-    return normalized;
+  const [loadingStates, setLoadingStates] = useState({
+    empresas: false, choferes: false, vehiculos: false, 
+    depositosOrigen: false, depositosDestino: false
+  });
+  
+  const [showLists, setShowLists] = useState({
+    empresas: false, choferes: false, vehiculos: false,
+    depositosOrigen: false, depositosDestino: false
   });
 
-  // Actualizar formData cuando cambien los props
-  useEffect(() => {
-    setFormData({
-      ...initialFormData,
-      empresaTransportista: initialFormData?.empresaTransportista || initialFormData?.empresa_asignada || null,
-      choferAsignado: initialFormData?.choferAsignado || initialFormData?.chofer_asignado || null,
-      vehiculoAsignado: initialFormData?.vehiculoAsignado || initialFormData?.vehiculo_asignado || null,
-      depositoOrigen: initialFormData?.depositoOrigen || initialFormData?.deposito_origen || null,
-      depositoDestino: initialFormData?.depositoDestino || initialFormData?.deposito_destino || null,
-      tipoViaje: initialFormData?.tipoViaje || initialFormData?.tipo_viaje || '',
-      fechaInicio: initialFormData?.fechaInicio || initialFormData?.inicio_viaje || '',
-      fechaFin: initialFormData?.fechaFin || initialFormData?.fin_viaje || ''
-    });
-  }, [initialFormData]);
+  // Configuración de búsquedas
+  const searchConfigs = [
+    { key: 'empresas', url: '/api/empresas', param: 'nombre', inputKey: 'empresa' },
+    { key: 'choferes', url: '/api/choferes', param: 'nombre', inputKey: 'chofer' },
+    { key: 'vehiculos', url: '/api/vehiculos', param: 'patente', inputKey: 'vehiculo' },
+    { key: 'depositosOrigen', url: '/api/depositos', param: 'direccion', inputKey: 'depositoOrigen' },
+    { key: 'depositosDestino', url: '/api/depositos', param: 'direccion', inputKey: 'depositoDestino' }
+  ];
 
-  // Función de handleChange modificada para manejar objetos complejos
-  const handleLocalChange = (event) => {
-    const { name, value } = event.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    handleChange(event);
+  // Configurar debounced fetch para cada búsqueda
+  searchConfigs.forEach(({ key, url, param, inputKey }) => {
+    useDebouncedFetch(
+      url, 
+      param, 
+      inputValues[inputKey], 
+      key === 'depositosOrigen' ? setDepositosOrigen : 
+      key === 'depositosDestino' ? setDepositosDestino :
+      key === 'choferes' ? setChoferes :
+      key === 'vehiculos' ? setVehiculos : setEmpresas,
+      (loading) => setLoadingStates(prev => ({ ...prev, [key]: loading }))
+    );
+  });
+
+  // Cargar datos iniciales para edición
+  useEffect(() => {
+    if (isEditing && normalizedFormData.choferAsignado && typeof normalizedFormData.choferAsignado === 'string') {
+      const fetchInitialData = async () => {
+        try {
+          const res = await axios.get(`/api/choferes/${normalizedFormData.choferAsignado}`);
+          handleChange({ target: { name: "choferAsignado", value: res.data } });
+        } catch (error) {
+          console.error("Error cargando datos iniciales:", error);
+        }
+      };
+      fetchInitialData();
+    }
+  }, [isEditing]);
+
+  // Handlers optimizados
+  const handleInputChange = (key, value) => 
+    setInputValues(prev => ({ ...prev, [key]: value }));
+
+  const toggleList = (key) => 
+    setShowLists(prev => ({ ...prev, [key]: !prev[key] }));
+
+  const handleChoferChange = (chofer) => {
+    handleChange({ target: { name: "choferAsignado", value: chofer } });
+    if (chofer?.vehiculoAsignado) {
+      handleChange({ target: { name: "vehiculoAsignado", value: chofer.vehiculoAsignado } });
+      handleInputChange('vehiculo', chofer.vehiculoAsignado.patente);
+      if (chofer.vehiculoAsignado.empresa) {
+        handleChange({ target: { name: "empresaTransportista", value: chofer.vehiculoAsignado.empresa } });
+        handleInputChange('empresa', chofer.vehiculoAsignado.empresa.nombre_empresa);
+      }
+    }
   };
 
-  // Cargar empresas del backend
-  useEffect(() => {
-    const fetchEmpresas = async () => {
-      setLoadingEmpresas(true);
-      try {
-        const response = await axios.get('/api/empresas', {
-          params: { nombre: inputValueEmpresa }
-        });
-        setEmpresas(response.data);
-      } catch (error) {
-        console.error('Error al cargar empresas:', error);
-      } finally {
-        setLoadingEmpresas(false);
-      }
-    };
+  const handleVehiculoChange = (vehiculo) => {
+    handleChange({ target: { name: "vehiculoAsignado", value: vehiculo } });
+    if (vehiculo?.empresa) {
+      handleChange({ target: { name: "empresaTransportista", value: vehiculo.empresa } });
+      handleInputChange('empresa', vehiculo.empresa.nombre_empresa);
+    }
+  };
 
-    const timer = setTimeout(() => {
-      if (inputValueEmpresa.length > 2 || inputValueEmpresa.length === 0) {
-        fetchEmpresas();
-      }
-    }, 500);
-
-    return () => clearTimeout(timer);
-  }, [inputValueEmpresa]);
-
-  // Cargar choferes del backend
-  useEffect(() => {
-    const fetchChoferes = async () => {
-      setLoadingChoferes(true);
-      try {
-        const response = await axios.get('/api/choferes', {
-          params: { nombre: inputValueChofer }
-        });
-        setChoferes(response.data);
-      } catch (error) {
-        console.error('Error al cargar choferes:', error);
-      } finally {
-        setLoadingChoferes(false);
-      }
-    };
-
-    const timer = setTimeout(() => {
-      if (inputValueChofer.length > 2 || inputValueChofer.length === 0) {
-        fetchChoferes();
-      }
-    }, 500);
-
-    return () => clearTimeout(timer);
-  }, [inputValueChofer]);
-
-  // Cargar vehículos del backend
-  useEffect(() => {
-    const fetchVehiculos = async () => {
-      setLoadingVehiculos(true);
-      try {
-        const response = await axios.get('/api/vehiculos', {
-          params: { patente: inputValueVehiculo }
-        });
-        setVehiculos(response.data);
-      } catch (error) {
-        console.error('Error al cargar vehículos:', error);
-      } finally {
-        setLoadingVehiculos(false);
-      }
-    };
-
-    const timer = setTimeout(() => {
-      if (inputValueVehiculo.length > 2 || inputValueVehiculo.length === 0) {
-        fetchVehiculos();
-      }
-    }, 500);
-
-    return () => clearTimeout(timer);
-  }, [inputValueVehiculo]);
-
-  // Cargar depósitos del backend
-  useEffect(() => {
-    const fetchDepositos = async () => {
-      setLoadingDepositos(true);
-      try {
-        const response = await axios.get('/api/depositos', {
-          params: { direccion: inputValueDeposito }
-        });
-        setDepositos(response.data);
-      } catch (error) {
-        console.error('Error al cargar depósitos:', error);
-      } finally {
-        setLoadingDepositos(false);
-      }
-    };
-
-    const timer = setTimeout(() => {
-      if (inputValueDeposito.length > 2 || inputValueDeposito.length === 0) {
-        fetchDepositos();
-      }
-    }, 500);
-
-    return () => clearTimeout(timer);
-  }, [inputValueDeposito]);
-
-  // Formatear fechas para el input datetime-local
   const formatForDateTimeLocal = (dateString) => {
-    if (!dateString || dateString === 'Sin fecha') return '';
+    if (!dateString) return '';
     try {
+      if (typeof dateString === 'string' && dateString.includes('/')) {
+        const [datePart, timePart] = dateString.split(' ');
+        const [day, month, year] = datePart.split('/');
+        const [hours, minutes] = timePart?.split(':') || ['00', '00'];
+        const date = new Date(year, month - 1, day, hours, minutes);
+        const offset = date.getTimezoneOffset() * 60000;
+        return new Date(date.getTime() - offset).toISOString().slice(0, 16);
+      }
       const date = new Date(dateString);
       if (isNaN(date.getTime())) return '';
       const offset = date.getTimezoneOffset() * 60000;
@@ -209,215 +236,78 @@ const ViajeForm = ({
 
   return (
     <Grid container spacing={2}>
-      {/* Columna Izquierda */}
       <Grid item xs={6}>
         {isEditing && (
           <Typography variant="body2" color="textSecondary" sx={{ mb: 1 }}>
-            Editando viaje: {formData.guid_viaje || formData._id || 'Nuevo viaje'}
+            Editando viaje: {normalizedFormData?.idViaje || 'Nuevo viaje'}
           </Typography>
         )}
 
-        {/* Depósito de Origen */}
-        <Box sx={{ mb: 2 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <InputLabel required sx={{ color: grey[900], fontWeight: 'bold' }}>
-              Depósito de Origen*
-            </InputLabel>
-            <IconButton 
-              size="small" 
-              onClick={() => setShowDepositosList(!showDepositosList)}
-              sx={{ mt: 1.5 }}
-            >
-              {showDepositosList ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-              <Typography variant="caption" sx={{ ml: 0.5 }}>
-                {showDepositosList ? 'Ocultar listado' : 'Ver depósitos'}
-              </Typography>
-            </IconButton>
-          </Box>
+        <SearchAutocomplete
+          label="Depósito de Origen*"
+          placeholder="Buscar depósito..."
+          value={normalizedFormData.depositoOrigen}
+          inputValue={inputValues.depositoOrigen}
+          onInputChange={(val) => handleInputChange('depositoOrigen', val)}
+          onChange={(val) => handleChange({ target: { name: "depositoOrigen", value: val } })}
+          options={depositosOrigen}
+          getOptionLabel={(opt) => opt?.localizacion?.direccion || ''}
+          loading={loadingStates.depositosOrigen}
+          error={errors.depositoOrigen}
+          noOptionsText={inputValues.depositoOrigen.length > 0 ? "No se encontraron depósitos" : "Escriba al menos 3 caracteres"}
+        />
 
-          <Autocomplete
-            options={depositos}
-            getOptionLabel={(option) => option?.localizacion?.direccion || ''}
-            inputValue={inputValueDeposito}
-            onInputChange={(_, newValue) => setInputValueDeposito(newValue)}
-            value={formData.depositoOrigen || null}
-            onChange={(_, newValue) => {
-              const event = {
-                target: {
-                  name: "depositoOrigen",
-                  value: newValue || null
-                }
-              };
-              handleLocalChange(event);
-            }}
-            loading={loadingDepositos}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                fullWidth
-                margin="dense"
-                error={!!errors.depositoOrigen}
-                sx={{ backgroundColor: grey[50] }}
-                placeholder="Buscar depósito..."
-                InputProps={{
-                  ...params.InputProps,
-                  endAdornment: (
-                    <>
-                      {loadingDepositos ? <CircularProgress color="inherit" size={20} /> : null}
-                      {params.InputProps.endAdornment}
-                    </>
-                  ),
-                }}
-              />
-            )}
-            noOptionsText={
-              inputValueDeposito.length > 0 
-                ? "No se encontraron depósitos" 
-                : "Escriba al menos 3 caracteres"
+        <CollapsibleList
+          open={showLists.depositosOrigen}
+          onToggle={() => toggleList('depositosOrigen')}
+          label="Depósitos Origen"
+          items={depositosOrigen}
+          onItemClick={(deposito) => {
+            handleChange({ target: { name: "depositoOrigen", value: deposito } });
+            toggleList('depositosOrigen');
+          }}
+          emptyText="No hay depósitos disponibles"
+          getText={(item) => item.localizacion?.direccion}
+          getSecondaryText={(item) => `${item.localizacion?.ciudad}, ${item.localizacion?.pais}`}
+        />
+
+        <SearchAutocomplete
+          label="Depósito de Destino*"
+          placeholder="Buscar depósito..."
+          value={normalizedFormData.depositoDestino}
+          inputValue={inputValues.depositoDestino}
+          onInputChange={(val) => handleInputChange('depositoDestino', val)}
+          onChange={(val) => {
+            if (normalizedFormData.depositoOrigen?._id === val?._id) {
+              handleChange({ target: { name: "depositoDestino", value: null } });
+              handleInputChange('depositoDestino', '');
+              return;
             }
-          />
-          {errors.depositoOrigen && <ErrorText>{errors.depositoOrigen}</ErrorText>}
+            handleChange({ target: { name: "depositoDestino", value: val } });
+          }}
+          options={depositosDestino}
+          getOptionLabel={(opt) => opt?.localizacion?.direccion || ''}
+          loading={loadingStates.depositosDestino}
+          error={errors.depositoDestino}
+          noOptionsText={inputValues.depositoDestino.length > 0 ? "No se encontraron depósitos" : "Escriba al menos 3 caracteres"}
+        />
 
-          <Collapse in={showDepositosList}>
-            <Box sx={{ mt: 2, maxHeight: 200, overflow: 'auto', border: `1px solid ${grey[300]}`, borderRadius: 1 }}>
-              <Typography variant="subtitle2" sx={{ p: 1, backgroundColor: grey[100], fontWeight: 'bold' }}>
-                Depósitos disponibles ({depositos.length})
-              </Typography>
-              <Divider />
-              <List dense>
-                {depositos.length > 0 ? (
-                  depositos.map((deposito) => (
-                    <ListItem 
-                      key={deposito._id} 
-                      button
-                      onClick={() => {
-                        const event = {
-                          target: {
-                            name: "depositoOrigen",
-                            value: deposito
-                          }
-                        };
-                        handleLocalChange(event);
-                        setShowDepositosList(false);
-                      }}
-                    >
-                      <ListItemText 
-                        primary={deposito.localizacion?.direccion} 
-                        secondary={`${deposito.localizacion?.ciudad}, ${deposito.localizacion?.pais}`}
-                      />
-                    </ListItem>
-                  ))
-                ) : (
-                  <ListItem>
-                    <ListItemText primary="No hay depósitos disponibles" />
-                  </ListItem>
-                )}
-              </List>
-            </Box>
-          </Collapse>
-        </Box>
-
-        {/* Depósito de Destino */}
-        <Box sx={{ mb: 2 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <InputLabel required sx={{ color: grey[900], fontWeight: 'bold' }}>
-              Depósito de Destino*
-            </InputLabel>
-            <IconButton 
-              size="small" 
-              onClick={() => setShowDepositosList(!showDepositosList)}
-              sx={{ mt: 1.5 }}
-            >
-              {showDepositosList ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-              <Typography variant="caption" sx={{ ml: 0.5 }}>
-                {showDepositosList ? 'Ocultar listado' : 'Ver depósitos'}
-              </Typography>
-            </IconButton>
-          </Box>
-
-          <Autocomplete
-            options={depositos}
-            getOptionLabel={(option) => option?.localizacion?.direccion || ''}
-            inputValue={inputValueDeposito}
-            onInputChange={(_, newValue) => setInputValueDeposito(newValue)}
-            value={formData.depositoDestino || null}
-            onChange={(_, newValue) => {
-              const event = {
-                target: {
-                  name: "depositoDestino",
-                  value: newValue || null
-                }
-              };
-              handleLocalChange(event);
-            }}
-            loading={loadingDepositos}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                fullWidth
-                margin="dense"
-                error={!!errors.depositoDestino}
-                sx={{ backgroundColor: grey[50] }}
-                placeholder="Buscar depósito..."
-                InputProps={{
-                  ...params.InputProps,
-                  endAdornment: (
-                    <>
-                      {loadingDepositos ? <CircularProgress color="inherit" size={20} /> : null}
-                      {params.InputProps.endAdornment}
-                    </>
-                  ),
-                }}
-              />
-            )}
-            noOptionsText={
-              inputValueDeposito.length > 0 
-                ? "No se encontraron depósitos" 
-                : "Escriba al menos 3 caracteres"
+        <CollapsibleList
+          open={showLists.depositosDestino}
+          onToggle={() => toggleList('depositosDestino')}
+          label="Depósitos Destino"
+          items={depositosDestino}
+          onItemClick={(deposito) => {
+            if (normalizedFormData.depositoOrigen?._id !== deposito?._id) {
+              handleChange({ target: { name: "depositoDestino", value: deposito } });
+              toggleList('depositosDestino');
             }
-          />
-          {errors.depositoDestino && <ErrorText>{errors.depositoDestino}</ErrorText>}
+          }}
+          emptyText="No hay depósitos disponibles"
+          getText={(item) => item.localizacion?.direccion}
+          getSecondaryText={(item) => `${item.localizacion?.ciudad}, ${item.localizacion?.pais}`}
+        />
 
-          <Collapse in={showDepositosList}>
-            <Box sx={{ mt: 2, maxHeight: 200, overflow: 'auto', border: `1px solid ${grey[300]}`, borderRadius: 1 }}>
-              <Typography variant="subtitle2" sx={{ p: 1, backgroundColor: grey[100], fontWeight: 'bold' }}>
-                Depósitos disponibles ({depositos.length})
-              </Typography>
-              <Divider />
-              <List dense>
-                {depositos.length > 0 ? (
-                  depositos.map((deposito) => (
-                    <ListItem 
-                      key={deposito._id} 
-                      button
-                      onClick={() => {
-                        const event = {
-                          target: {
-                            name: "depositoDestino",
-                            value: deposito
-                          }
-                        };
-                        handleLocalChange(event);
-                        setShowDepositosList(false);
-                      }}
-                    >
-                      <ListItemText 
-                        primary={deposito.localizacion?.direccion} 
-                        secondary={`${deposito.localizacion?.ciudad}, ${deposito.localizacion?.pais}`}
-                      />
-                    </ListItem>
-                  ))
-                ) : (
-                  <ListItem>
-                    <ListItemText primary="No hay depósitos disponibles" />
-                  </ListItem>
-                )}
-              </List>
-            </Box>
-          </Collapse>
-        </Box>
-
-        {/* Fecha y Hora de Inicio */}
         <InputLabel required sx={{ color: grey[900], fontWeight: 'bold', pt: 2 }}>
           Fecha y Hora de Inicio*
         </InputLabel>
@@ -426,8 +316,8 @@ const ViajeForm = ({
           margin="dense" 
           name="fechaInicio" 
           type="datetime-local" 
-          value={formatForDateTimeLocal(formData.fechaInicio) || ''} 
-          onChange={handleLocalChange}
+          value={formatForDateTimeLocal(normalizedFormData.fechaInicio)} 
+          onChange={handleChange}
           onBlur={handleBlur}
           error={!!errors.fechaInicio}
           InputLabelProps={{ shrink: true }}
@@ -436,9 +326,7 @@ const ViajeForm = ({
         {errors.fechaInicio && <ErrorText>{errors.fechaInicio}</ErrorText>}
       </Grid>
 
-      {/* Columna Derecha */}
       <Grid item xs={6}>
-        {/* Fecha y Hora de Fin */}
         <InputLabel sx={{ color: grey[900], fontWeight: 'bold' }}>
           Fecha y Hora de Fin
         </InputLabel>
@@ -447,317 +335,108 @@ const ViajeForm = ({
           margin="dense" 
           name="fechaFin" 
           type="datetime-local" 
-          value={formatForDateTimeLocal(formData.fechaFin) || ''} 
-          onChange={handleLocalChange}
+          value={formatForDateTimeLocal(normalizedFormData.fechaFin)} 
+          onChange={handleChange}
           InputLabelProps={{ shrink: true }}
           sx={{ backgroundColor: grey[50] }} 
         />
 
-        {/* Empresa */}
-        <Box sx={{ mb: 2 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <InputLabel required sx={{ color: grey[900], fontWeight: 'bold', pt: 2 }}>
-              Empresa*
-            </InputLabel>
-            <IconButton 
-              size="small" 
-              onClick={() => setShowEmpresasList(!showEmpresasList)}
-              sx={{ mt: 1.5 }}
-            >
-              {showEmpresasList ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-              <Typography variant="caption" sx={{ ml: 0.5 }}>
-                {showEmpresasList ? 'Ocultar listado' : 'Ver empresas'}
-              </Typography>
-            </IconButton>
-          </Box>
+        <SearchAutocomplete
+          label="Empresa Transportista*"
+          placeholder="Buscar empresa..."
+          value={normalizedFormData.empresaTransportista}
+          inputValue={inputValues.empresa}
+          onInputChange={(val) => handleInputChange('empresa', val)}
+          onChange={(val) => handleChange({ target: { name: "empresaTransportista", value: val } })}
+          options={empresas}
+          getOptionLabel={(opt) => opt?.nombre_empresa || ''}
+          loading={loadingStates.empresas}
+          error={errors.empresaTransportista}
+          noOptionsText={inputValues.empresa.length > 0 ? "No se encontraron empresas" : "Escriba al menos 3 caracteres"}
+        />
 
-          <Autocomplete
-            options={empresas}
-            getOptionLabel={(option) => option?.nombre_empresa || ''}
-            inputValue={inputValueEmpresa}
-            onInputChange={(_, newValue) => setInputValueEmpresa(newValue)}
-            value={formData.empresaTransportista || null}
-            onChange={(_, newValue) => {
-              const event = {
-                target: {
-                  name: "empresaTransportista",
-                  value: newValue || null
-                }
-              };
-              handleLocalChange(event);
-            }}
-            loading={loadingEmpresas}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                fullWidth
-                margin="dense"
-                error={!!errors.empresaTransportista}
-                sx={{ backgroundColor: grey[50] }}
-                placeholder="Buscar empresa..."
-                InputProps={{
-                  ...params.InputProps,
-                  endAdornment: (
-                    <>
-                      {loadingEmpresas ? <CircularProgress color="inherit" size={20} /> : null}
-                      {params.InputProps.endAdornment}
-                    </>
-                  ),
-                }}
-              />
-            )}
-            noOptionsText={
-              inputValueEmpresa.length > 0 
-                ? "No se encontraron empresas" 
-                : "Escriba al menos 3 caracteres"
-            }
-          />
-          {errors.empresaTransportista && <ErrorText>{errors.empresaTransportista}</ErrorText>}
+        <CollapsibleList
+          open={showLists.empresas}
+          onToggle={() => toggleList('empresas')}
+          label="Empresas"
+          items={empresas}
+          onItemClick={(empresa) => {
+            handleChange({ target: { name: "empresaTransportista", value: empresa } });
+            toggleList('empresas');
+          }}
+          emptyText="No hay empresas disponibles"
+          getText={(item) => item.nombre_empresa}
+        />
 
-          <Collapse in={showEmpresasList}>
-            <Box sx={{ mt: 2, maxHeight: 200, overflow: 'auto', border: `1px solid ${grey[300]}`, borderRadius: 1 }}>
-              <Typography variant="subtitle2" sx={{ p: 1, backgroundColor: grey[100], fontWeight: 'bold' }}>
-                Empresas disponibles ({empresas.length})
-              </Typography>
-              <Divider />
-              <List dense>
-                {empresas.length > 0 ? (
-                  empresas.map((empresa) => (
-                    <ListItem 
-                      key={empresa._id} 
-                      button
-                      onClick={() => {
-                        const event = {
-                          target: {
-                            name: "empresaTransportista",
-                            value: empresa
-                          }
-                        };
-                        handleLocalChange(event);
-                        setShowEmpresasList(false);
-                      }}
-                    >
-                      <ListItemText primary={empresa.nombre_empresa} />
-                    </ListItem>
-                  ))
-                ) : (
-                  <ListItem>
-                    <ListItemText primary="No hay empresas disponibles" />
-                  </ListItem>
-                )}
-              </List>
-            </Box>
-          </Collapse>
-        </Box>
+        <SearchAutocomplete
+          label="Chofer Asignado*"
+          placeholder="Buscar chofer..."
+          value={normalizedFormData.choferAsignado}
+          inputValue={inputValues.chofer}
+          onInputChange={(val) => handleInputChange('chofer', val)}
+          onChange={handleChoferChange}
+          options={choferes}
+          getOptionLabel={(opt) => 
+            !opt ? '' : `${opt.nombre || ''} ${opt.apellido || ''}`.trim() + 
+            (opt.vehiculoAsignado ? ` (Vehículo: ${opt.vehiculoAsignado.patente})` : '')
+          }
+          loading={loadingStates.choferes}
+          error={errors.choferAsignado}
+          noOptionsText={inputValues.chofer.length > 0 ? "No se encontraron choferes" : "Escriba al menos 3 caracteres"}
+        />
 
-        {/* Chofer */}
-        <Box sx={{ mb: 2 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <InputLabel required sx={{ color: grey[900], fontWeight: 'bold', pt: 2 }}>
-              Chofer*
-            </InputLabel>
-            <IconButton 
-              size="small" 
-              onClick={() => setShowChoferesList(!showChoferesList)}
-              sx={{ mt: 1.5 }}
-            >
-              {showChoferesList ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-              <Typography variant="caption" sx={{ ml: 0.5 }}>
-                {showChoferesList ? 'Ocultar listado' : 'Ver choferes'}
-              </Typography>
-            </IconButton>
-          </Box>
+        <CollapsibleList
+          open={showLists.choferes}
+          onToggle={() => toggleList('choferes')}
+          label="Choferes"
+          items={choferes}
+          onItemClick={(chofer) => {
+            handleChoferChange(chofer);
+            toggleList('choferes');
+          }}
+          emptyText="No hay choferes disponibles"
+          getText={(item) => `${item.nombre} ${item.apellido}`}
+          getSecondaryText={(item) => item.vehiculoAsignado?.patente && `Vehículo: ${item.vehiculoAsignado.patente}`}
+        />
 
-          <Autocomplete
-            options={choferes}
-            getOptionLabel={(option) => `${option.nombre || ''} ${option.apellido || ''}`.trim() || ''}
-            inputValue={inputValueChofer}
-            onInputChange={(_, newValue) => setInputValueChofer(newValue)}
-            value={formData.choferAsignado || null}
-            onChange={(_, newValue) => {
-              const event = {
-                target: {
-                  name: "choferAsignado",
-                  value: newValue || null
-                }
-              };
-              handleLocalChange(event);
-            }}
-            loading={loadingChoferes}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                fullWidth
-                margin="dense"
-                error={!!errors.choferAsignado}
-                sx={{ backgroundColor: grey[50] }}
-                placeholder="Buscar chofer..."
-                InputProps={{
-                  ...params.InputProps,
-                  endAdornment: (
-                    <>
-                      {loadingChoferes ? <CircularProgress color="inherit" size={20} /> : null}
-                      {params.InputProps.endAdornment}
-                    </>
-                  ),
-                }}
-              />
-            )}
-            noOptionsText={
-              inputValueChofer.length > 0 
-                ? "No se encontraron choferes" 
-                : "Escriba al menos 3 caracteres"
-            }
-          />
-          {errors.choferAsignado && <ErrorText>{errors.choferAsignado}</ErrorText>}
+        <SearchAutocomplete
+          label="Vehículo Asignado*"
+          placeholder="Buscar vehículo..."
+          value={normalizedFormData.vehiculoAsignado}
+          inputValue={inputValues.vehiculo}
+          onInputChange={(val) => handleInputChange('vehiculo', val)}
+          onChange={handleVehiculoChange}
+          options={vehiculos}
+          getOptionLabel={(opt) => 
+            !opt ? '' : `${opt.patente} - ${opt.marca} ${opt.modelo}` + 
+            (opt.empresa ? ` (Empresa: ${opt.empresa.nombre_empresa})` : '')
+          }
+          loading={loadingStates.vehiculos}
+          error={errors.vehiculoAsignado}
+          noOptionsText={inputValues.vehiculo.length > 0 ? "No se encontraron vehículos" : "Escriba al menos 3 caracteres"}
+        />
 
-          <Collapse in={showChoferesList}>
-            <Box sx={{ mt: 2, maxHeight: 200, overflow: 'auto', border: `1px solid ${grey[300]}`, borderRadius: 1 }}>
-              <Typography variant="subtitle2" sx={{ p: 1, backgroundColor: grey[100], fontWeight: 'bold' }}>
-                Choferes disponibles ({choferes.length})
-              </Typography>
-              <Divider />
-              <List dense>
-                {choferes.length > 0 ? (
-                  choferes.map((chofer) => (
-                    <ListItem 
-                      key={chofer._id} 
-                      button
-                      onClick={() => {
-                        const event = {
-                          target: {
-                            name: "choferAsignado",
-                            value: chofer
-                          }
-                        };
-                        handleLocalChange(event);
-                        setShowChoferesList(false);
-                      }}
-                    >
-                      <ListItemText 
-                        primary={`${chofer.nombre} ${chofer.apellido}`} 
-                        secondary={`CUIL: ${chofer.cuil}`}
-                      />
-                    </ListItem>
-                  ))
-                ) : (
-                  <ListItem>
-                    <ListItemText primary="No hay choferes disponibles" />
-                  </ListItem>
-                )}
-              </List>
-            </Box>
-          </Collapse>
-        </Box>
+        <CollapsibleList
+          open={showLists.vehiculos}
+          onToggle={() => toggleList('vehiculos')}
+          label="Vehículos"
+          items={vehiculos}
+          onItemClick={(vehiculo) => {
+            handleVehiculoChange(vehiculo);
+            toggleList('vehiculos');
+          }}
+          emptyText="No hay vehículos disponibles"
+          getText={(item) => `${item.patente} - ${item.marca} ${item.modelo}`}
+          getSecondaryText={(item) => item.empresa?.nombre_empresa && `Empresa: ${item.empresa.nombre_empresa}`}
+        />
 
-        {/* Vehículo */}
-        <Box sx={{ mb: 2 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <InputLabel required sx={{ color: grey[900], fontWeight: 'bold', pt: 2 }}>
-              Vehículo*
-            </InputLabel>
-            <IconButton 
-              size="small" 
-              onClick={() => setShowVehiculosList(!showVehiculosList)}
-              sx={{ mt: 1.5 }}
-            >
-              {showVehiculosList ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-              <Typography variant="caption" sx={{ ml: 0.5 }}>
-                {showVehiculosList ? 'Ocultar listado' : 'Ver vehículos'}
-              </Typography>
-            </IconButton>
-          </Box>
-
-          <Autocomplete
-            options={vehiculos}
-            getOptionLabel={(option) => option?.patente || ''}
-            inputValue={inputValueVehiculo}
-            onInputChange={(_, newValue) => setInputValueVehiculo(newValue)}
-            value={formData.vehiculoAsignado || null}
-            onChange={(_, newValue) => {
-              const event = {
-                target: {
-                  name: "vehiculoAsignado",
-                  value: newValue || null
-                }
-              };
-              handleLocalChange(event);
-            }}
-            loading={loadingVehiculos}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                fullWidth
-                margin="dense"
-                error={!!errors.vehiculoAsignado}
-                sx={{ backgroundColor: grey[50] }}
-                placeholder="Buscar vehículo..."
-                InputProps={{
-                  ...params.InputProps,
-                  endAdornment: (
-                    <>
-                      {loadingVehiculos ? <CircularProgress color="inherit" size={20} /> : null}
-                      {params.InputProps.endAdornment}
-                    </>
-                  ),
-                }}
-              />
-            )}
-            noOptionsText={
-              inputValueVehiculo.length > 0 
-                ? "No se encontraron vehículos" 
-                : "Escriba al menos 3 caracteres"
-            }
-          />
-          {errors.vehiculoAsignado && <ErrorText>{errors.vehiculoAsignado}</ErrorText>}
-
-          <Collapse in={showVehiculosList}>
-            <Box sx={{ mt: 2, maxHeight: 200, overflow: 'auto', border: `1px solid ${grey[300]}`, borderRadius: 1 }}>
-              <Typography variant="subtitle2" sx={{ p: 1, backgroundColor: grey[100], fontWeight: 'bold' }}>
-                Vehículos disponibles ({vehiculos.length})
-              </Typography>
-              <Divider />
-              <List dense>
-                {vehiculos.length > 0 ? (
-                  vehiculos.map((vehiculo) => (
-                    <ListItem 
-                      key={vehiculo._id} 
-                      button
-                      onClick={() => {
-                        const event = {
-                          target: {
-                            name: "vehiculoAsignado",
-                            value: vehiculo
-                          }
-                        };
-                        handleLocalChange(event);
-                        setShowVehiculosList(false);
-                      }}
-                    >
-                      <ListItemText 
-                        primary={vehiculo.patente} 
-                        secondary={`${vehiculo.marca} ${vehiculo.modelo} (${vehiculo.tipo_vehiculo})`}
-                      />
-                    </ListItem>
-                  ))
-                ) : (
-                  <ListItem>
-                    <ListItemText primary="No hay vehículos disponibles" />
-                  </ListItem>
-                )}
-              </List>
-            </Box>
-          </Collapse>
-        </Box>
-
-        {/* Tipo de Viaje */}
         <FormControl fullWidth sx={{ mt: 2 }}>
           <InputLabel required sx={{ color: grey[900], fontWeight: 'bold' }}>
             Tipo de Viaje*
           </InputLabel>
           <Select
-            value={formData.tipoViaje || ''}
-            onChange={handleLocalChange}
+            value={normalizedFormData.tipoViaje || ''}
+            onChange={handleChange}
             name="tipoViaje"
             error={!!errors.tipoViaje}
             sx={{ backgroundColor: grey[50] }}

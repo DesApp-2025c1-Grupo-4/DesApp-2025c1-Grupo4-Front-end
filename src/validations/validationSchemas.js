@@ -27,7 +27,7 @@ const validationSchemas = {
     empresa: Yup.string().required('Seleccione la empresa transportista'),
     chofer: Yup.string().required('Seleccione el chofer asignado'),
     vehiculo: Yup.string().required('Seleccione el vehículo asignado'),
-    tipoViaje: Yup.string().required('Seleccione el tipo de viaje (ej: Urgente, Estándar)')
+    tipoViaje: Yup.string().required('Seleccione el tipo de viaje (ej: Nacional, Internacional)')
   }),
   chofer: Yup.object().shape({
     nombre: Yup.string().required('El nombre es requerido (ej: Carlos)'),
