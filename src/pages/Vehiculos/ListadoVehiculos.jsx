@@ -103,9 +103,10 @@ const ListadoVehiculos = () => {
   const handleOpenPopup = async (type, vehiculo) => {
   setSelectedVehiculo(null);
   try {
-    const response = await axios.get(`/api/vehiculos/${vehiculo.patente}`);
+    if (!vehiculo._id) throw new Error('Vehículo sin _id');
+    const response = await axios.get(`/api/vehiculos/${vehiculo._id}`);
     const data = response.data;
-    
+
     setSelectedVehiculo({
       patente: data.patente,
       marca: data.marca,
@@ -115,7 +116,7 @@ const ListadoVehiculos = () => {
       volumen: data.capacidad_carga?.volumen,
       peso: data.capacidad_carga?.peso,
       empresa: data.empresa ? {
-        _id: data.empresa._id,  
+        _id: data.empresa._id,
         nombre_empresa: data.empresa.nombre_empresa
       } : null
     });
@@ -127,15 +128,16 @@ const ListadoVehiculos = () => {
       año: vehiculo.anio,
       volumen: vehiculo.capacidad_carga?.volumen,
       peso: vehiculo.capacidad_carga?.peso,
-      empresa: vehiculo.empresa ? {
-        _id: vehiculo.empresa._id,
-        nombre_empresa: vehiculo.empresa.nombre_empresa
+      empresa: vehiculo.empresaObj ? {
+        _id: vehiculo.empresaObj._id,
+        nombre_empresa: vehiculo.empresaObj.nombre_empresa
       } : null
     });
   }
   setPopupType(type);
   setPopupOpen(true);
 };
+
 
   const handleDeleteVehiculo = async (patente) => {
     try {

@@ -200,21 +200,16 @@ const SelectionModal = ({
 };
 
 const ViajeForm = ({ formData = {}, handleChange, handleBlur, errors, isEditing = false }) => {
-  // Normalización de datos
   const normalizedFormData = {
   ...formData,
-  tipoViaje: formData.tipo_viaje || formData.tipoViaje,
-  fechaInicio: formData.inicio_viaje || formData.fechaInicio,
-  fechaFin: formData.fin_viaje || formData.fechaFin,
-  depositoOrigen: formData.deposito_origen || formData.depositoOrigen,
-  depositoDestino: formData.deposito_destino || formData.depositoDestino,
-  empresaTransportista: formData.empresa_asignada || formData.empresaTransportista || null,
-  choferAsignado: formData.chofer_asignado || formData.choferAsignado,
-  // Asegurar que vehiculoAsignado incluya tanto el del viaje como el del chofer
-  vehiculoAsignado: formData.vehiculo_asignado || 
-                   (formData.chofer_asignado?.vehiculo_defecto) || 
-                   formData.vehiculoAsignado || 
-                   null
+  deposito_origen: formData.depositoOrigen?._id || formData.depositoOrigen,
+  deposito_destino: formData.depositoDestino?._id || formData.depositoDestino,
+  empresa_transportista: formData.empresaTransportista?._id || formData.empresaTransportista,
+  chofer_asignado: formData.choferAsignado?._id || formData.choferAsignado,
+  vehiculo_asignado: formData.vehiculoAsignado?._id || formData.vehiculoAsignado,
+  tipo_viaje: formData.tipoViaje,
+  inicio_viaje: formData.fechaInicio,
+  fin_viaje: formData.fechaFin
 };
 
   // Estados para búsquedas
@@ -330,22 +325,6 @@ const ViajeForm = ({ formData = {}, handleChange, handleBlur, errors, isEditing 
 
   return (
     <Box sx={{ p: 2 }}>
-      {isEditing && (
-        <Box sx={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 2,
-          mb: 2,
-          pt: 1,
-        }}>
-          <Avatar sx={{ bgcolor: indigo[100] }}>
-            <DirectionsCarIcon color="primary" />
-          </Avatar>
-          <Typography variant="h6" color="primary">
-            {normalizedFormData?.idViaje ? `Editando Viaje: ${normalizedFormData.idViaje}` : 'Nuevo Viaje'}
-          </Typography>
-        </Box>
-      )}
 
       <Grid container spacing={2}>
         <Grid item xs={12} md={6}>
@@ -605,7 +584,7 @@ const ViajeForm = ({ formData = {}, handleChange, handleBlur, errors, isEditing 
                 size="small"
                 value={
                   !normalizedFormData.vehiculoAsignado ? '' :
-                    `${normalizedFormData.vehiculoAsignado.patente} - ${normalizedFormData.vehiculoAsignado.marca} ${normalizedFormData.vehiculoAsignado.modelo}`
+                    `${normalizedFormData.vehiculoAsignado.patente}`
                 }
                 sx={fieldSx}
                 InputProps={{

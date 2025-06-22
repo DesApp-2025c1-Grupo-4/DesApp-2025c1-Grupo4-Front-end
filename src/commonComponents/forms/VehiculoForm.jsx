@@ -126,15 +126,15 @@ const SelectionModal = ({ open, onClose, title, items, onSelect, searchValue, on
 
 const VehiculoForm = ({ formData, handleChange, handleBlur, errors, isEditing = false }) => {
   const [empresas, setEmpresas] = useState([]);
-  const [inputValues, setInputValues] = useState({ empresa: formData.empresa?.nombre_empresa || '' });
+  const [inputValues, setInputValues] = useState({ empresa: formData?.empresa?.nombre_empresa || '' });
   const [loadingStates, setLoadingStates] = useState({ empresas: false });
   const [modalStates, setModalStates] = useState({ empresas: false });
 
   useEffect(() => {
-    if (isEditing && formData.empresa) {
+    if (isEditing && formData?.empresa) {
       setInputValues(prev => ({ ...prev, empresa: formData.empresa.nombre_empresa }));
     }
-  }, [isEditing, formData.empresa]);
+  }, [isEditing, formData?.empresa]);
 
   useDebouncedFetch('/api/empresas', 'nombre', inputValues.empresa, setEmpresas, (loading) => setLoadingStates(prev => ({ ...prev, empresas: loading })));
 
@@ -146,59 +146,58 @@ const VehiculoForm = ({ formData, handleChange, handleBlur, errors, isEditing = 
       {isEditing && (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1, pt: 1 }}>
           <Avatar sx={{ bgcolor: indigo[100] }}><DirectionsCarIcon color="primary" /></Avatar>
-          <Typography variant="h6" color="primary">Modificar Vehículo: {formData.patente}</Typography>
+          <Typography variant="h6" color="primary">Modificar Vehículo: {formData?.patente || ''}</Typography>
         </Box>
       )}
 
       <Grid container spacing={2}>
         <Grid item xs={12} md={6}>
           <Typography variant="subtitle1" color="primary" sx={{ mb: 1, fontWeight: 'bold' }}>Información del vehículo</Typography>
-          <InputField label="Patente" name="patente" value={formData.patente} onChange={handleChange} onBlur={handleBlur} error={errors.patente} placeholder="Ej: AA123BB" readOnly={isEditing} />
+          <InputField label="Patente" name="patente" value={formData?.patente || ''} onChange={handleChange} onBlur={handleBlur} error={errors?.patente} placeholder="Ej: AA123BB" readOnly={isEditing} />
           <Box sx={{ mb: 2 }}>
             <InputLabel required sx={{ color: grey[700], fontWeight: 'bold', mb: 0.5 }}>Tipo de Vehículo</InputLabel>
-            <TextField select fullWidth size="small" name="tipoVehiculo" value={formData.tipoVehiculo || ''} onChange={handleChange} onBlur={handleBlur} error={!!errors.tipoVehiculo} sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, '& fieldset': { borderColor: grey[300] } } }}>
+            <TextField select fullWidth size="small" name="tipoVehiculo" value={formData?.tipoVehiculo || ''} onChange={handleChange} onBlur={handleBlur} error={!!errors?.tipoVehiculo} sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, '& fieldset': { borderColor: grey[300] } } }}>
               <MenuItem value="" disabled>Seleccione un tipo</MenuItem>
               {TIPOS_VEHICULO.map((tipo) => <MenuItem key={tipo} value={tipo}>{tipo}</MenuItem>)}
             </TextField>
-            {errors.tipoVehiculo && <ErrorText>{errors.tipoVehiculo}</ErrorText>}
+            {errors?.tipoVehiculo && <ErrorText>{errors.tipoVehiculo}</ErrorText>}
           </Box>
-          <InputField label="Marca" name="marca" value={formData.marca} onChange={handleChange} onBlur={handleBlur} error={errors.marca} placeholder="Ej: Ford, Toyota" />
-          <InputField label="Modelo" name="modelo" value={formData.modelo} onChange={handleChange} onBlur={handleBlur} error={errors.modelo} placeholder="Ej: Focus, Hilux" />
+          <InputField label="Marca" name="marca" value={formData?.marca || ''} onChange={handleChange} onBlur={handleBlur} error={errors?.marca} placeholder="Ej: Ford, Toyota" />
+          <InputField label="Modelo" name="modelo" value={formData?.modelo || ''} onChange={handleChange} onBlur={handleBlur} error={errors?.modelo} placeholder="Ej: Focus, Hilux" />
         </Grid>
 
         <Grid item xs={12} md={6}>
           <Typography variant="subtitle1" color="primary" sx={{ mb: 1, fontWeight: 'bold' }}>Especificaciones</Typography>
-          <InputField label="Capacidad (Volumen)" name="volumen" value={formData.volumen} onChange={handleChange} onBlur={handleBlur} error={errors.volumen} type="number" helperText={isEditing ? `Actual: ${formData.volumenOriginal || 'N/D'}` : undefined} endAdornment={<span>m³</span>} />
-          <InputField label="Capacidad (Peso)" name="peso" value={formData.peso} onChange={handleChange} onBlur={handleBlur} error={errors.peso} type="number" helperText={isEditing ? `Actual: ${formData.pesoOriginal || 'N/D'}` : undefined} endAdornment={<span>kg</span>} />
-          <InputField label="Año" name="año" value={formData.año} onChange={handleChange} onBlur={handleBlur} error={errors.año} type="number" placeholder={`Ej: ${new Date().getFullYear()}`} inputProps={{ min: 1900, max: new Date().getFullYear() + 1 }} />
+          <InputField label="Capacidad (Volumen)" name="volumen" value={formData?.volumen || ''} onChange={handleChange} onBlur={handleBlur} error={errors?.volumen} type="number" helperText={isEditing ? `Actual: ${formData?.volumenOriginal || 'N/D'}` : undefined} endAdornment={<span>m³</span>} />
+          <InputField label="Capacidad (Peso)" name="peso" value={formData?.peso || ''} onChange={handleChange} onBlur={handleBlur} error={errors?.peso} type="number" helperText={isEditing ? `Actual: ${formData?.pesoOriginal || 'N/D'}` : undefined} endAdornment={<span>kg</span>} />
+          <InputField label="Año" name="año" value={formData?.año || ''} onChange={handleChange} onBlur={handleBlur} error={errors?.año} type="number" placeholder={`Ej: ${new Date().getFullYear()}`} inputProps={{ min: 1900, max: new Date().getFullYear() + 1 }} />
 
-          
-<Box sx={{ mb: 2 }}>
-  <InputLabel required sx={{ color: grey[700], fontWeight: 'bold', mb: 0.5 }}>Empresa</InputLabel>
-  <Box sx={{ display: 'flex', gap: 1 }}>
-    <TextField
-      fullWidth
-      size="small"
-      value={formData.empresa?.nombre_empresa || 'Sin empresa asignada'}
-      sx={{ 
-        '& .MuiOutlinedInput-root': { 
-          borderRadius: 2, 
-          '& fieldset': { borderColor: grey[300] } 
-        } 
-      }}
-      InputProps={{ 
-        readOnly: true,
-        startAdornment: formData.empresa && (
-          <BusinessIcon sx={{ mr: 1, color: grey[600] }} />
-        )
-      }}
-    />
-    <IconButton onClick={() => toggleModal('empresas')}>
-      <SearchIcon />
-    </IconButton>
-  </Box>
-  {errors.empresa && <ErrorText>{errors.empresa}</ErrorText>}
-</Box>
+          <Box sx={{ mb: 2 }}>
+            <InputLabel required sx={{ color: grey[700], fontWeight: 'bold', mb: 0.5 }}>Empresa</InputLabel>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <TextField
+                fullWidth
+                size="small"
+                value={formData?.empresa?.nombre_empresa || 'Sin empresa asignada'}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 2,
+                    '& fieldset': { borderColor: grey[300] }
+                  }
+                }}
+                InputProps={{
+                  readOnly: true,
+                  startAdornment: formData?.empresa && (
+                    <BusinessIcon sx={{ mr: 1, color: grey[600] }} />
+                  )
+                }}
+              />
+              <IconButton onClick={() => toggleModal('empresas')}>
+                <SearchIcon />
+              </IconButton>
+            </Box>
+            {errors?.empresa && <ErrorText>{errors.empresa}</ErrorText>}
+          </Box>
 
           <SelectionModal
             open={modalStates.empresas}
