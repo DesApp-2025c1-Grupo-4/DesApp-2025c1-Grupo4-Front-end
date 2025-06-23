@@ -135,21 +135,19 @@ const ListadoDeViajes = () => {
     try {
       // Obtener datos frescos del viaje (sin populate adicional)
       const response = await axios.get(`/api/viajes/${viaje._id}`);
-      
       // Usar los datos transformados que ya vienen del listado
       const viajeExistente = viajes.find(v => v._id === viaje._id);
-      
       setSelectedViaje({
-        _id: viajeExistente._id,
-        depositoOrigen: viajeExistente.deposito_origen,
-        depositoDestino: viajeExistente.deposito_destino,
-        fechaInicio: viajeExistente.inicio_viaje,
-        fechaFin: viajeExistente.fin_viaje,
-        empresaTransportista: viajeExistente.empresa_asignada,
-        choferAsignado: viajeExistente.chofer_asignado,
-        vehiculoAsignado: viajeExistente.vehiculo_asignado,
-        tipoViaje: viajeExistente.tipo_viaje
-      });
+      _id: viaje._id,
+      depositoOrigen: viaje.deposito_origen?._id || viaje.deposito_origen,
+      depositoDestino: viaje.deposito_destino?._id || viaje.deposito_destino,
+      fechaInicio: viaje.inicio_viaje,
+      fechaFin: viaje.fin_viaje,
+      empresaTransportista: viaje.empresa_asignada?._id || viaje.empresa_asignada,
+      choferAsignado: viaje.chofer_asignado?._id || viaje.chofer_asignado,
+      vehiculoAsignado: viaje.vehiculo_asignado?._id || viaje.vehiculo_asignado,
+      tipoViaje: viaje.tipo_viaje
+    });
     } catch (error) {
       console.error('Error al cargar datos del viaje:', error);
       // Usar datos locales como fallback

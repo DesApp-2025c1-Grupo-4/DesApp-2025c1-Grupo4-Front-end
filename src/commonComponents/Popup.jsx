@@ -310,9 +310,19 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem, onSucc
       }
     }
   };
-
-  console.log("Payload final a enviar:", JSON.stringify(dataToSend, null, 2));
-} else if (formType === 'empresa') {
+}   else if (formType === 'viaje') {
+      dataToSend = {
+        deposito_origen: formData.depositoOrigen?._id || formData.depositoOrigen,
+        deposito_destino: formData.depositoDestino?._id || formData.depositoDestino,
+        inicio_viaje: formData.fechaInicio,
+        fin_viaje: formData.fechaFin,
+        empresa_asignada: formData.empresaTransportista?._id || formData.empresaTransportista,
+        chofer_asignado: formData.choferAsignado?._id || formData.choferAsignado,
+        vehiculo_asignado: formData.vehiculoAsignado?._id || formData.vehiculoAsignado,
+        tipo_viaje: formData.tipoViaje,
+        estado: 'planificado' // Asegúrate de incluir el estado requerido
+      };
+    } else if (formType === 'empresa') {
         dataToSend = {
           nombre_empresa: formData.nombre_empresa,
           cuit: formData.cuit,
