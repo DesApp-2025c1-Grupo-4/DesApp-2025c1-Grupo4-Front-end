@@ -8,6 +8,7 @@ import ErrorText from '../ErrorText';
 const EmpresaForm = ({ formData = {}, handleChange, handleBlur, errors = {}, isEditing = false }) => {
   // Asegurar que formData tenga la estructura completa con valores por defecto
   const safeFormData = {
+    _id: formData._id || '',
     nombre_empresa: formData.nombre_empresa || '',
     cuit: formData.cuit || '',
     datos_contacto: {
@@ -73,17 +74,6 @@ const EmpresaForm = ({ formData = {}, handleChange, handleBlur, errors = {}, isE
 
   return (
     <Box sx={{ p: 2 }}>
-      {isEditing && (
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
-          <Avatar sx={{ bgcolor: indigo[100] }}>
-            <BusinessIcon color="primary" />
-          </Avatar>
-          <Typography variant="h6" color="primary">
-            Modificar Empresa: {safeFormData.nombre_empresa}
-          </Typography>
-        </Box>
-      )}
-
       <Grid container spacing={2}>
         <Grid item xs={12} md={6}>
           <Typography variant="subtitle1" color="primary" sx={{ mb: 1, fontWeight: 'bold' }}>

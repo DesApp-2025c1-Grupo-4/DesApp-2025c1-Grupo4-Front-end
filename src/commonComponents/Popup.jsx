@@ -12,20 +12,24 @@ import VehiculoForm from './forms/VehiculoForm';
 import EmpresaForm from './forms/EmpresaForm';
 import SeguimientoForm from './forms/SeguimientoForm';
 import axios from 'axios';
+import get from 'lodash.get';
+import set from 'lodash.set';
 
 const initialData = {
   deposito: {
     tipo: '',
-    razonSocial: '',
-    cuit: '',
-    calle: '',
-    numero: '',
+    direccion: '',
     provincia: '',
+    ciudad: '',
     pais: '',
     nombreContacto: '',
     apellidoContacto: '',
     telefonoContacto: '',
-    horarios: '',
+    horarios: {
+      dias: [],
+      desde: '',
+      hasta: ''
+    },
     coordenadas: ''
   },
   viaje: {
@@ -67,7 +71,7 @@ const initialData = {
 const Popup = ({ buttonName, page, open, onClose, children, selectedItem, onSuccess }) => {
   const [internalOpen, setInternalOpen] = useState(false);
 
-  // Inicializar con el formType correcto para evitar "undefined"
+  // Detectar tipo de formulario según page
   const formType = useMemo(() => {
     if (page.includes('deposito')) return 'deposito';
     if (page.includes('viaje')) return 'viaje';
@@ -77,7 +81,7 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem, onSucc
     return 'default';
   }, [page]);
 
-  // Inicializar formData con el formType actual
+  // Estado del formulario inicializado según tipo
   const [formData, setFormData] = useState(initialData[formType] || {});
 
   const [errors, setErrors] = useState({});
@@ -89,7 +93,6 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem, onSucc
   const isControlled = open !== undefined;
   const currentOpen = isControlled ? open : internalOpen;
 
-  // Cada vez que cambia la apertura o selectedItem, inicializamos datos
   useEffect(() => {
     if (currentOpen) {
       const newFormData = { ...initialData[formType] };
@@ -97,18 +100,17 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem, onSucc
       if (selectedItem) {
         if (formType === 'deposito') {
           newFormData.tipo = selectedItem?.tipo || '';
-          newFormData.horarios = selectedItem?.horarios || '';
-          newFormData.calle = selectedItem?.localizacion?.calle || '';
-          newFormData.numero = selectedItem?.localizacion?.número || '';
-          newFormData.provincia = selectedItem?.localizacion?.provincia || '';
+          // Asegurar que horarios sea objeto y no string
+          newFormData.horarios = selectedItem?.horarios || { dias: [], desde: '', hasta: '' };
+          newFormData.direccion = selectedItem?.localizacion?.direccion || '';
+          newFormData.provincia = selectedItem?.localizacion?.provincia_estado || '';
+          newFormData.ciudad = selectedItem?.localizacion?.ciudad || '';
           newFormData.pais = selectedItem?.localizacion?.pais || '';
           newFormData.coordenadas = selectedItem?.localizacion?.coordenadas || '';
-          newFormData.nombreContacto = selectedItem?.contacto?.nombre || '';
-          newFormData.apellidoContacto = selectedItem?.contacto?.apellido || '';
-          newFormData.telefonoContacto = selectedItem?.contacto?.telefono || '';
-          newFormData.razonSocial = selectedItem?.razonSocial || '';
-          newFormData.cuit = selectedItem?.cuit || '';
-        } 
+          newFormData.nombreContacto = selectedItem?.personal_contacto?.nombre || '';   
+          newFormData.apellidoContacto = selectedItem?.personal_contacto?.apellido || ''; 
+          newFormData.telefonoContacto = selectedItem?.personal_contacto?.telefono || ''; 
+        }
         else if (formType === 'viaje') {
           newFormData.idViaje = selectedItem?._id || '';
           newFormData.depositoOrigen = selectedItem?.depositoOrigen?._id || selectedItem?.depositoOrigen || null;
@@ -148,7 +150,6 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem, onSucc
           };
           newFormData.domicilio_fiscal = {
             calle: selectedItem?.domicilio_fiscal?.calle || '',
-            numero: selectedItem?.domicilio_fiscal?.numero || '',
             ciudad: selectedItem?.domicilio_fiscal?.ciudad || '',
             provincia: selectedItem?.domicilio_fiscal?.provincia || '',
             pais: selectedItem?.domicilio_fiscal?.pais || ''
@@ -171,18 +172,36 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem, onSucc
   };
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    if (touched[name]) {
-      validationSchemas[formType].validateAt(name, { [name]: value })
-        .then(() => setErrors(prev => ({ ...prev, [name]: '' })))
-        .catch(err => setErrors(prev => ({ ...prev, [name]: err.message })));
-    }
-  };
+  const { name, value } = e.target;
+
+  setFormData(prev => {
+    const newFormData = { ...prev };
+    set(newFormData, name, value);
+    return newFormData;
+  });
+  if (errors[name] || errors[name.split('.')[0]]) {
+    setErrors(prev => {
+      const newErrors = { ...prev };
+      if (name.includes('.')) {
+        const [parent, child] = name.split('.');
+        if (newErrors[parent]?.[child]) {
+          delete newErrors[parent][child];
+          if (Object.keys(newErrors[parent]).length === 0) {
+            delete newErrors[parent];
+          }
+        }
+      } else {
+        delete newErrors[name];
+      }
+      return newErrors;
+    });
+  }
+};
 
   const handleBlur = (e) => {
     const { name } = e.target;
     setTouched(prev => ({ ...prev, [name]: true }));
+
     validationSchemas[formType].validateAt(name, formData)
       .then(() => setErrors(prev => ({ ...prev, [name]: '' })))
       .catch(error => setErrors(prev => ({ ...prev, [name]: error.message })));
@@ -199,7 +218,6 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem, onSucc
     setTouched(allTouched);
 
     try {
-      // Aquí ajustamos para que los campos que deben ser objetos con _id tengan esa forma
       let formDataToValidate = { ...formData };
 
       if (formType === 'viaje') {
@@ -233,23 +251,23 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem, onSucc
 
       if (formType === 'deposito') {
         dataToSend = {
-          tipo: formData.tipo,
-          activo: true,
           localizacion: {
-            direccion: `${formData.calle} ${formData.numero}`,
-            provincia_estado: formData.provincia,
-            ciudad: formData.provincia,
+            direccion: formData.direccion,
+            provincia_estado: formData.provincia, 
+            ciudad: formData.ciudad,
             pais: formData.pais
           },
+          tipo: formData.tipo,
+          activo: true, 
           personal_contacto: {
             nombre: formData.nombreContacto,
             apellido: formData.apellidoContacto,
             telefono: formData.telefonoContacto
           },
           horarios: {
-            dias: ['lunes', 'martes', 'miércoles', 'jueves', 'viernes'],
-            desde: '08:00',
-            hasta: '17:00'
+            dias: formData.horarios?.dias || [],
+            desde: formData.horarios?.desde || '',
+            hasta: formData.horarios?.hasta || ''
           }
         };
       } else if (formType === 'vehiculo') {
@@ -274,20 +292,12 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem, onSucc
           empresa: dataToSend.empresa?._id || dataToSend.empresa,
           vehiculoAsignado: dataToSend.vehiculoAsignado?._id || dataToSend.vehiculoAsignado
         };
-      } else if (formType === 'vehiculo') {
-        dataToSend = {
-          ...dataToSend,
-          empresa: typeof dataToSend.empresa === 'object' 
-            ? dataToSend.empresa._id || '' 
-            : dataToSend.empresa || ''
-        };
       } else if (formType === 'empresa') {
         dataToSend = {
           nombre_empresa: formData.nombre_empresa,
           cuit: formData.cuit,
           domicilio_fiscal: {
             calle: formData.domicilio_fiscal.calle,
-            numero: formData.domicilio_fiscal.numero,
             ciudad: formData.domicilio_fiscal.ciudad,
             provincia: formData.domicilio_fiscal.provincia,
             pais: formData.domicilio_fiscal.pais,
@@ -295,7 +305,8 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem, onSucc
           datos_contacto: {
             telefono: String(formData.datos_contacto.telefono),
             mail: formData.datos_contacto.mail
-          }
+          },
+          activo: true
         };
       }
 
@@ -313,24 +324,36 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem, onSucc
       window.location.reload();
 
     } catch (error) {
-      console.error('Error al enviar datos:', error);
-      setIsSubmitting(false);
-
-      if (error.response) {
-        const backendErrors = error.response.data.errors || {};
-        const formattedErrors = {};
-        Object.keys(backendErrors).forEach(key => {
-          formattedErrors[key] = backendErrors[key].message;
-        });
-        setErrors(formattedErrors);
-      } else if (error.inner) {
-        const newErrors = {};
-        error.inner.forEach(err => newErrors[err.path] = err.message);
-        setErrors(newErrors);
-      } else {
-        setErrors({ _general: 'Error de conexión con el servidor' });
-      }
+  setIsSubmitting(false);
+  
+  if (error.response) {
+    const backendError = error.response.data;
+    let formattedErrors = {};
+    
+    // Manejar error específico de horarios
+    if (backendError.message?.includes('hora de cierre')) {
+      formattedErrors = {
+        ...formattedErrors,
+        horarios: {
+          hasta: backendError.message
+        }
+      };
+    } else if (backendError.errors) {
+      // Mapear otros errores de validación
+      Object.entries(backendError.errors).forEach(([field, err]) => {
+        formattedErrors[field] = err.message;
+      });
+    } else {
+      formattedErrors._general = backendError.message || 'Error al procesar la solicitud';
     }
+    
+    setErrors(formattedErrors);
+    console.error('Errores del backend:', backendError);
+  } else {
+    setErrors({ _general: error.message || 'Error de conexión con el servidor' });
+    console.error('Error desconocido:', error);
+  }
+}
   };
 
   const renderForm = () => {
@@ -484,24 +507,20 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem, onSucc
               >
                 Cancelar
               </Button>
-              <Button
-                onClick={handleSubmit}
-                color={page.includes('confirmar-eliminar') ? 'error' : 'primary'}
-                variant="contained"
-                disabled={isSubmitting || (Object.values(errors).some(Boolean) && !page.includes('confirmar-eliminar'))}
-                sx={{
-                  minWidth: 120,
-                  fontWeight: 600,
-                  py: 1.5,
-                  borderRadius: '8px',
-                  boxShadow: 'none',
-                  '&:hover': {
-                    boxShadow: theme.shadows[2]
-                  }
-                }}
-              >
-                {isSubmitting ? 'Guardando...' : (page.includes('confirmar-eliminar') ? 'Eliminar' : 'Guardar')}
-              </Button>
+              {!page.includes('confirmar-eliminar') && (
+                <Button
+                  onClick={handleSubmit}
+                  variant="contained"
+                  sx={{
+                    minWidth: 120,
+                    py: 1.5,
+                    borderRadius: '8px'
+                  }}
+                  disabled={isSubmitting}
+                >
+                  Guardar
+                </Button>
+              )}
             </DialogActions>
           </Box>
         </Box>

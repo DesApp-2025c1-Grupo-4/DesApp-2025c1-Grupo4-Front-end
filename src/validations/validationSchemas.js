@@ -19,20 +19,34 @@ const parseCustomDate = (value, originalValue) => {
 
 const validationSchemas = {
   deposito: Yup.object().shape({
-    tipo: Yup.string().required('El tipo de depósito es requerido (ej: Almacén, Centro de distribución)'),
-    horarios: Yup.string().required('Los horarios son requeridos (ej: Lunes a Viernes 8:00-18:00)'),
-    calle: Yup.string().required('La dirección es requerida (ej: Av. Corrientes 123)'),
-    numero: Yup.string()
-      .required('El número es requerido')
-      .matches(/^[0-9]+$/, 'Solo se permiten números'),
-    provincia: Yup.string().required('La provincia es requerida (ej: Buenos Aires)'),
-    pais: Yup.string().required('El país es requerido (ej: Argentina)'),
-    nombreContacto: Yup.string().required('El nombre de contacto es requerido (ej: Juan)'),
-    apellidoContacto: Yup.string().required('El apellido de contacto es requerido (ej: Pérez)'),
-    telefonoContacto: Yup.string()
-      .required('El teléfono es requerido')
-      .matches(/^[0-9]{10,15}$/, 'Teléfono inválido. Debe tener 10-15 dígitos (ej: 1123456789)')
-  }),
+  tipo: Yup.string().required('El tipo de depósito es requerido (ej: Propio, Tercerizado)'),
+  horarios: Yup.object().shape({
+  desde: Yup.string().required('Hora de apertura requerida'),
+  hasta: Yup.string()
+  .required('Hora de cierre requerida')
+  .test(
+    'is-after',
+    'La hora de cierre debe ser posterior a la hora de apertura',
+    function(value) {
+      const { desde } = this.parent;
+      if (!desde || !value) return true;
+      const [fromH, fromM] = desde.split(':').map(Number);
+      const [toH, toM] = value.split(':').map(Number);
+      return (toH > fromH) || (toH === fromH && toM > fromM);
+    }
+  )
+}),
+  direccion: Yup.string().required('La dirección es requerida (ej: Av. Corrientes 123)'),
+  provincia: Yup.string().required('La provincia es requerida (ej: Buenos Aires)'),
+  ciudad: Yup.string().required('La ciudad es requerida (ej: La Matanza)'),
+  pais: Yup.string().required('El país es requerido (ej: Argentina)'),
+  nombreContacto: Yup.string().required('El nombre de contacto es requerido (ej: Juan)'),
+  apellidoContacto: Yup.string().required('El apellido de contacto es requerido (ej: Pérez)'),
+  telefonoContacto: Yup.string()
+    .required('El teléfono es requerido')
+    .matches(/^[0-9]{10,15}$/, 'Teléfono inválido. Debe tener 10-15 dígitos (ej: 1123456789)')
+}),
+
 
   viaje: Yup.object().shape({
     fechaInicio: Yup.date()
