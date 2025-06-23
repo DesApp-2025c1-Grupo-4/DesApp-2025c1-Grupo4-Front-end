@@ -270,23 +270,21 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem, onSucc
             hasta: formData.horarios?.hasta || ''
           }
         };
-      } else if (formType === 'vehiculo') {
-        dataToSend = {
-          patente: formData.patente,
-          tipo_vehiculo: formData.tipoVehiculo,
-          marca: formData.marca,
-          modelo: formData.modelo,
-          anio: formData.año,
-          capacidad_carga: { 
-            volumen: formData.volumen,
-            peso: formData.peso
-          },
-          empresa: {
-            _id: formData.empresa 
-          },
-          activo: true 
-        };
-      } else if (formType === 'chofer') {
+      } if (formType === 'vehiculo') {
+          dataToSend = {
+            patente: formData.patente,
+            tipo_vehiculo: formData.tipoVehiculo,
+            marca: formData.marca,
+            modelo: formData.modelo,
+            anio: formData.año,
+            capacidad_carga: { 
+              volumen: formData.volumen,
+              peso: formData.peso
+            },
+            empresa: typeof formData.empresa === 'object' ? formData.empresa._id : formData.empresa, // Solo el ID
+            activo: true
+          };
+        } else if (formType === 'chofer') {
         dataToSend = {
           ...dataToSend,
           empresa: dataToSend.empresa?._id || dataToSend.empresa,

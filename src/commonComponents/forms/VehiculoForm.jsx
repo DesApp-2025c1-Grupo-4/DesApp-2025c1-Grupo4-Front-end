@@ -143,13 +143,6 @@ const VehiculoForm = ({ formData, handleChange, handleBlur, errors, isEditing = 
 
   return (
     <Box sx={{ p: 2 }}>
-      {isEditing && (
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1, pt: 1 }}>
-          <Avatar sx={{ bgcolor: indigo[100] }}><DirectionsCarIcon color="primary" /></Avatar>
-          <Typography variant="h6" color="primary">Modificar Vehículo: {formData?.patente || ''}</Typography>
-        </Box>
-      )}
-
       <Grid container spacing={2}>
         <Grid item xs={12} md={6}>
           <Typography variant="subtitle1" color="primary" sx={{ mb: 1, fontWeight: 'bold' }}>Información del vehículo</Typography>
@@ -205,7 +198,12 @@ const VehiculoForm = ({ formData, handleChange, handleBlur, errors, isEditing = 
             title="Seleccionar Empresa"
             items={empresas}
             onSelect={(empresa) => {
-              handleChange({ target: { name: 'empresa', value: empresa } });
+              handleChange({ 
+                target: { 
+                  name: 'empresa', 
+                  value: empresa._id
+                }
+              });
               setInputValues(prev => ({ ...prev, empresa: empresa.nombre_empresa }));
             }}
             searchValue={inputValues.empresa}

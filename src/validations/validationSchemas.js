@@ -87,9 +87,7 @@ const validationSchemas = {
     .max(new Date().getFullYear(), 'Año no puede ser futuro'),
   volumen: Yup.number().required('El volumen es requerido en m³ (ej: 50)').min(0),
   peso: Yup.number().required('El peso es requerido en kg (ej: 3000)').min(0),
-  empresa: Yup.object().shape({
-    nombre_empresa: Yup.string().required('El nombre de la empresa es requerido')
-  }).required('Seleccione la empresa asociada')
+  empresa: Yup.string().required('Seleccione la empresa asociada')
 }),
 
   empresa: Yup.object().shape({
