@@ -63,16 +63,15 @@ const validationSchemas = {
 
 
   chofer: Yup.object().shape({
-    nombre: Yup.string().required('El nombre es requerido (ej: Carlos)'),
-    apellido: Yup.string().required('El apellido es requerido (ej: Gómez)'),
-    dni: Yup.string()
-      .required('El DNI es requerido')
-      .matches(/^\d{7,8}$/, 'DNI inválido. Debe tener 7 u 8 dígitos (ej: 23456789)'),
-    fechaNacimiento: Yup.date()
-      .required('La fecha de nacimiento es requerida (ej: 01/01/1980)')
-      .max(new Date(), 'La fecha no puede ser futura'),
-    empresa: Yup.string().required('Seleccione la empresa asociada')
-  }),
+  nombre: Yup.string().required('Requerido'),
+  apellido: Yup.string().required('Requerido'),
+  cuil: Yup.string().required('Requerido'),
+  fechaNacimiento: Yup.date().required('Requerido'),
+  empresa: Yup.string().required('Requerido'),
+  licenciaNumero: Yup.string().required('Requerido'),
+  licenciaTipo: Yup.array().min(1, 'Seleccione al menos un tipo'),
+  licenciaExpiracion: Yup.date().required('Requerido')
+}),
 
   vehiculo: Yup.object().shape({
   patente: Yup.string()

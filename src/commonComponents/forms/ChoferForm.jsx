@@ -140,30 +140,18 @@ const ChoferForm = ({ formData, handleChange, handleBlur, errors, empresas: empr
   useDebouncedFetch('/api/vehiculos', 'patente', inputValues.vehiculo, setVehiculosDisponibles, (loading) => setLoadingStates(prev => ({ ...prev, vehiculos: loading })));
 
   const onEmpresaSelect = (empresa) => {
-    handleChange({ target: { name: "empresa", value: empresa } });
-    if (formData.vehiculoAsignado?.empresa?._id !== empresa._id) {
-      handleChange({ target: { name: "vehiculoAsignado", value: null } });
-    }
+    const empresaId = empresa._id.replace(/^"|"$/g, '');
+    handleChange({ target: { name: "empresa", value: empresaId } });
   };
 
   const onVehiculoSelect = (vehiculo) => {
-    handleChange({ target: { name: "vehiculoAsignado", value: vehiculo } });
-    if (vehiculo?.empresa) {
-      handleChange({ target: { name: "empresa", value: vehiculo.empresa } });
-      setInputValues(prev => ({ ...prev, empresa: vehiculo.empresa.nombre_empresa }));
-    }
+    const vehiculoId = vehiculo._id.replace(/^"|"$/g, '');
+    handleChange({ target: { name: "vehiculoAsignado", value: vehiculoId } });
   };
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
       <Box sx={{ p: 2 }}>
-        {isEditing && (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1, pt: 1 }}>
-            <Avatar sx={{ bgcolor: indigo[100] }}><Person color="primary" /></Avatar>
-            <Typography variant="h6" color="primary">Modificar Chofer: {formData.nombre} {formData.apellido}</Typography>
-          </Box>
-        )}
-
         <Grid container spacing={2}>
           {/* Información Personal */}
           <Grid item xs={12} md={6}>
@@ -182,7 +170,14 @@ const ChoferForm = ({ formData, handleChange, handleBlur, errors, empresas: empr
               <DatePicker
                 value={formData.fechaNacimiento || null}
                 onChange={(date) => handleChange({ target: { name: 'fechaNacimiento', value: date } })}
-                renderInput={(params) => <TextField {...params} fullWidth size="small" sx={styles.field} />}
+                slotProps={{
+                  textField: {
+                    fullWidth: true,
+                    size: 'small',
+                    error: !!errors.fechaNacimiento,
+                    sx: styles.field
+                  }
+                }}
               />
             </FieldContainer>
           </Grid>
@@ -222,6 +217,43 @@ const ChoferForm = ({ formData, handleChange, handleBlur, errors, empresas: empr
                 />
                 <IconButtonStyled onClick={() => setModalStates(prev => ({ ...prev, vehiculos: !prev.vehiculos }))} icon={Search} />
               </Box>
+            </FieldContainer>
+
+            <FieldContainer label="Número de Licencia" error={errors.licenciaNumero}>
+              <TextField
+                fullWidth
+                size="small"
+                name="licenciaNumero"
+                value={formData.licenciaNumero || ''}
+                onChange={handleChange}
+                sx={styles.field}
+              />
+            </FieldContainer>
+
+            <FieldContainer label="Tipo de Licencia" error={errors.licenciaTipo}>
+              <Autocomplete
+                multiple
+                options={['A1', 'A2', 'B1', 'B2', 'C1', 'C2', 'C3', 'D1', 'D2', 'E']}
+                value={formData.licenciaTipo || []}
+                onChange={(_, value) => handleChange({ target: { name: 'licenciaTipo', value } })}
+                renderInput={(params) => (
+                  <TextField {...params} size="small" sx={styles.field} />
+                )}
+              />
+            </FieldContainer>
+
+            <FieldContainer label="Fecha Expiración Licencia" error={errors.licenciaExpiracion}>
+              <DatePicker
+                value={formData.licenciaExpiracion || null}
+                onChange={(date) => handleChange({ target: { name: 'licenciaExpiracion', value: date } })}
+                slotProps={{
+                  textField: {
+                    fullWidth: true,
+                    size: 'small',
+                    sx: styles.field
+                  }
+                }}
+              />
             </FieldContainer>
           </Grid>
         </Grid>

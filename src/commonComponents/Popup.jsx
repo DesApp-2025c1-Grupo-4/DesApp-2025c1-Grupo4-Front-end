@@ -14,6 +14,7 @@ import SeguimientoForm from './forms/SeguimientoForm';
 import axios from 'axios';
 import get from 'lodash.get';
 import set from 'lodash.set';
+import { format } from 'date-fns';
 
 const initialData = {
   deposito: {
@@ -123,12 +124,13 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem, onSucc
           newFormData.tipoViaje = selectedItem?.tipoViaje || '';
         }
         else if (formType === 'chofer') {
+          newFormData._id = selectedItem?._id || '';
           newFormData.nombre = selectedItem?.nombre || '';
           newFormData.apellido = selectedItem?.apellido || '';
           newFormData.cuil = selectedItem?.cuil || '';
-          newFormData.fechaNacimiento = selectedItem?.fechaNacimiento || '';
-          newFormData.empresa = selectedItem?.empresa || '';
-          newFormData.vehiculoAsignado = selectedItem?.vehiculoAsignado || '';
+          newFormData.fechaNacimiento = selectedItem?.fechaNacimiento || null;
+          newFormData.empresa = selectedItem?.empresa || null;
+          newFormData.vehiculoAsignado = selectedItem?.vehiculoAsignado || null;
         }
         else if (formType === 'vehiculo') {
           newFormData._id = selectedItem?._id || '';
@@ -285,12 +287,32 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem, onSucc
             activo: true
           };
         } else if (formType === 'chofer') {
-        dataToSend = {
-          ...dataToSend,
-          empresa: dataToSend.empresa?._id || dataToSend.empresa,
-          vehiculoAsignado: dataToSend.vehiculoAsignado?._id || dataToSend.vehiculoAsignado
-        };
-      } else if (formType === 'empresa') {
+  // Datos mínimos requeridos según el modelo chofer.js
+  dataToSend = {
+    nombre: formData.nombre,
+    apellido: formData.apellido,
+    cuil: formData.cuil,
+    fecha_nacimiento: formData.fechaNacimiento,
+    empresa: formData.empresa, // Solo el ID
+    vehiculo_defecto: formData.vehiculoAsignado || null,
+    activo: true,
+    licencia: {
+      numero: formData.licenciaNumero || "00000000", // Valor temporal requerido
+      tipos: formData.licenciaTipos || ["C2"], // Valor temporal requerido
+      fecha_expiracion: formData.licenciaExpiracion 
+        ? format(new Date(formData.licenciaExpiracion), 'dd/MM/yyyy')
+        : format(new Date(), 'dd/MM/yyyy'), // Valor por defecto
+      documento: {
+        data: "", // Campo obligatorio - valor temporal
+        contentType: "application/pdf", // Valor temporal
+        fileName: "licencia.pdf", // Valor temporal
+        size: 0 // Valor temporal
+      }
+    }
+  };
+
+  console.log("Payload final a enviar:", JSON.stringify(dataToSend, null, 2));
+} else if (formType === 'empresa') {
         dataToSend = {
           nombre_empresa: formData.nombre_empresa,
           cuit: formData.cuit,

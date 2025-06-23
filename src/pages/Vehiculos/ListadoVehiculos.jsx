@@ -107,7 +107,7 @@ const ListadoVehiculos = () => {
     año: vehiculo.anio,
     volumen: vehiculo.capacidad_carga?.volumen,
     peso: vehiculo.capacidad_carga?.peso,
-    empresa: vehiculo.empresa?._id || vehiculo.empresa 
+    empresa: vehiculo.empresa?._id || vehiculo.empresa
   });
   setPopupType(type);
   setPopupOpen(true);

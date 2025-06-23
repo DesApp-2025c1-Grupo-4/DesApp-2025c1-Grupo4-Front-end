@@ -113,13 +113,12 @@ const ListadoDepositos = () => {
 
   const handleUpdateDeposito = async (depositoActualizado) => {
   try {
-    // Transformar los datos al formato que espera el backend
     const dataToSend = {
       tipo: depositoActualizado.tipo,
-      activo: true, // Asumiendo que siempre queremos que esté activo al actualizar
+      activo: true, 
       localizacion: {
         direccion: depositoActualizado.direccion,
-        provincia_estado: depositoActualizado.provincia, // Nota: el backend espera provincia_estado
+        provincia_estado: depositoActualizado.provincia,
         ciudad: depositoActualizado.ciudad,
         pais: depositoActualizado.pais
       },

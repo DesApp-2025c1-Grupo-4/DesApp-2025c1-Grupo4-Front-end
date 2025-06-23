@@ -34,6 +34,7 @@ const ListadoChoferes = () => {
 
       const datosTransformados = response.data.map(item => ({
         ...item,
+        _id: item._id, 
         fechaNacimiento: dateFormat(item.fecha_nacimiento),
         empresa: item.empresa?.nombre_empresa || '',
         vehiculoAsignado: item.vehiculo_defecto ? 
@@ -95,48 +96,46 @@ const ListadoChoferes = () => {
   };
 
   const handleOpenPopup = async (type, chofer = null) => {
-    setPopupType(type);
-    
-    if (type === 'modificar-chofer' && chofer) {
-      try {
-        // Obtener datos frescos del chofer
-        const response = await axios.get(`/api/choferes/${chofer.cuil}`);
-        const choferData = response.data;
-        
-        // Obtener listado de empresas y vehículos disponibles
-        const [empresasResponse, vehiculosResponse] = await Promise.all([
-          axios.get('/api/empresas'),
-          axios.get('/api/vehiculos')
-        ]);
-        
-        setSelectedChofer({
-          ...choferData,
-          nombre: choferData.nombre || '',
-          apellido: choferData.apellido || '',
-          cuil: choferData.cuil || '',
-          fechaNacimiento: choferData.fecha_nacimiento ? new Date(choferData.fecha_nacimiento) : null,
-          empresa: choferData.empresa || null, // Objeto completo de empresa
-          vehiculoAsignado: choferData.vehiculo_defecto || null, // Objeto completo de vehículo
-          empresasDisponibles: empresasResponse.data,
-          vehiculosDisponibles: vehiculosResponse.data
-        });
-      } catch (error) {
-        console.error('Error al cargar datos del chofer:', error);
-        // Usar datos locales si falla la consulta
-        setSelectedChofer({
-          ...chofer,
-          nombre: chofer.nombre || '',
-          apellido: chofer.apellido || '',
-          cuil: chofer.cuil || '',
-          fechaNacimiento: chofer.fecha_nacimiento ? new Date(chofer.fecha_nacimiento) : null,
-          empresa: chofer.empresaObj || null,
-          vehiculoAsignado: chofer.vehiculoObj || null,
-          empresasDisponibles: [],
-          vehiculosDisponibles: []
-        });
-      }
-    } else {
-      try {
+  setPopupType(type);
+  
+  if (type === 'modificar-chofer' && chofer) {
+    try {
+      // Obtener datos frescos del chofer por ID
+      const response = await axios.get(`/api/choferes/${chofer._id}`);
+      const choferData = response.data;
+      
+      // Resto del código permanece igual...
+      setSelectedChofer({
+        ...choferData,
+        _id: choferData._id, // Asegurar que tenemos el ID
+        nombre: choferData.nombre || '',
+        apellido: choferData.apellido || '',
+        cuil: choferData.cuil || '',
+        fechaNacimiento: choferData.fecha_nacimiento ? new Date(choferData.fecha_nacimiento) : null,
+        empresa: choferData.empresa || null,
+        vehiculoAsignado: choferData.vehiculo_defecto || null, // Usar vehiculo_defecto del backend
+        empresasDisponibles: [],
+        vehiculosDisponibles: []
+      });
+
+    } catch (error) {
+      console.error('Error al cargar datos del chofer:', error);
+      // Usar datos locales si falla la consulta
+      setSelectedChofer({
+        ...chofer,
+        _id: chofer._id, // Asegurar que tenemos el ID
+        nombre: chofer.nombre || '',
+        apellido: chofer.apellido || '',
+        cuil: chofer.cuil || '',
+        fechaNacimiento: chofer.fecha_nacimiento ? new Date(chofer.fecha_nacimiento) : null,
+        empresa: chofer.empresaObj || null,
+        vehiculoAsignado: chofer.vehiculoObj || null,
+        empresasDisponibles: [],
+        vehiculosDisponibles: []
+      });
+    }
+  } else {
+    try {
         // Para creación de nuevo chofer
         const [empresasResponse, vehiculosResponse] = await Promise.all([
           axios.get('/api/empresas'),
@@ -163,11 +162,11 @@ const ListadoChoferes = () => {
     }
     
     setPopupOpen(true);
-  };
+};
 
-  const handleDeleteChofer = async (cuil) => {
+  const handleDeleteChofer = async (chofer) => {
     try {
-      await axios.patch(`/api/choferes/${cuil}/delete`);
+      await axios.patch(`/api/choferes/${chofer._id}/delete`);
       await fetchChoferes();
       return { success: true };
     } catch (error) {
@@ -207,9 +206,15 @@ const ListadoChoferes = () => {
     },
     {
       id: 'eliminar', label: 'Eliminar', minWidth: 80, align: 'center',
-      render: (_, row) => <IconButton onClick={() => handleOpenPopup('confirmar-eliminar', row)} size="small" color="error">
+    render: (_, row) => (
+      <IconButton 
+        onClick={() => handleOpenPopup('confirmar-eliminar', row)} 
+        size="small" 
+        color="error"
+      >
         <CloseOutlinedIcon fontSize="small" />
       </IconButton>
+    )
     }
   ];
 
@@ -223,7 +228,7 @@ const ListadoChoferes = () => {
         onClose={() => setPopupOpen(false)}
         page={popupType}
         selectedItem={selectedChofer}
-        onDelete={popupType === 'confirmar-eliminar' ? handleDeleteChofer : null}
+        onDelete={popupType === 'confirmar-eliminar' ? () => handleDeleteChofer(selectedChofer) : null}
         onSubmit={popupType === 'modificar-chofer' ? handleSubmitChofer : null}
         buttonName={popupType === 'modificar-chofer' ? 'Modificar Chofer' : popupType === 'confirmar-eliminar' ? 'Eliminar Chofer' : 'Aceptar'}
         message={popupType === 'confirmar-eliminar' ? '¿Está seguro que desea eliminar este chofer?' : ''}

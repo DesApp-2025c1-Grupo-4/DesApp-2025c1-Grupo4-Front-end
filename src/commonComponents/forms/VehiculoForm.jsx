@@ -171,7 +171,7 @@ const VehiculoForm = ({ formData, handleChange, handleBlur, errors, isEditing = 
               <TextField
                 fullWidth
                 size="small"
-                value={formData?.empresa?.nombre_empresa || 'Sin empresa asignada'}
+                value={formData?.empresaNombre || 'Sin empresa asignada'} // Usar empresaNombre
                 sx={{
                   '& .MuiOutlinedInput-root': {
                     borderRadius: 2,
