@@ -10,7 +10,7 @@ import axios from 'axios';
 
 const ListadoEmpresas = () => {
   const [filtros, setFiltros] = useState({
-    criterio: 'Razón Social',
+    criterio: 'CUIT',
     busqueda: ''
   });
   const [pagina, setPagina] = useState(1);
@@ -276,7 +276,7 @@ const ListadoEmpresas = () => {
           onSearch={aplicarFiltros}
           onClear={() => {
             setFiltros({
-              criterio: 'Razón Social',
+              criterio: 'Cuit',
               busqueda: ''
             });
             setEmpresasFiltradas(empresas);
