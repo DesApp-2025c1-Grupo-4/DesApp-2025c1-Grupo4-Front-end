@@ -294,6 +294,22 @@ const ViajeForm = ({ formData = {}, handleChange, handleBlur, errors, isEditing 
   }
 };
 
+const handleEmpresaSelect = (empresa) => {
+  if (!empresa?._id) {
+    console.error('Empresa seleccionada sin ID:', empresa);
+    return;
+  }
+
+  handleChange({
+    target: {
+      name: "empresaTransportista",
+      value: empresa  // ← aquí está el fix
+    }
+  });
+
+  handleInputChange('empresa', empresa.nombre_empresa);
+};
+
   const handleVehiculoChange = (vehiculo) => {
     handleChange({ target: { name: "vehiculoAsignado", value: vehiculo } });
     if (vehiculo?.empresa) {
@@ -506,22 +522,12 @@ const ViajeForm = ({ formData = {}, handleChange, handleBlur, errors, isEditing 
             onClose={() => toggleModal('empresas')}
             title="Seleccionar Empresa Transportista"
             items={empresas}
-            onSelect={(empresa) => {
-              handleChange({ target: { name: "empresaTransportista", value: empresa } });
-              // Limpiar chofer y vehículo si no pertenecen a esta empresa
-              if (normalizedFormData.choferAsignado?.empresa?._id !== empresa._id) {
-                handleChange({ target: { name: "choferAsignado", value: null } });
-              }
-              if (normalizedFormData.vehiculoAsignado?.empresa?._id !== empresa._id) {
-                handleChange({ target: { name: "vehiculoAsignado", value: null } });
-              }
-            }}
+            onSelect={handleEmpresaSelect}  // Usamos la nueva función aquí
             searchValue={inputValues.empresa}
             onSearchChange={(val) => handleInputChange('empresa', val)}
             loading={loadingStates.empresas}
             getText={(item) => item.nombre_empresa}
             getSecondaryText={(item) => `CUIT: ${item.cuit}`}
-            getThirdText={(item) => `Tel: ${item.telefono}`}
             emptyText="No hay empresas disponibles"
             icon={BusinessIcon}
           />
