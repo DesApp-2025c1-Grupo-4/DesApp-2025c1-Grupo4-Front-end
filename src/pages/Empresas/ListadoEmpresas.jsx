@@ -28,16 +28,18 @@ const ListadoEmpresas = () => {
     const fetchEmpresas = async () => {
       try {
         const response = await axios.get('/api/empresas');
-        
-        const datosTransformados = response.data.map(item => ({
-          ...item,
-          razonSocial: item.nombre_empresa || 'Sin nombre',
-          domicilioFiscal: item.domicilio_fiscal ? 
-            `${item.domicilio_fiscal.calle}, ${item.domicilio_fiscal.ciudad}, ${item.domicilio_fiscal.provincia}` : 
-            'Sin domicilio',
-          telefono: item.datos_contacto?.telefono || 'Sin teléfono',
-          email: item.datos_contacto?.mail || 'Sin email'
-        }));
+        // Filtrar solo empresas activas y transformar datos
+        const datosTransformados = response.data
+          .filter(item => item.activo !== false)
+          .map(item => ({
+            ...item,
+            razonSocial: item.nombre_empresa || 'Sin nombre',
+            domicilioFiscal: item.domicilio_fiscal ? 
+              `${item.domicilio_fiscal.calle}, ${item.domicilio_fiscal.ciudad}, ${item.domicilio_fiscal.provincia}` : 
+              'Sin domicilio',
+            telefono: item.datos_contacto?.telefono || 'Sin teléfono',
+            email: item.datos_contacto?.mail || 'Sin email'
+          }));
 
         setEmpresas(datosTransformados);
         setEmpresasFiltradas(datosTransformados);
@@ -72,57 +74,41 @@ const ListadoEmpresas = () => {
     setPagina(1);
   };
 
-  const empresasPaginaActual = () => {
-    const inicio = (pagina - 1) * itemsPorPagina;
-    return empresasFiltradas.slice(inicio, inicio + itemsPorPagina);
-  };
-
   const handleOpenPopup = async (type, empresa = null) => {
-  setPopupType(type);
-  
-  if (type === 'modificar-empresa' && empresa?._id) {
-    setIsLoadingEmpresa(true);
-    try {
-      const response = await axios.get(`/api/empresas/${empresa._id}`);
-      
-      // Extraer número de calle si está combinado con el nombre
-      let calle = response.data.domicilio_fiscal?.calle || '';
-      let numero = '';
-      
-      const match = calle.match(/(.+?)\s*(\d+)\s*$/);
-      if (match) {
-        calle = match[1].trim();
-        numero = match[2].trim();
+    setPopupType(type);
+    
+    if (type === 'modificar-empresa' && empresa?._id) {
+      setIsLoadingEmpresa(true);
+      try {
+        const response = await axios.get(`/api/empresas/${empresa._id}`);
+        setSelectedEmpresa({
+          _id: response.data._id,
+          nombre_empresa: response.data.nombre_empresa || '',
+          cuit: response.data.cuit || '',
+          datos_contacto: {
+            mail: response.data.datos_contacto?.mail || '',
+            telefono: response.data.datos_contacto?.telefono || ''
+          },
+          domicilio_fiscal: {
+            calle: calle,
+            numero: numero || response.data.domicilio_fiscal?.numero || '',
+            ciudad: response.data.domicilio_fiscal?.ciudad || '',
+            provincia: response.data.domicilio_fiscal?.provincia || '',
+            pais: response.data.domicilio_fiscal?.pais || 'Argentina'
+          }
+        });
+      } catch (error) {
+        console.error('Error al cargar datos de la empresa:', error);
+        setSelectedEmpresa(empresa);
+      } finally {
+        setIsLoadingEmpresa(false);
+        setPopupOpen(true);
       }
-
-      setSelectedEmpresa({
-        _id: response.data._id,
-        nombre_empresa: response.data.nombre_empresa || '',
-        cuit: response.data.cuit || '',
-        datos_contacto: {
-          mail: response.data.datos_contacto?.mail || '',
-          telefono: response.data.datos_contacto?.telefono || ''
-        },
-        domicilio_fiscal: {
-          calle: calle,
-          numero: numero || response.data.domicilio_fiscal?.numero || '',
-          ciudad: response.data.domicilio_fiscal?.ciudad || '',
-          provincia: response.data.domicilio_fiscal?.provincia || '',
-          pais: response.data.domicilio_fiscal?.pais || 'Argentina'
-        }
-      });
-    } catch (error) {
-      console.error('Error al cargar datos de la empresa:', error);
+    } else {
       setSelectedEmpresa(empresa);
-    } finally {
-      setIsLoadingEmpresa(false);
       setPopupOpen(true);
     }
-  } else {
-    setSelectedEmpresa(empresa);
-    setPopupOpen(true);
-  }
-};
+  };
 
   const handleAddEmpresa = async (nuevaEmpresa) => {
     try {
@@ -166,16 +152,36 @@ const ListadoEmpresas = () => {
     }
   };
 
-  const handleDeleteEmpresa = async (_id) => {
+  const handleDeleteEmpresa = async (id) => {
     try {
-      await axios.patch(`/api/empresas/${_id}/delete`);
-      setEmpresas(prev => prev.filter(e => e._id !== _id));
-      setEmpresasFiltradas(prev => prev.filter(e => e._id !== _id));
+      // Obtener datos actuales de la empresa
+      const { data: currentData } = await axios.get(`/api/empresas/${id}`);
+      
+      // Preparar datos para desactivar manteniendo toda la información
+      const dataToSend = {
+        ...currentData,
+        activo: false
+      };
+
+      await axios.put(`/api/empresas/${id}`, dataToSend);
+      
+      // Actualizar el estado local
+      setEmpresas(prev => prev.filter(e => e._id !== id));
+      setEmpresasFiltradas(prev => prev.filter(e => e._id !== id));
+      
       return { success: true };
     } catch (error) {
-      console.error('Error al eliminar empresa:', error);
-      return { success: false, error: error.message };
+      console.error('Error al desactivar empresa:', error.response?.data || error.message);
+      return { 
+        success: false, 
+        error: error.response?.data?.message || 'Error al desactivar la empresa' 
+      };
     }
+  };
+
+  const empresasPaginaActual = () => {
+    const inicio = (pagina - 1) * itemsPorPagina;
+    return empresasFiltradas.slice(inicio, inicio + itemsPorPagina);
   };
 
   const columns = [
@@ -260,12 +266,6 @@ const ListadoEmpresas = () => {
           }
         }}
         onDelete={popupType === 'confirmar-eliminar' ? handleDeleteEmpresa : null}
-        buttonName={
-          popupType === 'empresas' ? 'Crear Empresa' : 
-          popupType === 'modificar-empresa' ? 'Modificar Empresa' : 
-          popupType === 'confirmar-eliminar' ? 'Eliminar Empresa' : 
-          'Aceptar'
-        }
       />
 
       <Box mb={4}>

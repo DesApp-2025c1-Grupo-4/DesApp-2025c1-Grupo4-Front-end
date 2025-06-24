@@ -160,10 +160,8 @@ const handleDeleteDeposito = async (id) => {
     if (!depositoActual) {
       return { success: false, error: 'Depósito no encontrado' };
     }
-
     const cleanHorarios = { ...depositoActual.horariosRaw };
     delete cleanHorarios._id; // eliminamos si existe
-
     const dataToSend = {
       tipo: depositoActual.tipo,
       activo: false,
