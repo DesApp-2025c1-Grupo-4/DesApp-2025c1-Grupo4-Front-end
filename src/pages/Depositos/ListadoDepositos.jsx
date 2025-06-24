@@ -25,12 +25,15 @@ const ListadoDepositos = () => {
     const fetchDepositos = async () => {
       try {
         const response = await axios.get('/api/depositos');
-        const datosTransformados = response.data.map(item => ({
-          ...item,
-          direccionCompleta: `${item.localizacion?.direccion || ''}, ${item.localizacion?.ciudad || ''}, ${item.localizacion?.provincia_estado || ''}`,
-          contacto: `${item.personal_contacto?.nombre || ''} ${item.personal_contacto?.apellido || ''}`.trim() || 'Sin contacto',
-          horarios: item.horarios ? `${item.horarios.dias.join(', ')}: ${item.horarios.desde} - ${item.horarios.hasta}` : 'Sin horarios'
-        }));
+        const datosTransformados = response.data
+          .filter(item => item.activo !== false) // Filtra solo activos
+          .map(item => ({
+            ...item,
+            direccionCompleta: `${item.localizacion?.direccion || ''}, ${item.localizacion?.ciudad || ''}, ${item.localizacion?.provincia_estado || ''}`,
+            contacto: `${item.personal_contacto?.nombre || ''} ${item.personal_contacto?.apellido || ''}`.trim() || 'Sin contacto',
+            horarios: item.horarios ? `${item.horarios.dias.join(', ')}: ${item.horarios.desde} - ${item.horarios.hasta}` : 'Sin horarios',
+            horariosRaw: item.horarios
+          }));
         setDepositos(datosTransformados);
         setDepositosFiltrados(datosTransformados);
       } catch (err) {
@@ -44,8 +47,8 @@ const ListadoDepositos = () => {
   }, []);
 
   const aplicarFiltros = () => {
+    const searchTerm = filtros.busqueda.toLowerCase();
     const filtered = depositos.filter(deposito => {
-      const searchTerm = filtros.busqueda.toLowerCase();
       switch (filtros.criterio) {
         case 'Localización':
           return (deposito.direccionCompleta || '').toLowerCase().includes(searchTerm);
@@ -112,56 +115,88 @@ const ListadoDepositos = () => {
   };
 
   const handleUpdateDeposito = async (depositoActualizado) => {
+    try {
+      const dataToSend = {
+        tipo: depositoActualizado.tipo,
+        activo: true,
+        localizacion: {
+          direccion: depositoActualizado.direccion,
+          provincia_estado: depositoActualizado.provincia,
+          ciudad: depositoActualizado.ciudad,
+          pais: depositoActualizado.pais
+        },
+        personal_contacto: {
+          nombre: depositoActualizado.nombreContacto,
+          apellido: depositoActualizado.apellidoContacto,
+          telefono: depositoActualizado.telefonoContacto
+        },
+        horarios: depositoActualizado.horarios
+      };
+
+      const response = await axios.put(`/api/depositos/${depositoActualizado._id}`, dataToSend);
+      
+      const updatedDeposito = {
+        ...response.data,
+        direccionCompleta: `${response.data.localizacion?.direccion || ''}, ${response.data.localizacion?.ciudad || ''}, ${response.data.localizacion?.provincia_estado || ''}`,
+        contacto: `${response.data.personal_contacto?.nombre || ''} ${response.data.personal_contacto?.apellido || ''}`.trim() || 'Sin contacto',
+        horarios: response.data.horarios ? `${response.data.horarios.dias.join(', ')}: ${response.data.horarios.desde} - ${response.data.horarios.hasta}` : 'Sin horarios'
+      };
+      
+      setDepositos(prev => prev.map(d => d._id === depositoActualizado._id ? updatedDeposito : d));
+      setDepositosFiltrados(prev => prev.map(d => d._id === depositoActualizado._id ? updatedDeposito : d));
+      return { success: true };
+    } catch (error) {
+      console.error('Error al actualizar depósito:', error.response?.data || error.message);
+      return { 
+        success: false, 
+        error: error.response?.data?.message || 'Error al actualizar el depósito' 
+      };
+    }
+  };
+
+const handleDeleteDeposito = async (id) => {
   try {
+    const depositoActual = depositos.find(d => d._id === id);
+    if (!depositoActual) {
+      return { success: false, error: 'Depósito no encontrado' };
+    }
+
+    const cleanHorarios = { ...depositoActual.horariosRaw };
+    delete cleanHorarios._id; // eliminamos si existe
+
     const dataToSend = {
-      tipo: depositoActualizado.tipo,
-      activo: true, 
+      tipo: depositoActual.tipo,
+      activo: false,
       localizacion: {
-        direccion: depositoActualizado.direccion,
-        provincia_estado: depositoActualizado.provincia,
-        ciudad: depositoActualizado.ciudad,
-        pais: depositoActualizado.pais
+        direccion: depositoActual.localizacion?.direccion || '',
+        provincia_estado: depositoActual.localizacion?.provincia_estado || '',
+        ciudad: depositoActual.localizacion?.ciudad || '',
+        pais: depositoActual.localizacion?.pais || ''
       },
       personal_contacto: {
-        nombre: depositoActualizado.nombreContacto,
-        apellido: depositoActualizado.apellidoContacto,
-        telefono: depositoActualizado.telefonoContacto
+        nombre: depositoActual.personal_contacto?.nombre || '',
+        apellido: depositoActual.personal_contacto?.apellido || '',
+        telefono: depositoActual.personal_contacto?.telefono || ''
       },
-      horarios: depositoActualizado.horarios
+      horarios: cleanHorarios
     };
 
-    const response = await axios.put(`/api/depositos/${depositoActualizado._id}`, dataToSend);
-    
-    const updatedDeposito = {
-      ...response.data,
-      direccionCompleta: `${response.data.localizacion?.direccion || ''}, ${response.data.localizacion?.ciudad || ''}, ${response.data.localizacion?.provincia_estado || ''}`,
-      contacto: `${response.data.personal_contacto?.nombre || ''} ${response.data.personal_contacto?.apellido || ''}`.trim() || 'Sin contacto',
-      horarios: response.data.horarios ? `${response.data.horarios.dias.join(', ')}: ${response.data.horarios.desde} - ${response.data.horarios.hasta}` : 'Sin horarios'
-    };
-    
-    setDepositos(prev => prev.map(d => d._id === depositoActualizado._id ? updatedDeposito : d));
-    setDepositosFiltrados(prev => prev.map(d => d._id === depositoActualizado._id ? updatedDeposito : d));
+    const response = await axios.put(`/api/depositos/${id}`, dataToSend);
+
+    setDepositos(prev => prev.filter(d => d._id !== id));
+    setDepositosFiltrados(prev => prev.filter(d => d._id !== id));
+
     return { success: true };
   } catch (error) {
-    console.error('Error al actualizar depósito:', error.response?.data || error.message);
-    return { 
-      success: false, 
-      error: error.response?.data?.message || 'Error al actualizar el depósito' 
+    console.error('Error al desactivar depósito:', error.response?.data || error.message);
+    return {
+      success: false,
+      error: error.response?.data?.message || 'Error al desactivar el depósito'
     };
   }
 };
 
-  const handleDeleteDeposito = async (id) => {
-    try {
-      await axios.delete(`/api/depositos/${id}`);
-      setDepositos(prev => prev.filter(d => d._id !== id));
-      setDepositosFiltrados(prev => prev.filter(d => d._id !== id));
-      return { success: true };
-    } catch (error) {
-      console.error('Error al eliminar depósito:', error);
-      return { success: false, error: error.message };
-    }
-  };
+
 
   const columns = [
     { id: '_id', label: 'ID', minWidth: 100, align: 'left', render: (value) => value?.toString() || 'N/A' },
@@ -206,12 +241,11 @@ const ListadoDepositos = () => {
         onClose={() => setPopupOpen(false)}
         page={popupType}
         selectedItem={selectedDeposito}
-        onAddItem={handleAddDeposito}
-        onUpdateItem={handleUpdateDeposito}
         onDelete={popupType === 'confirmar-eliminar' ? handleDeleteDeposito : null}
-        buttonName={popupType === 'modificar-deposito' ? 'Modificar Depósito' : 'Eliminar Depósito'}
+        onSuccess={() => {
+          setPopupOpen(false);
+        }}
       />
-
       <Box mb={4}>
         <Filtro
           filtros={filtros}

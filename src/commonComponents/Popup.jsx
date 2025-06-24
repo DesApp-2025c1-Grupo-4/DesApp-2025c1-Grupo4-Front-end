@@ -83,7 +83,7 @@ const initialData = {
   }
 };
 
-const Popup = ({ buttonName, page, open, onClose, children, selectedItem, onSuccess }) => {
+const Popup = ({ buttonName, page, open, onClose, children, selectedItem, onSuccess, onDelete }) => {
   const [internalOpen, setInternalOpen] = useState(false);
 
   // Detectar tipo de formulario según page
@@ -225,11 +225,30 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem, onSucc
 
   const handleSubmit = async () => {
     if (page.includes('confirmar-eliminar')) {
-      console.log('Eliminando elemento:', selectedItem);
-      handleClose();
+      setIsSubmitting(true);
+      try {
+        if (onDelete) {
+          const result = await onDelete(selectedItem._id);
+          
+          if (result?.success) {
+            if (onSuccess) onSuccess();
+            handleClose();
+            window.location.reload();
+          } else {
+            setErrors({
+              _general: result?.error || 'Error al eliminar el elemento'
+            });
+          }
+        }
+      } catch (error) {
+        setErrors({
+          _general: error.message || 'Error al procesar la eliminación'
+        });
+      } finally {
+        setIsSubmitting(false);
+      }
       return;
     }
-
     const allTouched = Object.keys(formData).reduce((acc, key) => ({ ...acc, [key]: true }), {});
     setTouched(allTouched);
 
@@ -406,14 +425,14 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem, onSucc
       return (
         <Box textAlign="center" sx={{ py: 2 }}>
           <Typography variant="body1" sx={{ mb: 3, fontSize: isMobile ? '1rem' : '1.1rem', color: 'text.secondary' }}>
-            ¿Estás seguro que deseas eliminar este elemento?
+            ¿Estás seguro que deseas desactivar este depósito?
           </Typography>
           <Typography variant="subtitle1" sx={{
-            color: theme.palette.error.main,
+            color: theme.palette.warning.main,
             fontWeight: 600,
             fontSize: isMobile ? '1rem' : '1.1rem'
           }}>
-            Esta acción no se puede deshacer.
+            El depósito se marcará como inactivo pero no se eliminará permanentemente.
           </Typography>
         </Box>
       );
@@ -552,20 +571,22 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem, onSucc
               >
                 Cancelar
               </Button>
-              {!page.includes('confirmar-eliminar') && (
-                <Button
-                  onClick={handleSubmit}
-                  variant="contained"
-                  sx={{
-                    minWidth: 120,
-                    py: 1.5,
-                    borderRadius: '8px'
-                  }}
-                  disabled={isSubmitting}
-                >
-                  Guardar
-                </Button>
-              )}
+              <Button
+                onClick={handleSubmit}
+                variant="contained"
+                sx={{
+                  minWidth: 120,
+                  py: 1.5,
+                  borderRadius: '8px',
+                  backgroundColor: page.includes('confirmar-eliminar') ? theme.palette.error.main : '',
+                  '&:hover': {
+                    backgroundColor: page.includes('confirmar-eliminar') ? theme.palette.error.dark : ''
+                  }
+                }}
+                disabled={isSubmitting}
+              >
+                {page.includes('confirmar-eliminar') ? 'Aceptar' : 'Guardar'}
+              </Button>
             </DialogActions>
           </Box>
         </Box>
