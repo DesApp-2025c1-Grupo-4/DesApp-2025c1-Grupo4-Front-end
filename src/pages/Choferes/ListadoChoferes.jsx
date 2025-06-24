@@ -12,6 +12,7 @@ import ChoferForm from '../../commonComponents/forms/ChoferForm';
 
 const ListadoChoferes = () => {
   const [filtros, setFiltros] = useState({ criterio: 'CUIL', busqueda: '' });
+  const [filtrosAplicados, setFiltrosAplicados] = useState({ criterio: 'CUIL', busqueda: '' });
   const [pagina, setPagina] = useState(1);
   const [itemsPorPagina] = useState(10);
   const [choferes, setChoferes] = useState([]);
@@ -27,25 +28,27 @@ const ListadoChoferes = () => {
     fetchChoferes();
   }, []);
 
+  // Fetch choferes activos (activo !== false)
   const fetchChoferes = async () => {
     try {
       setLoading(true);
       const response = await axios.get('/api/choferes');
 
-      const datosTransformados = response.data.map(item => ({
-        ...item,
-        _id: item._id, 
-        fechaNacimiento: dateFormat(item.fecha_nacimiento),
-        empresa: item.empresa?.nombre_empresa || '',
-        vehiculoAsignado: item.vehiculo_defecto ? 
-          `${item.vehiculo_defecto.patente}` : 
-          'Sin vehículo',
-        empresaObj: item.empresa || null,
-        vehiculoObj: item.vehiculo_defecto || null
-      }));
+      const datosTransformados = response.data
+        .filter(item => item.activo !== false) // solo activos
+        .map(item => ({
+          ...item,
+          _id: item._id,
+          fechaNacimiento: dateFormat(item.fecha_nacimiento),
+          empresa: item.empresa?.nombre_empresa || '',
+          vehiculoAsignado: item.vehiculo_defecto ? `${item.vehiculo_defecto.patente}` : 'Sin vehículo',
+          empresaObj: item.empresa || null,
+          vehiculoObj: item.vehiculo_defecto || null
+        }));
 
       setChoferes(datosTransformados);
       setChoferesFiltrados(datosTransformados);
+      setError(null);
     } catch (err) {
       setError(`Error al cargar datos: ${err.message}`);
       console.error('Error fetching choferes:', err);
@@ -54,40 +57,39 @@ const ListadoChoferes = () => {
     }
   };
 
+  // Aplica filtros desde filtrosAplicados
+  useEffect(() => {
+    const filtered = choferes.filter(chofer => {
+      if (filtrosAplicados.busqueda) {
+        const searchTerm = filtrosAplicados.busqueda.toLowerCase();
+        switch (filtrosAplicados.criterio) {
+          case 'CUIL':
+            return (chofer.cuil || '').toLowerCase().includes(searchTerm);
+          case 'Nombre':
+            return (chofer.nombre || '').toLowerCase().includes(searchTerm);
+          case 'Apellido':
+            return (chofer.apellido || '').toLowerCase().includes(searchTerm);
+          case 'Empresa':
+            return (chofer.empresa || '').toLowerCase().includes(searchTerm);
+          default:
+            return true;
+        }
+      }
+      return true;
+    });
+    setChoferesFiltrados(filtered);
+    setPagina(1);
+  }, [filtrosAplicados, choferes]);
+
   const aplicarFiltros = () => {
     setIsSearching(true);
-    try {
-      const filtered = choferes.filter(chofer => {
-        if (filtros.busqueda) {
-          const searchTerm = filtros.busqueda.toLowerCase();
-          switch (filtros.criterio) {
-            case 'CUIL':
-              return (chofer.cuil || '').toLowerCase().includes(searchTerm);
-            case 'Nombre':
-              return (chofer.nombre || '').toLowerCase().includes(searchTerm);
-            case 'Apellido':
-              return (chofer.apellido || '').toLowerCase().includes(searchTerm);
-            case 'Empresa':
-              return (chofer.empresa || '').toLowerCase().includes(searchTerm);
-            default:
-              return true;
-          }
-        }
-        return true;
-      });
-      setChoferesFiltrados(filtered);
-      setPagina(1);
-    } catch (err) {
-      console.error('Error al filtrar choferes:', err);
-    } finally {
-      setIsSearching(false);
-    }
+    setFiltrosAplicados({ ...filtros });
+    setIsSearching(false);
   };
 
-  const handleClear = () => {
+  const limpiarFiltros = () => {
     setFiltros({ criterio: 'CUIL', busqueda: '' });
-    setChoferesFiltrados(choferes);
-    setPagina(1);
+    setFiltrosAplicados({ criterio: 'CUIL', busqueda: '' });
   };
 
   const choferesPaginaActual = () => {
@@ -95,53 +97,51 @@ const ListadoChoferes = () => {
     return choferesFiltrados.slice(inicio, inicio + itemsPorPagina);
   };
 
+  // Abre el popup y setea chofer seleccionado
   const handleOpenPopup = async (type, chofer = null) => {
-  setPopupType(type);
-  
-  if (type === 'modificar-chofer' && chofer) {
-    try {
-      // Obtener datos frescos del chofer por ID
-      const response = await axios.get(`/api/choferes/${chofer._id}`);
-      const choferData = response.data;
-      
-      // Resto del código permanece igual...
-      setSelectedChofer({
-        ...choferData,
-        _id: choferData._id, // Asegurar que tenemos el ID
-        nombre: choferData.nombre || '',
-        apellido: choferData.apellido || '',
-        cuil: choferData.cuil || '',
-        fechaNacimiento: choferData.fecha_nacimiento ? new Date(choferData.fecha_nacimiento) : null,
-        empresa: choferData.empresa || null,
-        vehiculoAsignado: choferData.vehiculo_defecto || null, // Usar vehiculo_defecto del backend
-        empresasDisponibles: [],
-        vehiculosDisponibles: []
-      });
+    setPopupType(type);
 
-    } catch (error) {
-      console.error('Error al cargar datos del chofer:', error);
-      // Usar datos locales si falla la consulta
-      setSelectedChofer({
-        ...chofer,
-        _id: chofer._id, // Asegurar que tenemos el ID
-        nombre: chofer.nombre || '',
-        apellido: chofer.apellido || '',
-        cuil: chofer.cuil || '',
-        fechaNacimiento: chofer.fecha_nacimiento ? new Date(chofer.fecha_nacimiento) : null,
-        empresa: chofer.empresaObj || null,
-        vehiculoAsignado: chofer.vehiculoObj || null,
-        empresasDisponibles: [],
-        vehiculosDisponibles: []
-      });
-    }
-  } else {
-    try {
-        // Para creación de nuevo chofer
+    if (type === 'modificar-chofer' && chofer) {
+      try {
+        const response = await axios.get(`/api/choferes/${chofer._id}`);
+        const choferData = response.data;
+        setSelectedChofer({
+          ...choferData,
+          _id: choferData._id,
+          nombre: choferData.nombre || '',
+          apellido: choferData.apellido || '',
+          cuil: choferData.cuil || '',
+          fechaNacimiento: choferData.fecha_nacimiento ? new Date(choferData.fecha_nacimiento) : null,
+          empresa: choferData.empresa || null,
+          vehiculoAsignado: choferData.vehiculo_defecto || null,
+          empresasDisponibles: [],
+          vehiculosDisponibles: []
+        });
+      } catch (error) {
+        console.error('Error al cargar datos del chofer:', error);
+        setSelectedChofer({
+          ...chofer,
+          _id: chofer._id,
+          nombre: chofer.nombre || '',
+          apellido: chofer.apellido || '',
+          cuil: chofer.cuil || '',
+          fechaNacimiento: chofer.fecha_nacimiento ? new Date(chofer.fecha_nacimiento) : null,
+          empresa: chofer.empresaObj || null,
+          vehiculoAsignado: chofer.vehiculoObj || null,
+          empresasDisponibles: [],
+          vehiculosDisponibles: []
+        });
+      }
+    } else if (type === 'confirmar-eliminar' && chofer) {
+      setSelectedChofer(chofer);
+    } else {
+      // Nuevo chofer
+      try {
         const [empresasResponse, vehiculosResponse] = await Promise.all([
           axios.get('/api/empresas'),
           axios.get('/api/vehiculos')
         ]);
-        
+
         setSelectedChofer({
           nombre: '',
           apellido: '',
@@ -160,36 +160,46 @@ const ListadoChoferes = () => {
         });
       }
     }
-    
     setPopupOpen(true);
+  };
+
+  // Función para desactivar chofer (set activo: false)
+ const handleDeleteChofer = async (id) => {
+  try {
+    // Primero obtener los datos actuales del chofer
+    const { data: currentData } = await axios.get(`/api/choferes/${id}`);
+    
+    // Preparar los datos para enviar (marcar como inactivo)
+    const dataToSend = {
+      nombre: currentData.nombre,
+      apellido: currentData.apellido,
+      cuil: currentData.cuil,
+      fecha_nacimiento: currentData.fecha_nacimiento,
+      empresa: typeof currentData.empresa === 'object' ? currentData.empresa._id : currentData.empresa,
+      vehiculo_defecto: typeof currentData.vehiculo_defecto === 'object' ? 
+                       currentData.vehiculo_defecto._id : 
+                       currentData.vehiculo_defecto,
+      activo: false
+    };
+
+    // Enviar la actualización
+    await axios.put(`/api/choferes/${id}`, dataToSend);
+    
+    // Actualizar los estados
+    setChoferes(prev => prev.filter(c => c._id !== id));
+    setChoferesFiltrados(prev => prev.filter(c => c._id !== id));
+    setPopupOpen(false);
+    
+    return { success: true };
+  } catch (error) {
+    console.error('Error al desactivar chofer:', error.response?.data || error.message);
+    return { 
+      success: false, 
+      error: error.response?.data?.message || 'Error al desactivar el chofer',
+      details: error.response?.data
+    };
+  }
 };
-
-  const handleDeleteChofer = async (chofer) => {
-    try {
-      await axios.patch(`/api/choferes/${chofer._id}/delete`);
-      await fetchChoferes();
-      return { success: true };
-    } catch (error) {
-      console.error('Error al eliminar chofer:', error);
-      return { success: false, error: error.message };
-    }
-  };
-
-  const handleSubmitChofer = async (formData) => {
-    try {
-      if (popupType === 'modificar-chofer') {
-        await axios.put(`/api/choferes/${formData.cuil}`, formData);
-      } else {
-        await axios.post('/api/choferes', formData);
-      }
-      await fetchChoferes();
-      setPopupOpen(false);
-      return { success: true };
-    } catch (error) {
-      console.error('Error al guardar chofer:', error);
-      return { success: false, error: error.response?.data?.message || error.message };
-    }
-  };
 
   const columns = [
     { id: 'nombre', label: 'Nombre', minWidth: 120, align: 'left' },
@@ -199,22 +209,26 @@ const ListadoChoferes = () => {
     { id: 'empresa', label: 'Empresa', minWidth: 150, align: 'left' },
     { id: 'vehiculoAsignado', label: 'Vehículo Asignado', minWidth: 150, align: 'left' },
     {
-      id: 'modificar', label: 'Modificar', minWidth: 80, align: 'center',
-      render: (_, row) => <IconButton onClick={() => handleOpenPopup('modificar-chofer', row)} size="small" color="primary">
-        <CreateOutlinedIcon fontSize="small" />
-      </IconButton>
+      id: 'modificar',
+      label: 'Modificar',
+      minWidth: 80,
+      align: 'center',
+      render: (_, row) => (
+        <IconButton onClick={() => handleOpenPopup('modificar-chofer', row)} size="small" color="primary">
+          <CreateOutlinedIcon fontSize="small" />
+        </IconButton>
+      )
     },
     {
-      id: 'eliminar', label: 'Eliminar', minWidth: 80, align: 'center',
-    render: (_, row) => (
-      <IconButton 
-        onClick={() => handleOpenPopup('confirmar-eliminar', row)} 
-        size="small" 
-        color="error"
-      >
-        <CloseOutlinedIcon fontSize="small" />
-      </IconButton>
-    )
+      id: 'eliminar',
+      label: 'Eliminar',
+      minWidth: 80,
+      align: 'center',
+      render: (_, row) => (
+        <IconButton onClick={() => handleOpenPopup('confirmar-eliminar', row)} size="small" color="error">
+          <CloseOutlinedIcon fontSize="small" />
+        </IconButton>
+      )
     }
   ];
 
@@ -228,9 +242,18 @@ const ListadoChoferes = () => {
         onClose={() => setPopupOpen(false)}
         page={popupType}
         selectedItem={selectedChofer}
-        onDelete={popupType === 'confirmar-eliminar' ? () => handleDeleteChofer(selectedChofer) : null}
+        onDelete={popupType === 'confirmar-eliminar' && selectedChofer
+          ? () => handleDeleteChofer(selectedChofer._id)
+          : null
+        }
         onSubmit={popupType === 'modificar-chofer' ? handleSubmitChofer : null}
-        buttonName={popupType === 'modificar-chofer' ? 'Modificar Chofer' : popupType === 'confirmar-eliminar' ? 'Eliminar Chofer' : 'Aceptar'}
+        buttonName={
+          popupType === 'modificar-chofer'
+            ? 'Modificar Chofer'
+            : popupType === 'confirmar-eliminar'
+            ? 'Eliminar Chofer'
+            : 'Aceptar'
+        }
         message={popupType === 'confirmar-eliminar' ? '¿Está seguro que desea eliminar este chofer?' : ''}
         FormComponent={popupType === 'modificar-chofer' ? ChoferForm : null}
       />
@@ -240,13 +263,20 @@ const ListadoChoferes = () => {
           filtros={filtros}
           setFiltros={setFiltros}
           mode="choferes"
-          onClear={handleClear}
-          onBuscar={aplicarFiltros}
+          onClear={limpiarFiltros}
+          onSearch={aplicarFiltros}
           isSearching={isSearching}
         />
       </Box>
 
-      <Box sx={{ width: '85vw', marginLeft: 'calc(-43vw + 50%)', marginRight: 'calc(-40vw + 50%)', overflowX: 'hidden' }}>
+      <Box
+        sx={{
+          width: '85vw',
+          marginLeft: 'calc(-43vw + 50%)',
+          marginRight: 'calc(-40vw + 50%)',
+          overflowX: 'hidden'
+        }}
+      >
         <Tabla2 columns={columns} data={choferesPaginaActual()} sx={{ tableLayout: 'auto', width: '100%' }} />
       </Box>
 

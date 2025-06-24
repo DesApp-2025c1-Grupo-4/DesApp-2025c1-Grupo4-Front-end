@@ -1,4 +1,5 @@
-import { Box, Grid, TextField, MenuItem, Button, Typography } from '@mui/material';
+import { useEffect } from 'react';
+import { Box, Grid, TextField, MenuItem, Button } from '@mui/material';
 import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import Popup from './Popup';
@@ -6,9 +7,9 @@ import Popup from './Popup';
 const Filtro = ({ 
   filtros, 
   setFiltros, 
-  mode, // 'viajes', 'empresas', 'choferes', 'depositos', 'vehiculos'
+  mode,
   onSearch,
-  onClear // Nueva prop para manejar limpieza
+  onClear
 }) => {
   // Configuración por modo
   const config = {
@@ -24,13 +25,15 @@ const Filtro = ({
       showCriterio: false,
       showDates: false,
       searchLabel: 'Buscar por CUIT/RUT',
-      registerButton: 'Registrar Empresa'
+      registerButton: 'Registrar Empresa',
+      criterios: ['CUIT'] // Necesario aunque no se muestre
     },
     choferes: {
       showCriterio: false,
       showDates: false,
       searchLabel: 'Buscar por CUIL',
-      registerButton: 'Registrar Chofer'
+      registerButton: 'Registrar Chofer',
+      criterios: ['CUIL']
     },
     depositos: {
       showCriterio: false,
@@ -51,6 +54,16 @@ const Filtro = ({
   const fechaDesdeValue = filtros.fechaDesde ? new Date(filtros.fechaDesde) : null;
   const fechaHastaValue = filtros.fechaHasta ? new Date(filtros.fechaHasta) : null;
 
+  // Setea automáticamente el criterio CUIT si es modo empresas
+  useEffect(() => {
+    if (mode === 'empresas') {
+      setFiltros(prev => ({ ...prev, criterio: 'CUIT' }));
+    }
+      if (mode === 'choferes') {
+      setFiltros(prev => ({ ...prev, criterio: 'CUIL' }));
+    }
+  }, [mode]);
+
   const handleDateChange = (name) => (date) => {
     setFiltros({ 
       ...filtros, 
@@ -59,9 +72,7 @@ const Filtro = ({
   };
 
   const handleSearch = () => {
-    if (onSearch) {
-      onSearch(filtros);
-    }
+    if (onSearch) onSearch(filtros);
   };
 
   return (
@@ -91,6 +102,7 @@ const Filtro = ({
               <Popup buttonName={currentConfig.registerButton} page={mode}/>
             </Grid>
           )}
+
           {currentConfig.showCriterio && (
             <Grid item xs={12} sm={6} md={1.5}>
               <TextField 
@@ -109,7 +121,6 @@ const Filtro = ({
             </Grid>
           )}
 
-          {/* Campo de Búsqueda */}
           <Grid item xs={12} sm={6} md={currentConfig.showCriterio ? 4 : 6.5}>
             <TextField
               fullWidth
@@ -121,31 +132,27 @@ const Filtro = ({
             />
           </Grid>
 
-          {/* Fecha Desde (solo en modo viajes) */}
           {currentConfig.showDates && (
-            <Grid item xs={12} sm={6} md={1}>
-              <DatePicker 
-                label="Fecha Desde" 
-                value={fechaDesdeValue} 
-                onChange={handleDateChange('fechaDesde')} 
-                slotProps={{ textField: { fullWidth: true } }}
-              />
-            </Grid>
+            <>
+              <Grid item xs={12} sm={6} md={1}>
+                <DatePicker 
+                  label="Fecha Desde" 
+                  value={fechaDesdeValue} 
+                  onChange={handleDateChange('fechaDesde')} 
+                  slotProps={{ textField: { fullWidth: true } }}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6} md={1}>
+                <DatePicker 
+                  label="Fecha Hasta" 
+                  value={fechaHastaValue} 
+                  onChange={handleDateChange('fechaHasta')} 
+                  slotProps={{ textField: { fullWidth: true } }}
+                />
+              </Grid>
+            </>
           )}
 
-          {/* Fecha Hasta (solo en modo viajes) */}
-          {currentConfig.showDates && (
-            <Grid item xs={12} sm={6} md={1}>
-              <DatePicker 
-                label="Fecha Hasta" 
-                value={fechaHastaValue} 
-                onChange={handleDateChange('fechaHasta')} 
-                slotProps={{ textField: { fullWidth: true } }}
-              />
-            </Grid>
-          )}
-
-          {/* Botón de Buscar (para modos no viajes) */}
           {!currentConfig.showDates && (
             <Grid item xs={12} sm={6} md={2}>
               <Button 
@@ -159,14 +166,13 @@ const Filtro = ({
             </Grid>
           )}
 
-          {/* Botón de Limpiar */}
           <Grid item xs={12} sm={6} md={1.5}>
             <Button 
               fullWidth 
               variant="outlined" 
               onClick={() => {
                 setFiltros({ criterio: '', fechaDesde: '', fechaHasta: '', busqueda: '' });
-                if (onClear) onClear(); // Llama a onClear al limpiar
+                if (onClear) onClear();
               }}
             >
               Limpiar
