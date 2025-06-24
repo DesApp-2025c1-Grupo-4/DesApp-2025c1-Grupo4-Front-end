@@ -16,6 +16,20 @@ import get from 'lodash.get';
 import set from 'lodash.set';
 import { format } from 'date-fns';
 
+const convertToBackendFormat = (dateTimeString) => {
+  if (!dateTimeString) return '';
+  const date = new Date(dateTimeString);
+  if (isNaN(date.getTime())) return '';
+  
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  
+  return `${day}/${month}/${year} ${hours}:${minutes}`;
+};
+
 const initialData = {
   deposito: {
     tipo: '',
@@ -311,18 +325,17 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem, onSucc
     }
   };
 }   else if (formType === 'viaje') {
-      dataToSend = {
-        deposito_origen: formData.depositoOrigen?._id || formData.depositoOrigen,
-        deposito_destino: formData.depositoDestino?._id || formData.depositoDestino,
-        inicio_viaje: formData.fechaInicio,
-        fin_viaje: formData.fechaFin,
-        empresa_asignada: formData.empresaTransportista?._id || formData.empresaTransportista,
-        chofer_asignado: formData.choferAsignado?._id || formData.choferAsignado,
-        vehiculo_asignado: formData.vehiculoAsignado?._id || formData.vehiculoAsignado,
-        tipo_viaje: formData.tipoViaje,
-        estado: 'planificado' // Asegúrate de incluir el estado requerido
-      };
-    } else if (formType === 'empresa') {
+  dataToSend = {
+    deposito_origen: typeof formData.depositoOrigen === 'object' ? formData.depositoOrigen._id : formData.depositoOrigen,
+    deposito_destino: typeof formData.depositoDestino === 'object' ? formData.depositoDestino._id : formData.depositoDestino,
+    inicio_viaje: convertToBackendFormat(formData.fechaInicio),
+    fin_viaje: convertToBackendFormat(formData.fechaFin),
+    empresa_asignada: typeof formData.empresaTransportista === 'object' ? formData.empresaTransportista._id : formData.empresaTransportista,
+    chofer_asignado: typeof formData.choferAsignado === 'object' ? formData.choferAsignado._id : formData.choferAsignado,
+    vehiculo_asignado: typeof formData.vehiculoAsignado === 'object' ? formData.vehiculoAsignado._id : formData.vehiculoAsignado,
+    estado: 'planificado'
+  };
+} else if (formType === 'empresa') {
         dataToSend = {
           nombre_empresa: formData.nombre_empresa,
           cuit: formData.cuit,

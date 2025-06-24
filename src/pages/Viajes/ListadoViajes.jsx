@@ -202,15 +202,44 @@ const ListadoDeViajes = () => {
 
   const handleUpdateViaje = async (viajeActualizado) => {
     try {
-      setIsLoadingAction(true);
-      await axios.put(`/api/viajes/${viajeActualizado._id}`, viajeActualizado);
+    setIsLoadingAction(true);
+    
+    // Función para convertir formato de fecha
+    const convertToBackendFormat = (dateTimeString) => {
+      if (!dateTimeString) return '';
+      const date = new Date(dateTimeString);
+      if (isNaN(date.getTime())) return '';
       
-      // Actualizar el listado
-      const response = await axios.get('/api/viajes', {
-        params: {
-          populate: 'empresa_asignada,chofer_asignado,vehiculo_asignado,deposito_origen,deposito_destino'
-        }
-      });
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = date.getFullYear();
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      
+      return `${day}/${month}/${year} ${hours}:${minutes}`;
+    };
+
+    const payload = {
+      ...viajeActualizado,
+      inicio_viaje: convertToBackendFormat(viajeActualizado.fechaInicio),
+      fin_viaje: convertToBackendFormat(viajeActualizado.fechaFin),
+      deposito_origen: viajeActualizado.depositoOrigen?._id || viajeActualizado.depositoOrigen,
+      deposito_destino: viajeActualizado.depositoDestino?._id || viajeActualizado.depositoDestino,
+      empresa_asignada: viajeActualizado.empresaTransportista?._id || viajeActualizado.empresaTransportista,
+      chofer_asignado: viajeActualizado.choferAsignado?._id || viajeActualizado.choferAsignado,
+      vehiculo_asignado: viajeActualizado.vehiculoAsignado?._id || viajeActualizado.vehiculoAsignado,
+      tipo_viaje: viajeActualizado.tipoViaje,
+      estado: 'planificado'
+    };
+
+    await axios.put(`/api/viajes/${viajeActualizado._id}`, payload);
+    
+    // Resto del código para actualizar el listado...
+    const response = await axios.get('/api/viajes', {
+      params: {
+        populate: 'empresa_asignada,chofer_asignado,vehiculo_asignado,deposito_origen,deposito_destino'
+      }
+    });
 
       const datosTransformados = response.data.map(item => ({
         ...item,
@@ -243,6 +272,8 @@ const ListadoDeViajes = () => {
       setIsLoadingAction(false);
     }
   };
+
+  
 
   const columns = [
     { id: 'numeroViaje', label: 'Número', minWidth: 80, align: 'left' },

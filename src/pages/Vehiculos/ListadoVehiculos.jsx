@@ -107,7 +107,9 @@ const ListadoVehiculos = () => {
     año: vehiculo.anio,
     volumen: vehiculo.capacidad_carga?.volumen,
     peso: vehiculo.capacidad_carga?.peso,
-    empresa: vehiculo.empresa?._id || vehiculo.empresa
+    empresa: vehiculo.empresa?._id || vehiculo.empresa,
+    empresaNombre: vehiculo.empresa?.nombre_empresa || vehiculo.empresa || 'Sin empresa asignada',
+    empresaObj: vehiculo.empresa || null // Añadir esto para mantener el objeto completo
   });
   setPopupType(type);
   setPopupOpen(true);

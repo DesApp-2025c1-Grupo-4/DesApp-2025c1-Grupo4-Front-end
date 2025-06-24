@@ -161,8 +161,8 @@ const VehiculoForm = ({ formData, handleChange, handleBlur, errors, isEditing = 
 
         <Grid item xs={12} md={6}>
           <Typography variant="subtitle1" color="primary" sx={{ mb: 1, fontWeight: 'bold' }}>Especificaciones</Typography>
-          <InputField label="Capacidad (Volumen)" name="volumen" value={formData?.volumen || ''} onChange={handleChange} onBlur={handleBlur} error={errors?.volumen} type="number" helperText={isEditing ? `Actual: ${formData?.volumenOriginal || 'N/D'}` : undefined} endAdornment={<span>m³</span>} />
-          <InputField label="Capacidad (Peso)" name="peso" value={formData?.peso || ''} onChange={handleChange} onBlur={handleBlur} error={errors?.peso} type="number" helperText={isEditing ? `Actual: ${formData?.pesoOriginal || 'N/D'}` : undefined} endAdornment={<span>kg</span>} />
+          <InputField label="Capacidad (Volumen)" name="volumen" value={formData?.volumen || ''} onChange={handleChange} onBlur={handleBlur} error={errors?.volumen} type="number" endAdornment={<span>m³</span>} />
+          <InputField label="Capacidad (Peso)" name="peso" value={formData?.peso || ''} onChange={handleChange} onBlur={handleBlur} error={errors?.peso} type="number" endAdornment={<span>kg</span>} />
           <InputField label="Año" name="año" value={formData?.año || ''} onChange={handleChange} onBlur={handleBlur} error={errors?.año} type="number" placeholder={`Ej: ${new Date().getFullYear()}`} inputProps={{ min: 1900, max: new Date().getFullYear() + 1 }} />
 
           <Box sx={{ mb: 2 }}>
@@ -171,7 +171,7 @@ const VehiculoForm = ({ formData, handleChange, handleBlur, errors, isEditing = 
               <TextField
                 fullWidth
                 size="small"
-                value={formData?.empresaNombre || 'Sin empresa asignada'} // Usar empresaNombre
+                value={formData?.empresaObj?.nombre_empresa || formData?.empresaNombre || 'Sin empresa asignada'}
                 sx={{
                   '& .MuiOutlinedInput-root': {
                     borderRadius: 2,
@@ -180,7 +180,7 @@ const VehiculoForm = ({ formData, handleChange, handleBlur, errors, isEditing = 
                 }}
                 InputProps={{
                   readOnly: true,
-                  startAdornment: formData?.empresa && (
+                  startAdornment: (formData?.empresaObj || formData?.empresa) && (
                     <BusinessIcon sx={{ mr: 1, color: grey[600] }} />
                   )
                 }}
@@ -198,12 +198,12 @@ const VehiculoForm = ({ formData, handleChange, handleBlur, errors, isEditing = 
             title="Seleccionar Empresa"
             items={empresas}
             onSelect={(empresa) => {
-              handleChange({ 
-                target: { 
-                  name: 'empresa', 
-                  value: empresa._id
-                }
-              });
+                handleChange({ 
+                  target: { 
+                    name: 'empresa', 
+                    value: empresa._id
+                  }
+                });
               setInputValues(prev => ({ ...prev, empresa: empresa.nombre_empresa }));
             }}
             searchValue={inputValues.empresa}
