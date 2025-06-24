@@ -152,32 +152,41 @@ const ListadoEmpresas = () => {
     }
   };
 
-  const handleDeleteEmpresa = async (id) => {
-    try {
-      // Obtener datos actuales de la empresa
-      const { data: currentData } = await axios.get(`/api/empresas/${id}`);
-      
-      // Preparar datos para desactivar manteniendo toda la información
-      const dataToSend = {
-        ...currentData,
-        activo: false
-      };
+const handleDeleteEmpresa = async (id) => {
+  try {
+    const { data: currentData } = await axios.get(`/api/empresas/${id}`);
 
-      await axios.put(`/api/empresas/${id}`, dataToSend);
-      
-      // Actualizar el estado local
-      setEmpresas(prev => prev.filter(e => e._id !== id));
-      setEmpresasFiltradas(prev => prev.filter(e => e._id !== id));
-      
-      return { success: true };
-    } catch (error) {
-      console.error('Error al desactivar empresa:', error.response?.data || error.message);
-      return { 
-        success: false, 
-        error: error.response?.data?.message || 'Error al desactivar la empresa' 
-      };
+    // Clonar y limpiar los datos
+    const { _id, ...empresaSinId } = currentData;
+
+    // Eliminar _id internos si existen
+    if (empresaSinId.domicilio_fiscal?._id) {
+      delete empresaSinId.domicilio_fiscal._id;
     }
-  };
+    if (empresaSinId.datos_contacto?._id) {
+      delete empresaSinId.datos_contacto._id;
+    }
+
+    // Agregar el cambio
+    empresaSinId.activo = false;
+
+    await axios.put(`/api/empresas/${id}`, empresaSinId);
+
+    // Actualizar estado local
+    setEmpresas(prev => prev.filter(e => e._id !== id));
+    setEmpresasFiltradas(prev => prev.filter(e => e._id !== id));
+
+    return { success: true };
+  } catch (error) {
+    console.error('Error al desactivar empresa:', error.response?.data || error.message);
+    return {
+      success: false,
+      error: error.response?.data?.message || 'Error al desactivar la empresa'
+    };
+  }
+};
+
+
 
   const empresasPaginaActual = () => {
     const inicio = (pagina - 1) * itemsPorPagina;
