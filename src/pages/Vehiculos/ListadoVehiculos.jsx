@@ -32,12 +32,16 @@ const ListadoVehiculos = () => {
     const fetchVehiculos = async () => {
       try {
         const response = await axios.get('/api/vehiculos');
-        setVehiculosOriginales([...response.data]);
-        const datosTransformados = response.data.map(item => ({
+        // Filtrar solo vehículos activos
+        const vehiculosActivos = response.data.filter(item => item.activo !== false);
+        
+        setVehiculosOriginales([...vehiculosActivos]);
+        const datosTransformados = vehiculosActivos.map(item => ({
           ...item,
+          _id: item._id, // Asegúrate de incluir esto
           empresa: item.empresa?.nombre_empresa || 'Sin empresa',
           capacidad: `${item.capacidad_carga?.volumen || 0}m³ - ${item.capacidad_carga?.peso || 0}kg`,
-          año: item.anio, // Para mostrar en tabla
+          año: item.anio,
           tipo_vehiculo: item.tipo_vehiculo,
           capacidad_carga: item.capacidad_carga,
           anio: item.anio
@@ -101,33 +105,55 @@ const ListadoVehiculos = () => {
   };
 
   const handleOpenPopup = async (type, vehiculo) => {
-  setSelectedVehiculo({
-    ...vehiculo,
-    tipoVehiculo: vehiculo.tipo_vehiculo,
-    año: vehiculo.anio,
-    volumen: vehiculo.capacidad_carga?.volumen,
-    peso: vehiculo.capacidad_carga?.peso,
-    empresa: vehiculo.empresa?._id || vehiculo.empresa,
-    empresaNombre: vehiculo.empresa?.nombre_empresa || vehiculo.empresa || 'Sin empresa asignada',
-    empresaObj: vehiculo.empresa || null // Añadir esto para mantener el objeto completo
-  });
-  setPopupType(type);
-  setPopupOpen(true);
-};
-
-
-  const handleDeleteVehiculo = async (patente) => {
-    try {
-      await axios.patch(`/api/vehiculos/${patente}/delete`);
-      setVehiculos(prev => prev.filter(v => v.patente !== patente));
-      setVehiculosFiltrados(prev => prev.filter(v => v.patente !== patente));
-      setVehiculosOriginales(prev => prev.filter(v => v.patente !== patente));
-      return { success: true };
-    } catch (error) {
-      console.error('Error al eliminar vehículo:', error);
-      return { success: false, error: error.message };
-    }
+    setSelectedVehiculo({
+      ...vehiculo,
+      tipoVehiculo: vehiculo.tipo_vehiculo,
+      año: vehiculo.anio,
+      volumen: vehiculo.capacidad_carga?.volumen,
+      peso: vehiculo.capacidad_carga?.peso,
+      empresa: vehiculo.empresa?._id || vehiculo.empresa,
+      empresaNombre: vehiculo.empresa?.nombre_empresa || vehiculo.empresa || 'Sin empresa asignada',
+      empresaObj: vehiculo.empresa || null
+    });
+    setPopupType(type);
+    setPopupOpen(true);
   };
+
+const handleDeleteVehiculo = async (id) => {
+  try {
+    const { data: currentData } = await axios.get(`/api/vehiculos/${id}`);
+    const empresaId = typeof currentData.empresa === 'object' 
+      ? currentData.empresa._id 
+      : currentData.empresa;
+
+    const dataToSend = {
+      patente: currentData.patente,
+      tipo_vehiculo: currentData.tipo_vehiculo,
+      marca: currentData.marca,
+      modelo: currentData.modelo,
+      anio: currentData.anio,
+      capacidad_carga: {
+        volumen: currentData.capacidad_carga?.volumen || 0,
+        peso: currentData.capacidad_carga?.peso || 0
+      },
+      empresa: empresaId,
+      activo: false
+    };
+
+    await axios.put(`/api/vehiculos/${id}`, dataToSend);
+    setVehiculos(prev => prev.filter(v => v._id !== id));
+    setVehiculosFiltrados(prev => prev.filter(v => v._id !== id));
+    setVehiculosOriginales(prev => prev.filter(v => v._id !== id));
+    return { success: true };
+  } catch (error) {
+    console.error('Error al desactivar vehículo:', error.response?.data || error.message);
+    return { 
+      success: false, 
+      error: error.response?.data?.message || 'Error al desactivar el vehículo',
+      details: error.response?.data
+    };
+  }
+};
 
   const columns = [
     { 
@@ -215,12 +241,6 @@ const ListadoVehiculos = () => {
         page={popupType}
         selectedItem={selectedVehiculo}
         onDelete={popupType === 'confirmar-eliminar' ? handleDeleteVehiculo : null}
-        buttonName={
-          popupType === 'modificar-vehiculo' ? 'Modificar Vehículo' : 
-          popupType === 'confirmar-eliminar' ? 'Eliminar Vehículo' : 
-          'Aceptar'
-        }
-        message={popupType === 'confirmar-eliminar' ? '¿Está seguro que desea eliminar este vehículo?' : ''}
       />
 
       <Box mb={4}>

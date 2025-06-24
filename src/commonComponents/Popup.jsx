@@ -228,7 +228,7 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem, onSucc
       setIsSubmitting(true);
       try {
         if (onDelete) {
-          const result = await onDelete(selectedItem._id);
+          const result = await onDelete(selectedItem._id); // Asegúrate de usar _id
           
           if (result?.success) {
             if (onSuccess) onSuccess();
@@ -236,13 +236,15 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem, onSucc
             window.location.reload();
           } else {
             setErrors({
-              _general: result?.error || 'Error al eliminar el elemento'
+              _general: result?.error || 'Error al eliminar el elemento',
+              _details: result?.details // Mostrar detalles adicionales
             });
           }
         }
       } catch (error) {
         setErrors({
-          _general: error.message || 'Error al procesar la eliminación'
+          _general: error.message || 'Error al procesar la eliminación',
+          _details: error.response?.data // Mostrar detalles del error
         });
       } finally {
         setIsSubmitting(false);
