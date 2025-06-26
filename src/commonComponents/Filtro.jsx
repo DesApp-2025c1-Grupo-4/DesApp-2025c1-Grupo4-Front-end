@@ -24,9 +24,9 @@ const Filtro = ({
     empresas: {
       showCriterio: false,
       showDates: false,
-      searchLabel: 'Buscar por CUIT/RUT',
+      searchLabel: 'Buscar por CUIT',
       registerButton: 'Registrar Empresa',
-      criterios: ['CUIT'] // Necesario aunque no se muestre
+      criterios: ['CUIT']
     },
     choferes: {
       showCriterio: false,
@@ -59,10 +59,10 @@ const Filtro = ({
     if (mode === 'empresas') {
       setFiltros(prev => ({ ...prev, criterio: 'CUIT' }));
     }
-      if (mode === 'choferes') {
+    if (mode === 'choferes') {
       setFiltros(prev => ({ ...prev, criterio: 'CUIL' }));
     }
-  }, [mode]);
+  }, [mode, setFiltros]);
 
   const handleDateChange = (name) => (date) => {
     setFiltros({ 
@@ -72,13 +72,26 @@ const Filtro = ({
   };
 
   const handleSearch = () => {
-    if (onSearch) onSearch(filtros);
+    if (onSearch) {
+      // Para empresas, siempre usamos el criterio CUIT
+      const searchFilters = mode === 'empresas' 
+        ? { ...filtros, criterio: 'CUIT' }
+        : filtros;
+      onSearch(searchFilters);
+    }
+  };
+
+  // Manejar la tecla Enter en el campo de búsqueda
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
   };
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
       <Box className="filterGrid">
-        <Grid container spacing={3} alignItems="center">
+        <Grid container spacing={3} alignItems="bottom">
           {mode === 'viajes' && (
             <>
               <Grid item xs={12} sm={6} md={1.5}>
@@ -128,7 +141,12 @@ const Filtro = ({
               name="busqueda"
               value={filtros.busqueda || ''}
               onChange={(e) => setFiltros({ ...filtros, [e.target.name]: e.target.value })}
-              size="medium"
+              onKeyPress={handleKeyPress}
+              size="small"
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  height: '58px', 
+                },}}
             />
           </Grid>
 
@@ -171,7 +189,12 @@ const Filtro = ({
               fullWidth 
               variant="outlined" 
               onClick={() => {
-                setFiltros({ criterio: '', fechaDesde: '', fechaHasta: '', busqueda: '' });
+                setFiltros({ 
+                  criterio: mode === 'empresas' ? 'CUIT' : '', 
+                  fechaDesde: '', 
+                  fechaHasta: '', 
+                  busqueda: '' 
+                });
                 if (onClear) onClear();
               }}
             >

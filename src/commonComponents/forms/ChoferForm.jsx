@@ -1,172 +1,76 @@
-import {
-  Grid, InputLabel, TextField, Autocomplete, Box, Typography, List, ListItem,
-  ListItemText, CircularProgress, IconButton, Divider, Modal, Button, Paper, Avatar
-} from '@mui/material';
-import { grey, blue, indigo } from "@mui/material/colors";
+import { Grid, TextField, Autocomplete, Box, Typography, IconButton, Modal, Button, Paper, Divider } from '@mui/material';
 import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { useEffect, useState } from 'react';
-import { Search, Close, Person, Business, DirectionsCar } from '@mui/icons-material';
+import { Search, Business, DirectionsCar, Close } from '@mui/icons-material';
+import { grey } from '@mui/material/colors';
+import FieldContainer from '../formsComponents/FieldContainer';
+import IconButtonStyled from '../formsComponents/IconButtonStyled';
+import SelectionModal from '../formsComponents/SelectionModal';
 import axios from 'axios';
-import ErrorText from '../ErrorText';
 
-// Subcomponentes reutilizables
-const FieldContainer = ({ label, children, error }) => (
-  <Box sx={{ mb: 2 }}>
-    <InputLabel required sx={{ color: grey[700], fontWeight: 'bold', mb: 0.5 }}>
-      {label}
-    </InputLabel>
-    {children}
-    {error && <ErrorText>{error}</ErrorText>}
-  </Box>
-);
+const ChoferForm = ({ formData, handleChange, handleBlur, errors, isEditing = false }) => {
+  // Hooks de estado
+  const [empresas, setEmpresas] = useState([]);
+  const [vehiculosDisponibles, setVehiculosDisponibles] = useState([]);
+  const [loadingStates, setLoadingStates] = useState({
+    empresas: false,
+    vehiculos: false
+  });
+  const [modalStates, setModalStates] = useState({
+    empresas: false,
+    vehiculos: false
+  });
+  const [detailModal, setDetailModal] = useState({
+    open: false,
+    title: '',
+    content: null
+  });
 
-const IconButtonStyled = ({ onClick, icon: Icon }) => (
-  <IconButton
-    onClick={onClick}
-    sx={{
-      borderRadius: 2,
-      border: `1px solid ${grey[300]}`,
-      backgroundColor: 'background.paper',
-      '&:hover': { backgroundColor: grey[100] }
-    }}
-  >
-    <Icon />
-  </IconButton>
-);
-
-const styles = {
-  field: {
-    '& .MuiOutlinedInput-root': {
-      borderRadius: 2,
-      '& fieldset': { borderColor: grey[300] }
-    }
-  },
-  modalPaper: {
-    position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
-    width: 500, boxShadow: 24, p: 3, borderRadius: 2, maxHeight: '80vh', display: 'flex', flexDirection: 'column'
-  }
-};
-
-// Hook reutilizable para búsqueda con debounce
-// Reemplaza el hook useDebouncedFetch en ChoferForm.jsx con este:
-const useDebouncedFetch = (url, paramName, value, setData, setLoading) => {
+  // Efectos para cargar datos
   useEffect(() => {
-    let cancel = false;
+    if (modalStates.empresas && empresas.length === 0) {
+      setLoadingStates(prev => ({ ...prev, empresas: true }));
+      axios.get('/api/empresas')
+        .then(res => setEmpresas(res.data))
+        .finally(() => setLoadingStates(prev => ({ ...prev, empresas: false })));
+    }
+  }, [modalStates.empresas]);
 
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        const res = await axios.get(url, { params: { [paramName]: value } });
-        // Filtrar solo items con activo !== false
-        const activos = Array.isArray(res.data)
-          ? res.data.filter(e => e.activo !== false)
-          : [];
-        if (!cancel) setData(activos);
-      } catch (error) {
-        console.error(`Error fetching ${url}:`, error);
-      } finally {
-        if (!cancel) setLoading(false);
-      }
-    };
+  useEffect(() => {
+    if (modalStates.vehiculos && vehiculosDisponibles.length === 0) {
+      setLoadingStates(prev => ({ ...prev, vehiculos: true }));
+      axios.get('/api/vehiculos?activo=true')
+        .then(res => setVehiculosDisponibles(res.data))
+        .finally(() => setLoadingStates(prev => ({ ...prev, vehiculos: false })));
+    }
+  }, [modalStates.vehiculos]);
 
-    const timer = setTimeout(() => {
-      if (value.length > 2 || !value.length) {
-        fetchData();
-      }
-    }, 500);
-
-    return () => {
-      cancel = true;
-      clearTimeout(timer);
-    };
-  }, [value]);
-};
-
-// Modal genérico de selección
-const SelectionModal = ({
-  open, onClose, title, items, onSelect, searchValue, onSearchChange,
-  loading, getText, getSecondaryText, emptyText, icon: Icon
-}) => (
-  <Modal open={open} onClose={onClose}>
-    <Paper sx={styles.modalPaper}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          {Icon && <Icon color="primary" />}
-          <Typography variant="h6" color="primary">{title}</Typography>
-        </Box>
-        <IconButton onClick={onClose} size="small"><Close /></IconButton>
-      </Box>
-
-      <TextField
-        fullWidth value={searchValue} onChange={(e) => onSearchChange(e.target.value)}
-        placeholder="Buscar..." size="small"
-        InputProps={{ startAdornment: <Search sx={{ mr: 1, color: grey[500] }} /> }}
-        sx={{ mb: 2, ...styles.field }}
-      />
-
-      <Paper elevation={0} sx={{ flex: 1, overflow: 'auto', border: `1px solid ${grey[200]}`, borderRadius: 2 }}>
-        {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
-            <CircularProgress size={24} />
-          </Box>
-        ) : items.length > 0 ? (
-          <List dense>
-            {items.map((item) => (
-              <ListItem
-                key={item._id} button
-                onClick={() => { onSelect(item); onClose(); }}
-                sx={{ '&:hover': { backgroundColor: blue[50] } }}
-              >
-                <ListItemText
-                  primary={<Typography fontWeight="medium">{getText(item)}</Typography>}
-                  secondary={getSecondaryText?.(item) && (
-                    <Typography variant="body2" color="text.secondary">
-                      {getSecondaryText(item)}
-                    </Typography>
-                  )}
-                />
-              </ListItem>
-            ))}
-          </List>
-        ) : (
-          <Box sx={{ p: 3, textAlign: 'center' }}>
-            <Typography variant="body2" color="textSecondary">{emptyText}</Typography>
-          </Box>
-        )}
-      </Paper>
-
-      <Button variant="outlined" onClick={onClose} sx={{ mt: 2, alignSelf: 'flex-end', borderRadius: 2, textTransform: 'none' }}>
-        Cancelar
-      </Button>
-    </Paper>
-  </Modal>
-);
-
-// Componente principal
-const ChoferForm = ({ formData, handleChange, handleBlur, errors, empresas: empresasIniciales = [], vehiculos = [], isEditing = false }) => {
-  const [empresas, setEmpresas] = useState(empresasIniciales);
-  const [vehiculosDisponibles, setVehiculosDisponibles] = useState(vehiculos);
-  const [inputValues, setInputValues] = useState({ empresa: '', vehiculo: '' });
-  const [loadingStates, setLoadingStates] = useState({ empresas: false, vehiculos: false });
-  const [modalStates, setModalStates] = useState({ empresas: false, vehiculos: false });
-
-  useDebouncedFetch('/api/empresas', 'nombre', inputValues.empresa, setEmpresas, (loading) => setLoadingStates(prev => ({ ...prev, empresas: loading })));
-  useDebouncedFetch('/api/vehiculos', 'patente', inputValues.vehiculo, setVehiculosDisponibles, (loading) => setLoadingStates(prev => ({ ...prev, vehiculos: loading })));
-
+  // Manejadores de selección
   const onEmpresaSelect = (empresa) => {
-    const empresaId = empresa._id.replace(/^"|"$/g, '');
-    handleChange({ target: { name: "empresa", value: empresaId } });
-    // Guardar también el nombre para mostrar
-    handleChange({ target: { name: "empresaNombre", value: empresa.nombre_empresa } });
+    handleChange({ 
+      target: { 
+        name: "empresa", 
+        value: {
+          _id: empresa._id,
+          nombre_empresa: empresa.nombre_empresa
+        }
+      } 
+    });
+    setModalStates(prev => ({ ...prev, empresas: false }));
   };
 
   const onVehiculoSelect = (vehiculo) => {
     if (vehiculo._id === 'null') {
       handleChange({ target: { name: "vehiculoAsignado", value: null } });
+      handleChange({ target: { name: "vehiculoAsignadoData", value: null } });
     } else {
-      handleChange({ target: { name: "vehiculoAsignado", value: vehiculo._id } });
-      // Guardar también los datos para mostrar
+      handleChange({ 
+        target: { 
+          name: "vehiculoAsignado", 
+          value: vehiculo._id
+        } 
+      });
       handleChange({ 
         target: { 
           name: "vehiculoAsignadoData", 
@@ -178,22 +82,93 @@ const ChoferForm = ({ formData, handleChange, handleBlur, errors, empresas: empr
         } 
       });
     }
+    setModalStates(prev => ({ ...prev, vehiculos: false }));
   };
 
+  // Manejador para mostrar detalles
+  const handleViewDetails = (item) => {
+    let content;
+    let title;
+    
+    if (item.patente) {
+      title = `Detalles del Vehículo: ${item.patente}`;
+      content = (
+        <Box sx={{ p: 2 }}>
+          <Typography variant="subtitle1" gutterBottom>Información del Vehículo</Typography>
+          <Divider sx={{ my: 1 }} />
+          <Typography><strong>Patente:</strong> {item.patente}</Typography>
+          <Typography><strong>Marca:</strong> {item.marca}</Typography>
+          <Typography><strong>Modelo:</strong> {item.modelo}</Typography>
+          <Typography><strong>Año:</strong> {item.año || item.anio}</Typography>
+          <Typography><strong>Tipo:</strong> {item.tipo_vehiculo || item.tipo}</Typography>
+          {item.capacidad_carga && (
+            <>
+              <Typography><strong>Capacidad:</strong></Typography>
+              <Box sx={{ pl: 2 }}>
+                <Typography><strong>Peso:</strong> {item.capacidad_carga.peso || item.peso} kg</Typography>
+                <Typography><strong>Volumen:</strong> {item.capacidad_carga.volumen || item.volumen} m³</Typography>
+              </Box>
+            </>
+          )}
+          {item.empresa?.nombre_empresa && (
+            <Typography><strong>Empresa:</strong> {item.empresa.nombre_empresa}</Typography>
+          )}
+        </Box>
+      );
+    } else if (item.nombre_empresa) {
+      title = `Detalles de la Empresa: ${item.nombre_empresa}`;
+      content = (
+        <Box sx={{ p: 2 }}>
+          <Typography variant="subtitle1" gutterBottom>Información de la Empresa</Typography>
+          <Divider sx={{ my: 1 }} />
+          <Typography><strong>Nombre:</strong> {item.nombre_empresa}</Typography>
+          <Typography><strong>CUIT:</strong> {item.cuit}</Typography>
+          {item.datos_contacto && (
+            <>
+              <Typography><strong>Contacto:</strong></Typography>
+              <Box sx={{ pl: 2 }}>
+                <Typography><strong>Email:</strong> {item.datos_contacto.mail || 'No especificado'}</Typography>
+                <Typography><strong>Teléfono:</strong> {item.datos_contacto.telefono || 'No especificado'}</Typography>
+              </Box>
+            </>
+          )}
+          {item.domicilio_fiscal && (
+            <>
+              <Typography><strong>Domicilio:</strong></Typography>
+              <Box sx={{ pl: 2 }}>
+                <Typography><strong>Direccion:</strong> {item.domicilio_fiscal.calle}</Typography>
+                <Typography><strong>Ciudad:</strong> {item.domicilio_fiscal.ciudad}</Typography>
+                <Typography><strong>Provincia:</strong> {item.domicilio_fiscal.provincia}</Typography>
+                <Typography><strong>Pais:</strong> {item.domicilio_fiscal.pais}</Typography>
+              </Box>
+            </>
+          )}
+        </Box>
+      );
+    }
+    setDetailModal({ open: true, title, content });
+  };
+
+  // Renderizado del formulario
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
-      <Box sx={{ p: 2 }}>
+      <Box className="formContainer">
         <Grid container spacing={2}>
-          {/* Información Personal */}
+          {/* Sección de información personal */}
           <Grid item xs={12} md={6}>
             <Typography variant="subtitle1" color="primary" sx={{ mb: 1, fontWeight: 'bold' }}>Información personal</Typography>
             {['nombre', 'apellido', 'cuil'].map((field) => (
               <FieldContainer key={field} label={field.charAt(0).toUpperCase() + field.slice(1)} error={errors[field]}>
                 <TextField
-                  fullWidth size="small" name={field} value={formData[field] || ''}
-                  onChange={handleChange} onBlur={handleBlur} error={!!errors[field]}
+                  fullWidth
+                  size="small"
+                  name={field}
+                  value={formData[field] || ''}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  error={!!errors[field]}
                   placeholder={field === 'cuil' ? 'XX-XXXXXXXX-X' : ''}
-                  readOnly={field === 'cuil' && isEditing} sx={styles.field}
+                  readOnly={field === 'cuil' && isEditing}
                 />
               </FieldContainer>
             ))}
@@ -205,15 +180,14 @@ const ChoferForm = ({ formData, handleChange, handleBlur, errors, empresas: empr
                   textField: {
                     fullWidth: true,
                     size: 'small',
-                    error: !!errors.fechaNacimiento,
-                    sx: styles.field
+                    error: !!errors.fechaNacimiento
                   }
                 }}
               />
             </FieldContainer>
           </Grid>
 
-          {/* Información Laboral */}
+          {/* Sección de información laboral */}
           <Grid item xs={12} md={6}>
             <Typography variant="subtitle1" color="primary" sx={{ mb: 1, fontWeight: 'bold' }}>Información laboral</Typography>
 
@@ -222,18 +196,13 @@ const ChoferForm = ({ formData, handleChange, handleBlur, errors, empresas: empr
                 <TextField
                   fullWidth
                   size="small"
-                  value={
-                    formData.empresa
-                      ? formData.empresa.nombre_empresa 
-                      : '-- Sin empresa asignada --'
-                  }
-                  sx={styles.field}
+                  value={formData.empresa?.nombre_empresa || 'Sin empresa asignada'}
                   InputProps={{
                     readOnly: true,
                     startAdornment: formData.empresa && <Business sx={{ mr: 1, color: grey[600] }} />
                   }}
                 />
-                <IconButtonStyled onClick={() => setModalStates(prev => ({ ...prev, empresas: !prev.empresas }))} icon={Search} />
+                <IconButtonStyled onClick={() => setModalStates(prev => ({ ...prev, empresas: true }))} icon={Search} />
               </Box>
             </FieldContainer>
 
@@ -242,90 +211,109 @@ const ChoferForm = ({ formData, handleChange, handleBlur, errors, empresas: empr
                 <TextField
                   fullWidth
                   size="small"
-                  value={
-                    !formData.vehiculoAsignado ? '-- Sin asignar --' :
-                    vehiculosDisponibles.find(v => v._id === formData.vehiculoAsignado)?.patente || 
-                    formData.vehiculoAsignado.patente || 
-                    ''
-                  }
-                  sx={styles.field}
+                  value={formData.vehiculoAsignadoData?.patente || 'Sin asignar'}
                   InputProps={{
                     readOnly: true,
                     startAdornment: formData.vehiculoAsignado && <DirectionsCar sx={{ mr: 1, color: grey[600] }} />
                   }}
                 />
-                <IconButtonStyled onClick={() => setModalStates(prev => ({ ...prev, vehiculos: !prev.vehiculos }))} icon={Search} />
+                <IconButtonStyled onClick={() => setModalStates(prev => ({ ...prev, vehiculos: true }))} icon={Search} />
               </Box>
             </FieldContainer>
 
             <FieldContainer label="Número de Licencia" error={errors.licenciaNumero}>
-  <TextField
-    fullWidth
-    size="small"
-    name="licenciaNumero"
-    value={formData.licenciaNumero || ''}
-    onChange={handleChange}
-    onBlur={handleBlur}
-    error={!!errors.licenciaNumero}
-    sx={styles.field}
-  />
-</FieldContainer>
+              <TextField
+                fullWidth
+                size="small"
+                name="licenciaNumero"
+                value={formData.licenciaNumero || ''}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                error={!!errors.licenciaNumero}
+              />
+            </FieldContainer>
 
-<FieldContainer label="Tipo de Licencia" error={errors.licenciaTipo}>
-  <Autocomplete
-    multiple
-    options={['A1', 'A2', 'B1', 'B2', 'C1', 'C2', 'C3', 'D1', 'D2', 'E']}
-    value={formData.licenciaTipo || []}
-    onChange={(_, value) => handleChange({ target: { name: 'licenciaTipo', value } })}
-    renderInput={(params) => (
-      <TextField {...params} size="small" sx={styles.field} />
-    )}
-  />
-</FieldContainer>
+            <FieldContainer label="Tipo de Licencia" error={errors.licenciaTipo}>
+              <Autocomplete
+                multiple
+                options={['A1', 'A2', 'B1', 'B2', 'C1', 'C2', 'C3', 'D1', 'D2', 'E']}
+                value={formData.licenciaTipo || []}
+                onChange={(_, value) => handleChange({ target: { name: 'licenciaTipo', value } })}
+                renderInput={(params) => (
+                  <TextField {...params} size="small" />
+                )}
+              />
+            </FieldContainer>
 
-<FieldContainer label="Fecha Expiración Licencia" error={errors.licenciaExpiracion}>
-  <DatePicker
-    value={formData.licenciaExpiracion || null}
-    onChange={(date) => handleChange({ target: { name: 'licenciaExpiracion', value: date } })}
-    slotProps={{
-      textField: {
-        fullWidth: true,
-        size: 'small',
-        error: !!errors.licenciaExpiracion,
-        sx: styles.field
-      }
-    }}
-  />
-</FieldContainer>
+            <FieldContainer label="Fecha Expiración Licencia" error={errors.licenciaExpiracion}>
+              <DatePicker
+                value={formData.licenciaExpiracion || null}
+                onChange={(date) => handleChange({ target: { name: 'licenciaExpiracion', value: date } })}
+                slotProps={{
+                  textField: {
+                    fullWidth: true,
+                    size: 'small',
+                    error: !!errors.licenciaExpiracion
+                  }
+                }}
+              />
+            </FieldContainer>
           </Grid>
         </Grid>
 
-        {/* Modales */}
+        {/* Modales de selección */}
         <SelectionModal
-          open={modalStates.empresas} onClose={() => setModalStates(prev => ({ ...prev, empresas: !prev.empresas }))}
-          title="Seleccionar Empresa" items={empresas} loading={loadingStates.empresas}
+          open={modalStates.empresas}
+          onClose={() => setModalStates(prev => ({ ...prev, empresas: false }))}
+          title="Seleccionar Empresa"
+          items={empresas}
+          loading={loadingStates.empresas}
           onSelect={onEmpresaSelect}
-          searchValue={inputValues.empresa} onSearchChange={(val) => setInputValues(prev => ({ ...prev, empresa: val }))}
           getText={(item) => item.nombre_empresa}
           getSecondaryText={(item) => item.cuit && `CUIT: ${item.cuit}`}
-          emptyText="No hay empresas disponibles"
+          emptyText="No hay empresas registradas"
           icon={Business}
+          onViewDetails={handleViewDetails}
         />
 
         <SelectionModal
           open={modalStates.vehiculos}
-          onClose={() => setModalStates(prev => ({ ...prev, vehiculos: !prev.vehiculos }))}
+          onClose={() => setModalStates(prev => ({ ...prev, vehiculos: false }))}
           title="Seleccionar Vehículo"
-          items={[{ _id: 'null', patente: '-- Sin asignar --' }, ...vehiculosDisponibles]}
+          items={[{ _id: 'null', patente: 'Sin asignar' }, ...vehiculosDisponibles]}
           loading={loadingStates.vehiculos}
           onSelect={onVehiculoSelect}
-          searchValue={inputValues.vehiculo}
-          onSearchChange={(val) => setInputValues(prev => ({ ...prev, vehiculo: val }))}
           getText={(item) => item.patente}
-          getSecondaryText={(item) => item.empresa?.nombre_empresa && `Empresa: ${item.empresa.nombre_empresa}`}
-          emptyText={formData.empresa ? "No hay vehículos para esta empresa" : "No hay vehículos disponibles"}
+          getSecondaryText={(item) => item.marca ? `${item.marca} ${item.modelo}` : ''}
+          emptyText="No hay vehículos registrados"
           icon={DirectionsCar}
+          onViewDetails={handleViewDetails}
         />
+
+        {/* Modal de detalles */}
+        <Modal
+          open={detailModal.open}
+          onClose={() => setDetailModal(prev => ({ ...prev, open: false }))}
+        >
+          <Paper sx={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: 400,
+            bgcolor: 'background.paper',
+            boxShadow: 24,
+            p: 2
+          }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              <Typography variant="h6" color="primary">{detailModal.title}</Typography>
+              <IconButton onClick={() => setDetailModal(prev => ({ ...prev, open: false }))}>
+                <Close />
+              </IconButton>
+            </Box>
+            {detailModal.content}
+          </Paper>
+        </Modal>
       </Box>
     </LocalizationProvider>
   );

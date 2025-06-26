@@ -143,31 +143,36 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem, onSucc
           newFormData.cuil = selectedItem?.cuil || '';
           newFormData.fechaNacimiento = selectedItem?.fechaNacimiento || null;
           newFormData.empresa = selectedItem?.empresa || null;
-          newFormData.vehiculoAsignado = selectedItem?.vehiculoAsignado || null;
+          newFormData.vehiculoAsignado = selectedItem?.vehiculoAsignado?._id || selectedItem?.vehiculoAsignado || null;
+          // Agregar estos datos del vehículo
+          newFormData.vehiculoAsignadoData = selectedItem?.vehiculoAsignado 
+            ? {
+                patente: selectedItem.vehiculoAsignado.patente,
+                marca: selectedItem.vehiculoAsignado.marca,
+                modelo: selectedItem.vehiculoAsignado.modelo
+              }
+            : null;
+          newFormData.licenciaNumero = selectedItem?.licenciaNumero || '';
+          newFormData.licenciaTipo = selectedItem?.licenciaTipo || [];
+          newFormData.licenciaExpiracion = selectedItem?.licenciaExpiracion || null;
         }
         else if (formType === 'vehiculo') {
-  newFormData._id = selectedItem?._id || '';
-  newFormData.patente = selectedItem?.patente || '';
-  newFormData.tipoVehiculo = selectedItem?.tipo_vehiculo || selectedItem?.tipo || '';
-  newFormData.marca = selectedItem?.marca || '';
-  newFormData.modelo = selectedItem?.modelo || '';
-  newFormData.año = selectedItem?.año || selectedItem?.anio || '';
-  newFormData.volumen = selectedItem?.capacidad_carga?.volumen || selectedItem?.volumen || '';
-  newFormData.peso = selectedItem?.capacidad_carga?.peso || selectedItem?.peso || '';
-  
-  // Simplificar el manejo de empresa
-  if (selectedItem?.empresa) {
-    newFormData.empresa = typeof selectedItem.empresa === 'object' 
-      ? selectedItem.empresa._id 
-      : selectedItem.empresa;
-    newFormData.empresaNombre = typeof selectedItem.empresa === 'object'
-      ? selectedItem.empresa.nombre_empresa
-      : ''; // Si es solo ID, no tenemos nombre
-  } else {
-    newFormData.empresa = '';
-    newFormData.empresaNombre = '';
-  }
-}
+          newFormData._id = selectedItem?._id || '';
+          newFormData.patente = selectedItem?.patente || '';
+          newFormData.tipoVehiculo = selectedItem?.tipo_vehiculo || selectedItem?.tipo || '';
+          newFormData.marca = selectedItem?.marca || '';
+          newFormData.modelo = selectedItem?.modelo || '';
+          newFormData.año = selectedItem?.año || selectedItem?.anio || '';
+          newFormData.volumen = selectedItem?.capacidad_carga?.volumen || selectedItem?.volumen || '';
+          newFormData.peso = selectedItem?.capacidad_carga?.peso || selectedItem?.peso || '';
+          if (selectedItem?.empresa) {
+            newFormData.empresa = typeof selectedItem.empresa === 'object' ? selectedItem.empresa._id : selectedItem.empresa;
+            newFormData.empresaNombre = typeof selectedItem.empresa === 'object'? selectedItem.empresa.nombre_empresa: '';
+          } else {
+            newFormData.empresa = '';
+            newFormData.empresaNombre = '';
+          }
+        }
         else if (formType === 'empresa') {
           newFormData.nombre_empresa = selectedItem?.nombre_empresa || '';
           newFormData.cuit = selectedItem?.cuit || '';
@@ -333,29 +338,31 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem, onSucc
             activo: true
           };
         } else if (formType === 'chofer') {
-          dataToSend = {
-            nombre: formData.nombre,
-            apellido: formData.apellido,
-            cuil: formData.cuil,
-            fecha_nacimiento: formData.fechaNacimiento,
-            empresa: formData.empresa, // Solo el ID
-            vehiculo_defecto: formData.vehiculoAsignado || null,
-            activo: true,
-            licencia: {
-              numero: formData.licenciaNumero || "00000000", // Valor temporal requerido
-              tipos: formData.licenciaTipos || ["C2"], // Valor temporal requerido
-              fecha_expiracion: formData.licenciaExpiracion 
-                ? format(new Date(formData.licenciaExpiracion), 'dd/MM/yyyy')
-                : format(new Date(), 'dd/MM/yyyy'), // Valor por defecto
-              documento: {
-                data: "", // Campo obligatorio - valor temporal
-                contentType: "application/pdf", // Valor temporal
-                fileName: "licencia.pdf", // Valor temporal
-                size: 0 // Valor temporal
+            dataToSend = {
+              nombre: formData.nombre,
+              apellido: formData.apellido,
+              cuil: formData.cuil,
+              fecha_nacimiento: formData.fechaNacimiento,
+              empresa: typeof formData.empresa === 'object' ? formData.empresa._id : formData.empresa,
+              vehiculo_defecto: formData.vehiculoAsignado ? 
+                (typeof formData.vehiculoAsignado === 'object' ? formData.vehiculoAsignado._id : formData.vehiculoAsignado) : 
+                null,
+              activo: true,
+              licencia: {
+                numero: formData.licenciaNumero || "00000000",
+                tipos: formData.licenciaTipo || ["C2"],
+                fecha_expiracion: formData.licenciaExpiracion 
+                  ? format(new Date(formData.licenciaExpiracion), 'dd/MM/yyyy')
+                  : format(new Date(), 'dd/MM/yyyy'),
+                documento: {
+                  data: "",
+                  contentType: "application/pdf",
+                  fileName: "licencia.pdf",
+                  size: 0
+                }
               }
-            }
-          };
-        }   else if (formType === 'viaje') {
+            };
+          }   else if (formType === 'viaje') {
               dataToSend = {
                 deposito_origen: formData.depositoOrigen._id || formData.depositoOrigen,
                 deposito_destino: formData.depositoDestino._id || formData.depositoDestino,
@@ -445,7 +452,7 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem, onSucc
             fontWeight: 600,
             fontSize: isMobile ? '1rem' : '1.1rem'
           }}>
-            El elemento se eliminará permanentemente.
+            SE ELIMINARA PERMANENTEMENTE
           </Typography>
         </Box>
       );

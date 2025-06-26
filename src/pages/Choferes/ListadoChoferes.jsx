@@ -28,14 +28,13 @@ const ListadoChoferes = () => {
     fetchChoferes();
   }, []);
 
-  // Fetch choferes activos (activo !== false)
   const fetchChoferes = async () => {
     try {
       setLoading(true);
       const response = await axios.get('/api/choferes');
 
       const datosTransformados = response.data
-        .filter(item => item.activo !== false) // solo activos
+        .filter(item => item.activo !== false)
         .map(item => ({
           ...item,
           _id: item._id,
@@ -51,13 +50,11 @@ const ListadoChoferes = () => {
       setError(null);
     } catch (err) {
       setError(`Error al cargar datos: ${err.message}`);
-      console.error('Error fetching choferes:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  // Aplica filtros desde filtrosAplicados
   useEffect(() => {
     const filtered = choferes.filter(chofer => {
       if (filtrosAplicados.busqueda) {
@@ -97,132 +94,87 @@ const ListadoChoferes = () => {
     return choferesFiltrados.slice(inicio, inicio + itemsPorPagina);
   };
 
-  // Abre el popup y setea chofer seleccionado
-const handleOpenPopup = async (type, chofer = null) => {
-  setPopupType(type);
-
-  if (type === 'modificar-chofer' && chofer) {
-    try {
-      const response = await axios.get(`/api/choferes/${chofer._id}`);
-      const choferData = response.data;
-
-      setSelectedChofer({
-        ...choferData,
-        _id: choferData._id,
-        nombre: choferData.nombre || '',
-        apellido: choferData.apellido || '',
-        cuil: choferData.cuil || '',
-        fechaNacimiento: choferData.fecha_nacimiento ? new Date(choferData.fecha_nacimiento) : null,
-        // Empresa - mismo formato que vehiculoAsignado
-        empresa: choferData.empresa ? {
-          _id: typeof choferData.empresa === 'object' ? choferData.empresa._id : choferData.empresa,
-          nombre_empresa: typeof choferData.empresa === 'object' ? choferData.empresa.nombre_empresa : ''
-        } : null,
-        vehiculoAsignado: choferData.vehiculo_defecto || null,
-        licenciaNumero: choferData.licencia?.numero || '',
-        licenciaTipo: choferData.licencia?.tipos || [],
-        licenciaExpiracion: choferData.licencia?.fecha_expiracion ? 
-          new Date(choferData.licencia.fecha_expiracion.split('/').reverse().join('-')) : null
+  const handleOpenPopup = async (type, chofer = null) => {
+    setPopupType(type);
+    
+    if (type === 'confirmar-eliminar' && chofer) {
+      setSelectedChofer({ 
+        _id: chofer._id,
+        nombre: chofer.nombre
       });
-    } catch (error) {
-      console.error('Error al cargar chofer:', error);
-      // Fallback con datos del listado
-      setSelectedChofer({
-        ...chofer,
-        empresa: chofer.empresaObj ? {
-          _id: chofer.empresaObj._id,
-          nombre_empresa: chofer.empresaObj.nombre_empresa
-        } : null,
-        vehiculoAsignado: chofer.vehiculoObj || null
-      });
+      setPopupOpen(true);
+      return;
     }
-  } else {
-      // Nuevo chofer
-      try {
-        const [empresasResponse, vehiculosResponse] = await Promise.all([
-          axios.get('/api/empresas'),
-          axios.get('/api/vehiculos')
-        ]);
 
-        setSelectedChofer({
-          nombre: '',
-          apellido: '',
-          cuil: '',
-          fechaNacimiento: null,
-          empresa: null,
-          vehiculoAsignado: null,
-          empresasDisponibles: empresasResponse.data,
-          vehiculosDisponibles: vehiculosResponse.data
-        });
-      } catch (error) {
-        console.error('Error al cargar listados:', error);
-        setSelectedChofer({
-          empresasDisponibles: [],
-          vehiculosDisponibles: []
-        });
-      }
-    }
+if (type === 'modificar-chofer' && chofer) {
+  try {
+    const response = await axios.get(`/api/choferes/${chofer._id}`);
+    const choferData = response.data;
+
+    setSelectedChofer({
+      ...choferData,
+      _id: choferData._id,
+      nombre: choferData.nombre || '',
+      apellido: choferData.apellido || '',
+      cuil: choferData.cuil || '',
+      fechaNacimiento: choferData.fecha_nacimiento ? new Date(choferData.fecha_nacimiento) : null,
+      empresa: choferData.empresa ? {
+        _id: typeof choferData.empresa === 'object' ? choferData.empresa._id : choferData.empresa,
+        nombre_empresa: typeof choferData.empresa === 'object' ? choferData.empresa.nombre_empresa : ''
+      } : null,
+      vehiculoAsignado: choferData.vehiculo_defecto ? {
+        _id: typeof choferData.vehiculo_defecto === 'object' ? choferData.vehiculo_defecto._id : choferData.vehiculo_defecto,
+        patente: typeof choferData.vehiculo_defecto === 'object' ? choferData.vehiculo_defecto.patente : ''
+      } : null,
+      licenciaNumero: choferData.licencia?.numero || '',
+      licenciaTipo: choferData.licencia?.tipos || [],
+      licenciaExpiracion: choferData.licencia?.fecha_expiracion ? 
+        new Date(choferData.licencia.fecha_expiracion.split('/').reverse().join('-')) : null
+    });
+  } catch (error) {
+    console.error('Error al cargar detalles del chofer:', error);
+    setSelectedChofer({
+      ...chofer,
+      empresa: chofer.empresaObj ? {
+        _id: chofer.empresaObj._id,
+        nombre_empresa: chofer.empresaObj.nombre_empresa
+      } : null,
+      vehiculoAsignado: chofer.vehiculoObj ? {
+        _id: chofer.vehiculoObj._id,
+        patente: chofer.vehiculoObj.patente
+      } : null
+    });
+  }
+}
     setPopupOpen(true);
   };
 
-  // Función para desactivar chofer (set activo: false)
- const handleDeleteChofer = async (id) => {
+  const handleDeleteChofer = async (id) => {
+    try {
+      await axios.put(`/api/choferes/${id}`, { activo: false });
+      setChoferes(prev => prev.filter(c => c._id !== id));
+      setChoferesFiltrados(prev => prev.filter(c => c._id !== id));
+      setPopupOpen(false);
+      return { success: true };
+    } catch (error) {
+      return { 
+        success: false,
+        error: error.response?.data?.message || 'Error al eliminar chofer'
+      };
+    }
+  };
+
+  const handleSubmitChofer = async (formData) => {
   try {
-    // Primero obtener los datos actuales del chofer
-    const { data: currentData } = await axios.get(`/api/choferes/${id}`);
-    
-    // Preparar los datos para enviar (marcar como inactivo)
-    const dataToSend = {
-      nombre: currentData.nombre,
-      apellido: currentData.apellido,
-      cuil: currentData.cuil,
-      fecha_nacimiento: currentData.fecha_nacimiento,
-      empresa: typeof currentData.empresa === 'object' ? currentData.empresa._id : currentData.empresa,
-      vehiculo_defecto: typeof currentData.vehiculo_defecto === 'object' ? 
-                       currentData.vehiculo_defecto._id : 
-                       currentData.vehiculo_defecto,
-      activo: false
-    };
-
-    // Enviar la actualización
-    await axios.put(`/api/choferes/${id}`, dataToSend);
-    
-    // Actualizar los estados
-    setChoferes(prev => prev.filter(c => c._id !== id));
-    setChoferesFiltrados(prev => prev.filter(c => c._id !== id));
-    setPopupOpen(false);
-    
-    return { success: true };
-  } catch (error) {
-    console.error('Error al desactivar chofer:', error.response?.data || error.message);
-    return { 
-      success: false, 
-      error: error.response?.data?.message || 'Error al desactivar el chofer',
-      details: error.response?.data
-    };
-  }
-};
-
-const handleSubmitChofer = async (formData) => {
-  try {
-    // Función para normalizar el ID del vehículo
-    const normalizeVehicleId = (vehicle) => {
-      if (!vehicle) return null;
-      if (typeof vehicle === 'string') {
-        // Si es un string ID válido (24 caracteres hexadecimal)
-        return /^[0-9a-fA-F]{24}$/.test(vehicle) ? vehicle : null;
-      }
-      // Si es un objeto con _id
-      return vehicle._id || null;
-    };
-
     const dataToSend = {
       nombre: formData.nombre,
       apellido: formData.apellido,
       cuil: formData.cuil,
       fecha_nacimiento: formData.fechaNacimiento,
       empresa: typeof formData.empresa === 'object' ? formData.empresa._id : formData.empresa,
-      vehiculo_defecto: normalizeVehicleId(formData.vehiculoAsignado), // <-- Aquí aplicamos la normalización
+      vehiculo_defecto: formData.vehiculoAsignado ? 
+        (typeof formData.vehiculoAsignado === 'object' ? formData.vehiculoAsignado._id : formData.vehiculoAsignado) : 
+        null,
       activo: true,
       licencia: {
         numero: formData.licenciaNumero,
@@ -236,22 +188,18 @@ const handleSubmitChofer = async (formData) => {
         }
       }
     };
-
-    console.log('Payload a enviar:', JSON.stringify(dataToSend, null, 2));
-
     const method = selectedChofer ? 'PUT' : 'POST';
     const url = selectedChofer ? `/api/choferes/${selectedChofer._id}` : '/api/choferes';
-
-    const response = await axios({ method, url, data: dataToSend });
+    await axios({ method, url, data: dataToSend });
+    fetchChoferes();
+    return { success: true };
   } catch (error) {
-    console.error('Error completo:', error.response?.data || error.message);
     return { 
       success: false, 
       error: error.response?.data?.message || 'Error al guardar chofer' 
     };
   }
 };
-
 
   const columns = [
     { id: 'nombre', label: 'Nombre', minWidth: 120, align: 'left' },
@@ -274,10 +222,18 @@ const handleSubmitChofer = async (formData) => {
     {
       id: 'eliminar',
       label: 'Eliminar',
-      minWidth: 80,
-      align: 'center',
       render: (_, row) => (
-        <IconButton onClick={() => handleOpenPopup('confirmar-eliminar', row)} size="small" color="error">
+        <IconButton
+          onClick={(e) => {
+            e.stopPropagation();
+            handleOpenPopup('confirmar-eliminar', { 
+              _id: row._id, 
+              nombre: row.nombre 
+            });
+          }}
+          size="small"
+          color="error"
+        >
           <CloseOutlinedIcon fontSize="small" />
         </IconButton>
       )
@@ -294,8 +250,13 @@ const handleSubmitChofer = async (formData) => {
         onClose={() => setPopupOpen(false)}
         page={popupType}
         selectedItem={selectedChofer}
-        onDelete={popupType === 'confirmar-eliminar' && selectedChofer
-          ? () => handleDeleteChofer(selectedChofer._id)
+        onDelete={popupType === 'confirmar-eliminar' ? 
+          async () => {
+            const result = await handleDeleteChofer(selectedChofer._id);
+            if (!result.success) {
+              alert(result.error);
+            }
+          }
           : null
         }
         onSubmit={popupType === 'modificar-chofer' ? handleSubmitChofer : null}
