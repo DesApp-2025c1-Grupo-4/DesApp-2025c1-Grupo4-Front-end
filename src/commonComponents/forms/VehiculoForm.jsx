@@ -28,17 +28,25 @@ const TIPOS_VEHICULO = ['Camión', 'Camioneta', 'Furgón', 'Auto', 'Moto'];
 
 const useDebouncedFetch = (url, paramName, value, setData, setLoading) => {
   useEffect(() => {
+    let cancel = false;
+
     const fetchData = async () => {
       setLoading(true);
       try {
         const response = await axios.get(url, {
           params: { [paramName]: value }
         });
-        setData(response.data);
+
+        // Filtrar solo items con activo !== false
+        const activos = Array.isArray(response.data)
+          ? response.data.filter(e => e.activo !== false)
+          : [];
+
+        if (!cancel) setData(activos);
       } catch (error) {
         console.error(`Error al cargar ${url}:`, error);
       } finally {
-        setLoading(false);
+        if (!cancel) setLoading(false);
       }
     };
 
@@ -48,9 +56,15 @@ const useDebouncedFetch = (url, paramName, value, setData, setLoading) => {
       }
     }, 500);
 
-    return () => clearTimeout(timer);
-  }, [value]);
+    return () => {
+      cancel = true;
+      clearTimeout(timer);
+    };
+  }, [url, paramName, value]);
 };
+
+
+
 
 const InputField = ({ label, name, value, onChange, onBlur, error, placeholder, type = 'text', helperText, readOnly = false, inputProps, endAdornment }) => (
   <Box sx={{ mb: 2 }}>
@@ -126,7 +140,9 @@ const SelectionModal = ({ open, onClose, title, items, onSelect, searchValue, on
 
 const VehiculoForm = ({ formData, handleChange, handleBlur, errors, isEditing = false }) => {
   const [empresas, setEmpresas] = useState([]);
-  const [inputValues, setInputValues] = useState({ empresa: formData?.empresa?.nombre_empresa || '' });
+  const [inputValues, setInputValues] = useState({ 
+     empresa: formData?.empresaNombre || ''
+  });
   const [loadingStates, setLoadingStates] = useState({ empresas: false });
   const [modalStates, setModalStates] = useState({ empresas: false });
 
@@ -168,23 +184,23 @@ const VehiculoForm = ({ formData, handleChange, handleBlur, errors, isEditing = 
           <Box sx={{ mb: 2 }}>
             <InputLabel required sx={{ color: grey[700], fontWeight: 'bold', mb: 0.5 }}>Empresa</InputLabel>
             <Box sx={{ display: 'flex', gap: 1 }}>
-              <TextField
-                fullWidth
-                size="small"
-                value={formData?.empresaObj?.nombre_empresa || formData?.empresaNombre || 'Sin empresa asignada'}
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: 2,
-                    '& fieldset': { borderColor: grey[300] }
-                  }
-                }}
-                InputProps={{
-                  readOnly: true,
-                  startAdornment: (formData?.empresaObj || formData?.empresa) && (
-                    <BusinessIcon sx={{ mr: 1, color: grey[600] }} />
-                  )
-                }}
-              />
+               <TextField
+                  fullWidth
+                  size="small"
+                  value={inputValues.empresa || formData?.empresaNombre || formData?.empresaObj?.nombre_empresa || 'Sin empresa asignada'}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 2,
+                      '& fieldset': { borderColor: grey[300] }
+                    }
+                  }}
+                  InputProps={{
+                    readOnly: true,
+                    startAdornment: formData?.empresaNombre && (
+                      <BusinessIcon sx={{ mr: 1, color: grey[600] }} />
+                    )
+                  }}
+                />
               <IconButton onClick={() => toggleModal('empresas')}>
                 <SearchIcon />
               </IconButton>
@@ -198,14 +214,20 @@ const VehiculoForm = ({ formData, handleChange, handleBlur, errors, isEditing = 
             title="Seleccionar Empresa"
             items={empresas}
             onSelect={(empresa) => {
-                handleChange({ 
-                  target: { 
-                    name: 'empresa', 
-                    value: empresa._id
-                  }
-                });
-              setInputValues(prev => ({ ...prev, empresa: empresa.nombre_empresa }));
-            }}
+  handleChange({ 
+    target: { 
+      name: 'empresa', 
+      value: empresa._id // Siempre guardar el ID aquí
+    }
+  });
+  // Mantener el nombre para mostrar
+  handleChange({
+    target: {
+      name: 'empresaNombre',
+      value: empresa.nombre_empresa
+    }
+  });
+            }}  
             searchValue={inputValues.empresa}
             onSearchChange={(val) => handleInputChange('empresa', val)}
             loading={loadingStates.empresas}
@@ -221,3 +243,4 @@ const VehiculoForm = ({ formData, handleChange, handleBlur, errors, isEditing = 
 };
 
 export default VehiculoForm;
+

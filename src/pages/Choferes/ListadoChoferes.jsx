@@ -98,43 +98,45 @@ const ListadoChoferes = () => {
   };
 
   // Abre el popup y setea chofer seleccionado
-  const handleOpenPopup = async (type, chofer = null) => {
-    setPopupType(type);
+const handleOpenPopup = async (type, chofer = null) => {
+  setPopupType(type);
 
-    if (type === 'modificar-chofer' && chofer) {
-      try {
-        const response = await axios.get(`/api/choferes/${chofer._id}`);
-        const choferData = response.data;
-        setSelectedChofer({
-          ...choferData,
-          _id: choferData._id,
-          nombre: choferData.nombre || '',
-          apellido: choferData.apellido || '',
-          cuil: choferData.cuil || '',
-          fechaNacimiento: choferData.fecha_nacimiento ? new Date(choferData.fecha_nacimiento) : null,
-          empresa: choferData.empresa || null,
-          vehiculoAsignado: choferData.vehiculo_defecto || null,
-          empresasDisponibles: [],
-          vehiculosDisponibles: []
-        });
-      } catch (error) {
-        console.error('Error al cargar datos del chofer:', error);
-        setSelectedChofer({
-          ...chofer,
-          _id: chofer._id,
-          nombre: chofer.nombre || '',
-          apellido: chofer.apellido || '',
-          cuil: chofer.cuil || '',
-          fechaNacimiento: chofer.fecha_nacimiento ? new Date(chofer.fecha_nacimiento) : null,
-          empresa: chofer.empresaObj || null,
-          vehiculoAsignado: chofer.vehiculoObj || null,
-          empresasDisponibles: [],
-          vehiculosDisponibles: []
-        });
-      }
-    } else if (type === 'confirmar-eliminar' && chofer) {
-      setSelectedChofer(chofer);
-    } else {
+  if (type === 'modificar-chofer' && chofer) {
+    try {
+      const response = await axios.get(`/api/choferes/${chofer._id}`);
+      const choferData = response.data;
+
+      setSelectedChofer({
+        ...choferData,
+        _id: choferData._id,
+        nombre: choferData.nombre || '',
+        apellido: choferData.apellido || '',
+        cuil: choferData.cuil || '',
+        fechaNacimiento: choferData.fecha_nacimiento ? new Date(choferData.fecha_nacimiento) : null,
+        // Empresa - mismo formato que vehiculoAsignado
+        empresa: choferData.empresa ? {
+          _id: typeof choferData.empresa === 'object' ? choferData.empresa._id : choferData.empresa,
+          nombre_empresa: typeof choferData.empresa === 'object' ? choferData.empresa.nombre_empresa : ''
+        } : null,
+        vehiculoAsignado: choferData.vehiculo_defecto || null,
+        licenciaNumero: choferData.licencia?.numero || '',
+        licenciaTipo: choferData.licencia?.tipos || [],
+        licenciaExpiracion: choferData.licencia?.fecha_expiracion ? 
+          new Date(choferData.licencia.fecha_expiracion.split('/').reverse().join('-')) : null
+      });
+    } catch (error) {
+      console.error('Error al cargar chofer:', error);
+      // Fallback con datos del listado
+      setSelectedChofer({
+        ...chofer,
+        empresa: chofer.empresaObj ? {
+          _id: chofer.empresaObj._id,
+          nombre_empresa: chofer.empresaObj.nombre_empresa
+        } : null,
+        vehiculoAsignado: chofer.vehiculoObj || null
+      });
+    }
+  } else {
       // Nuevo chofer
       try {
         const [empresasResponse, vehiculosResponse] = await Promise.all([
@@ -201,6 +203,56 @@ const ListadoChoferes = () => {
   }
 };
 
+const handleSubmitChofer = async (formData) => {
+  try {
+    // Función para normalizar el ID del vehículo
+    const normalizeVehicleId = (vehicle) => {
+      if (!vehicle) return null;
+      if (typeof vehicle === 'string') {
+        // Si es un string ID válido (24 caracteres hexadecimal)
+        return /^[0-9a-fA-F]{24}$/.test(vehicle) ? vehicle : null;
+      }
+      // Si es un objeto con _id
+      return vehicle._id || null;
+    };
+
+    const dataToSend = {
+      nombre: formData.nombre,
+      apellido: formData.apellido,
+      cuil: formData.cuil,
+      fecha_nacimiento: formData.fechaNacimiento,
+      empresa: typeof formData.empresa === 'object' ? formData.empresa._id : formData.empresa,
+      vehiculo_defecto: normalizeVehicleId(formData.vehiculoAsignado), // <-- Aquí aplicamos la normalización
+      activo: true,
+      licencia: {
+        numero: formData.licenciaNumero,
+        tipos: formData.licenciaTipo,
+        fecha_expiracion: format(formData.licenciaExpiracion, 'dd/MM/yyyy'),
+        documento: {
+          data: "",
+          contentType: "application/pdf",
+          fileName: "licencia.pdf",
+          size: 0
+        }
+      }
+    };
+
+    console.log('Payload a enviar:', JSON.stringify(dataToSend, null, 2));
+
+    const method = selectedChofer ? 'PUT' : 'POST';
+    const url = selectedChofer ? `/api/choferes/${selectedChofer._id}` : '/api/choferes';
+
+    const response = await axios({ method, url, data: dataToSend });
+  } catch (error) {
+    console.error('Error completo:', error.response?.data || error.message);
+    return { 
+      success: false, 
+      error: error.response?.data?.message || 'Error al guardar chofer' 
+    };
+  }
+};
+
+
   const columns = [
     { id: 'nombre', label: 'Nombre', minWidth: 120, align: 'left' },
     { id: 'apellido', label: 'Apellido', minWidth: 120, align: 'left' },
@@ -249,7 +301,7 @@ const ListadoChoferes = () => {
         onSubmit={popupType === 'modificar-chofer' ? handleSubmitChofer : null}
         buttonName={
           popupType === 'modificar-chofer'
-            ? 'Modificar Chofer'
+            ? selectedChofer?._id ? 'Modificar Chofer' : 'Crear Chofer'
             : popupType === 'confirmar-eliminar'
             ? 'Eliminar Chofer'
             : 'Aceptar'

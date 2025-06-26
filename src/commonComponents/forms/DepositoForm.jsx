@@ -5,7 +5,7 @@ import { grey } from "@mui/material/colors";
 import ErrorText from '../ErrorText';
 
 const TIPOS_DEPOSITO = ['Propio', 'Tercerizado'];
-const DIAS_SEMANA = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes','sabado','domingo'];
+const DIAS_SEMANA = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
 
 const FormInput = ({ 
   label, 

@@ -8,6 +8,7 @@ import CreateOutlinedIcon from '@mui/icons-material/CreateOutlined';
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
 import axios from 'axios';
 
+
 const ListadoVehiculos = () => {
   const [filtros, setFiltros] = useState({
     criterio: 'Patente',
@@ -104,20 +105,32 @@ const ListadoVehiculos = () => {
     return vehiculosFiltrados.slice(inicio, fin);
   };
 
-  const handleOpenPopup = async (type, vehiculo) => {
+const handleOpenPopup = async (type, vehiculo) => {
+  try {
+    const response = await axios.get(`/api/vehiculos/${vehiculo._id}`);
+    const vehiculoCompleto = response.data;
+    
+    // Manejar correctamente el campo empresa
+    const empresaId = vehiculoCompleto.empresa?._id || vehiculoCompleto.empresa;
+    const empresaNombre = vehiculoCompleto.empresa?.nombre_empresa || 'Sin empresa asignada';
+    
     setSelectedVehiculo({
-      ...vehiculo,
-      tipoVehiculo: vehiculo.tipo_vehiculo,
-      año: vehiculo.anio,
-      volumen: vehiculo.capacidad_carga?.volumen,
-      peso: vehiculo.capacidad_carga?.peso,
-      empresa: vehiculo.empresa?._id || vehiculo.empresa,
-      empresaNombre: vehiculo.empresa?.nombre_empresa || vehiculo.empresa || 'Sin empresa asignada',
-      empresaObj: vehiculo.empresa || null
+      ...vehiculoCompleto,
+      tipoVehiculo: vehiculoCompleto.tipo_vehiculo,
+      año: vehiculoCompleto.anio,
+      volumen: vehiculoCompleto.capacidad_carga?.volumen,
+      peso: vehiculoCompleto.capacidad_carga?.peso,
+      empresa: empresaId, // Asegurarse de pasar el ID
+      empresaNombre: empresaNombre // Y el nombre para mostrar
     });
+    
     setPopupType(type);
     setPopupOpen(true);
-  };
+  } catch (error) {
+    console.error('Error al cargar datos del vehículo:', error);
+    setError('No se pudieron cargar los datos completos del vehículo');
+  }
+};
 
 const handleDeleteVehiculo = async (id) => {
   try {

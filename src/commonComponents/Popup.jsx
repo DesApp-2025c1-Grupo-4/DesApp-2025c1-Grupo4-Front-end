@@ -115,7 +115,6 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem, onSucc
       if (selectedItem) {
         if (formType === 'deposito') {
           newFormData.tipo = selectedItem?.tipo || '';
-          // Asegurar que horarios sea objeto y no string
           newFormData.horarios = selectedItem?.horarios || { dias: [], desde: '', hasta: '' };
           newFormData.direccion = selectedItem?.localizacion?.direccion || '';
           newFormData.provincia = selectedItem?.localizacion?.provincia_estado || '';
@@ -147,16 +146,28 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem, onSucc
           newFormData.vehiculoAsignado = selectedItem?.vehiculoAsignado || null;
         }
         else if (formType === 'vehiculo') {
-          newFormData._id = selectedItem?._id || '';
-          newFormData.patente = selectedItem?.patente || '';
-          newFormData.tipoVehiculo = selectedItem?.tipo_vehiculo || selectedItem?.tipo || '';
-          newFormData.marca = selectedItem?.marca || '';
-          newFormData.modelo = selectedItem?.modelo || '';
-          newFormData.año = selectedItem?.año || selectedItem?.anio || '';
-          newFormData.volumen = selectedItem?.capacidad_carga?.volumen || selectedItem?.volumen || '';
-          newFormData.peso = selectedItem?.capacidad_carga?.peso || selectedItem?.peso || '';
-          newFormData.empresa = selectedItem?.empresa?._id || '';
-        }
+  newFormData._id = selectedItem?._id || '';
+  newFormData.patente = selectedItem?.patente || '';
+  newFormData.tipoVehiculo = selectedItem?.tipo_vehiculo || selectedItem?.tipo || '';
+  newFormData.marca = selectedItem?.marca || '';
+  newFormData.modelo = selectedItem?.modelo || '';
+  newFormData.año = selectedItem?.año || selectedItem?.anio || '';
+  newFormData.volumen = selectedItem?.capacidad_carga?.volumen || selectedItem?.volumen || '';
+  newFormData.peso = selectedItem?.capacidad_carga?.peso || selectedItem?.peso || '';
+  
+  // Simplificar el manejo de empresa
+  if (selectedItem?.empresa) {
+    newFormData.empresa = typeof selectedItem.empresa === 'object' 
+      ? selectedItem.empresa._id 
+      : selectedItem.empresa;
+    newFormData.empresaNombre = typeof selectedItem.empresa === 'object'
+      ? selectedItem.empresa.nombre_empresa
+      : ''; // Si es solo ID, no tenemos nombre
+  } else {
+    newFormData.empresa = '';
+    newFormData.empresaNombre = '';
+  }
+}
         else if (formType === 'empresa') {
           newFormData.nombre_empresa = selectedItem?.nombre_empresa || '';
           newFormData.cuit = selectedItem?.cuit || '';
@@ -307,7 +318,7 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem, onSucc
             hasta: formData.horarios?.hasta || ''
           }
         };
-      } if (formType === 'vehiculo') {
+      } else if (formType === 'vehiculo') {
           dataToSend = {
             patente: formData.patente,
             tipo_vehiculo: formData.tipoVehiculo,
@@ -318,7 +329,7 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem, onSucc
               volumen: formData.volumen,
               peso: formData.peso
             },
-            empresa: typeof formData.empresa === 'object' ? formData.empresa._id : formData.empresa, // Solo el ID
+            empresa: formData.empresa, // Envías solo el ID que ya está guardado
             activo: true
           };
         } else if (formType === 'chofer') {
@@ -427,14 +438,14 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem, onSucc
       return (
         <Box textAlign="center" sx={{ py: 2 }}>
           <Typography variant="body1" sx={{ mb: 3, fontSize: isMobile ? '1rem' : '1.1rem', color: 'text.secondary' }}>
-            ¿Estás seguro que deseas desactivar este depósito?
+            ¿Estás seguro que deseas eliminar este elemento?
           </Typography>
           <Typography variant="subtitle1" sx={{
             color: theme.palette.warning.main,
             fontWeight: 600,
             fontSize: isMobile ? '1rem' : '1.1rem'
           }}>
-            El depósito se marcará como inactivo pero no se eliminará permanentemente.
+            El elemento se eliminará permanentemente.
           </Typography>
         </Box>
       );

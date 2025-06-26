@@ -6,7 +6,6 @@ import BusinessIcon from '@mui/icons-material/Business';
 import ErrorText from '../ErrorText';
 
 const EmpresaForm = ({ formData = {}, handleChange, handleBlur, errors = {}, isEditing = false }) => {
-  // Asegurar que formData tenga la estructura completa con valores por defecto
   const safeFormData = {
     _id: formData._id || '',
     nombre_empresa: formData.nombre_empresa || '',

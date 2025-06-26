@@ -26,10 +26,15 @@ const ListadoDepositos = () => {
       try {
         const response = await axios.get('/api/depositos');
         const datosTransformados = response.data
-          .filter(item => item.activo !== false) // Filtra solo activos
+          .filter(item => item.activo !== false) 
           .map(item => ({
             ...item,
-            direccionCompleta: `${item.localizacion?.direccion || ''}, ${item.localizacion?.ciudad || ''}, ${item.localizacion?.provincia_estado || ''}`,
+            direccionCompleta: [
+              item.localizacion?.direccion,
+              item.localizacion?.ciudad,
+              item.localizacion?.provincia_estado,
+              item.localizacion?.pais
+            ].filter(Boolean).join(', '),
             contacto: `${item.personal_contacto?.nombre || ''} ${item.personal_contacto?.apellido || ''}`.trim() || 'Sin contacto',
             horarios: item.horarios ? `${item.horarios.dias.join(', ')}: ${item.horarios.desde} - ${item.horarios.hasta}` : 'Sin horarios',
             horariosRaw: item.horarios
@@ -46,23 +51,34 @@ const ListadoDepositos = () => {
     fetchDepositos();
   }, []);
 
-  const aplicarFiltros = () => {
-    const searchTerm = filtros.busqueda.toLowerCase();
-    const filtered = depositos.filter(deposito => {
-      switch (filtros.criterio) {
-        case 'Localización':
-          return (deposito.direccionCompleta || '').toLowerCase().includes(searchTerm);
-        case 'Tipo':
-          return (deposito.tipo || '').toLowerCase().includes(searchTerm);
-        case 'Contacto':
-          return (deposito.contacto || '').toLowerCase().includes(searchTerm);
-        default:
-          return true;
-      }
-    });
-    setDepositosFiltrados(filtered);
-    setPagina(1);
-  };
+const aplicarFiltros = () => {
+  const searchTerm = filtros.busqueda.toLowerCase();
+
+  const filtered = depositos.filter(deposito => {
+    switch (filtros.criterio) {
+      case 'Localización':
+        return [
+          deposito.localizacion?.direccion || '',
+          deposito.localizacion?.ciudad || '',
+          deposito.localizacion?.provincia_estado || '',
+          deposito.localizacion?.pais || ''
+        ].some(field => field.toLowerCase().includes(searchTerm));
+
+      case 'Tipo':
+        return (deposito.tipo || '').toLowerCase().includes(searchTerm);
+
+      case 'Contacto':
+        return (deposito.contacto || '').toLowerCase().includes(searchTerm);
+
+      default:
+        return true;
+    }
+  });
+
+  setDepositosFiltrados(filtered);
+  setPagina(1);
+};
+
 
   const handleClear = () => {
     setFiltros({ criterio: 'Localización', busqueda: '' });

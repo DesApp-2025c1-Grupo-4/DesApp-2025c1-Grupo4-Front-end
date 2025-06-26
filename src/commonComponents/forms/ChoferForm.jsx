@@ -49,22 +49,37 @@ const styles = {
 };
 
 // Hook reutilizable para búsqueda con debounce
+// Reemplaza el hook useDebouncedFetch en ChoferForm.jsx con este:
 const useDebouncedFetch = (url, paramName, value, setData, setLoading) => {
   useEffect(() => {
-    const timer = setTimeout(async () => {
+    let cancel = false;
+
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const res = await axios.get(url, { params: { [paramName]: value } });
+        // Filtrar solo items con activo !== false
+        const activos = Array.isArray(res.data)
+          ? res.data.filter(e => e.activo !== false)
+          : [];
+        if (!cancel) setData(activos);
+      } catch (error) {
+        console.error(`Error fetching ${url}:`, error);
+      } finally {
+        if (!cancel) setLoading(false);
+      }
+    };
+
+    const timer = setTimeout(() => {
       if (value.length > 2 || !value.length) {
-        setLoading(true);
-        try {
-          const res = await axios.get(url, { params: { [paramName]: value } });
-          setData(res.data);
-        } catch (error) {
-          console.error(`Error fetching ${url}:`, error);
-        } finally {
-          setLoading(false);
-        }
+        fetchData();
       }
     }, 500);
-    return () => clearTimeout(timer);
+
+    return () => {
+      cancel = true;
+      clearTimeout(timer);
+    };
   }, [value]);
 };
 
@@ -142,11 +157,27 @@ const ChoferForm = ({ formData, handleChange, handleBlur, errors, empresas: empr
   const onEmpresaSelect = (empresa) => {
     const empresaId = empresa._id.replace(/^"|"$/g, '');
     handleChange({ target: { name: "empresa", value: empresaId } });
+    // Guardar también el nombre para mostrar
+    handleChange({ target: { name: "empresaNombre", value: empresa.nombre_empresa } });
   };
 
   const onVehiculoSelect = (vehiculo) => {
-    const vehiculoId = vehiculo._id.replace(/^"|"$/g, '');
-    handleChange({ target: { name: "vehiculoAsignado", value: vehiculoId } });
+    if (vehiculo._id === 'null') {
+      handleChange({ target: { name: "vehiculoAsignado", value: null } });
+    } else {
+      handleChange({ target: { name: "vehiculoAsignado", value: vehiculo._id } });
+      // Guardar también los datos para mostrar
+      handleChange({ 
+        target: { 
+          name: "vehiculoAsignadoData", 
+          value: {
+            patente: vehiculo.patente,
+            marca: vehiculo.marca,
+            modelo: vehiculo.modelo
+          }
+        } 
+      });
+    }
   };
 
   return (
@@ -189,7 +220,13 @@ const ChoferForm = ({ formData, handleChange, handleBlur, errors, empresas: empr
             <FieldContainer label="Empresa" error={errors.empresa}>
               <Box sx={{ display: 'flex', gap: 1 }}>
                 <TextField
-                  fullWidth size="small" value={formData.empresa?.nombre_empresa || ''}
+                  fullWidth
+                  size="small"
+                  value={
+                    formData.empresa
+                      ? formData.empresa.nombre_empresa 
+                      : '-- Sin empresa asignada --'
+                  }
                   sx={styles.field}
                   InputProps={{
                     readOnly: true,
@@ -203,11 +240,13 @@ const ChoferForm = ({ formData, handleChange, handleBlur, errors, empresas: empr
             <FieldContainer label="Vehículo Asignado" error={errors.vehiculoAsignado}>
               <Box sx={{ display: 'flex', gap: 1 }}>
                 <TextField
-                  fullWidth size="small"
+                  fullWidth
+                  size="small"
                   value={
-                    formData.vehiculoAsignado
-                      ? `${formData.vehiculoAsignado.patente} - ${[formData.vehiculoAsignado.marca, formData.vehiculoAsignado.modelo].filter(Boolean).join(' ')}`
-                      : '-- Sin asignar --'
+                    !formData.vehiculoAsignado ? '-- Sin asignar --' :
+                    vehiculosDisponibles.find(v => v._id === formData.vehiculoAsignado)?.patente || 
+                    formData.vehiculoAsignado.patente || 
+                    ''
                   }
                   sx={styles.field}
                   InputProps={{
@@ -220,41 +259,44 @@ const ChoferForm = ({ formData, handleChange, handleBlur, errors, empresas: empr
             </FieldContainer>
 
             <FieldContainer label="Número de Licencia" error={errors.licenciaNumero}>
-              <TextField
-                fullWidth
-                size="small"
-                name="licenciaNumero"
-                value={formData.licenciaNumero || ''}
-                onChange={handleChange}
-                sx={styles.field}
-              />
-            </FieldContainer>
+  <TextField
+    fullWidth
+    size="small"
+    name="licenciaNumero"
+    value={formData.licenciaNumero || ''}
+    onChange={handleChange}
+    onBlur={handleBlur}
+    error={!!errors.licenciaNumero}
+    sx={styles.field}
+  />
+</FieldContainer>
 
-            <FieldContainer label="Tipo de Licencia" error={errors.licenciaTipo}>
-              <Autocomplete
-                multiple
-                options={['A1', 'A2', 'B1', 'B2', 'C1', 'C2', 'C3', 'D1', 'D2', 'E']}
-                value={formData.licenciaTipo || []}
-                onChange={(_, value) => handleChange({ target: { name: 'licenciaTipo', value } })}
-                renderInput={(params) => (
-                  <TextField {...params} size="small" sx={styles.field} />
-                )}
-              />
-            </FieldContainer>
+<FieldContainer label="Tipo de Licencia" error={errors.licenciaTipo}>
+  <Autocomplete
+    multiple
+    options={['A1', 'A2', 'B1', 'B2', 'C1', 'C2', 'C3', 'D1', 'D2', 'E']}
+    value={formData.licenciaTipo || []}
+    onChange={(_, value) => handleChange({ target: { name: 'licenciaTipo', value } })}
+    renderInput={(params) => (
+      <TextField {...params} size="small" sx={styles.field} />
+    )}
+  />
+</FieldContainer>
 
-            <FieldContainer label="Fecha Expiración Licencia" error={errors.licenciaExpiracion}>
-              <DatePicker
-                value={formData.licenciaExpiracion || null}
-                onChange={(date) => handleChange({ target: { name: 'licenciaExpiracion', value: date } })}
-                slotProps={{
-                  textField: {
-                    fullWidth: true,
-                    size: 'small',
-                    sx: styles.field
-                  }
-                }}
-              />
-            </FieldContainer>
+<FieldContainer label="Fecha Expiración Licencia" error={errors.licenciaExpiracion}>
+  <DatePicker
+    value={formData.licenciaExpiracion || null}
+    onChange={(date) => handleChange({ target: { name: 'licenciaExpiracion', value: date } })}
+    slotProps={{
+      textField: {
+        fullWidth: true,
+        size: 'small',
+        error: !!errors.licenciaExpiracion,
+        sx: styles.field
+      }
+    }}
+  />
+</FieldContainer>
           </Grid>
         </Grid>
 
@@ -271,12 +313,14 @@ const ChoferForm = ({ formData, handleChange, handleBlur, errors, empresas: empr
         />
 
         <SelectionModal
-          open={modalStates.vehiculos} onClose={() => setModalStates(prev => ({ ...prev, vehiculos: !prev.vehiculos }))}
+          open={modalStates.vehiculos}
+          onClose={() => setModalStates(prev => ({ ...prev, vehiculos: !prev.vehiculos }))}
           title="Seleccionar Vehículo"
           items={[{ _id: 'null', patente: '-- Sin asignar --' }, ...vehiculosDisponibles]}
           loading={loadingStates.vehiculos}
           onSelect={onVehiculoSelect}
-          searchValue={inputValues.vehiculo} onSearchChange={(val) => setInputValues(prev => ({ ...prev, vehiculo: val }))}
+          searchValue={inputValues.vehiculo}
+          onSearchChange={(val) => setInputValues(prev => ({ ...prev, vehiculo: val }))}
           getText={(item) => item.patente}
           getSecondaryText={(item) => item.empresa?.nombre_empresa && `Empresa: ${item.empresa.nombre_empresa}`}
           emptyText={formData.empresa ? "No hay vehículos para esta empresa" : "No hay vehículos disponibles"}
