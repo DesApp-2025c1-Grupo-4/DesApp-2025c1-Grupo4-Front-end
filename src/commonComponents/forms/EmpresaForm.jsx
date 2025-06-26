@@ -15,10 +15,10 @@ const EmpresaForm = ({ formData = {}, handleChange, handleBlur, errors = {}, isE
       ...formData.datos_contacto
     },
     domicilio_fiscal: {
-      calle: formData.domicilio_fiscal?.calle || '',
+      direccion: formData.domicilio_fiscal?.direccion || '',
       ciudad: formData.domicilio_fiscal?.ciudad || '',
-      provincia: formData.domicilio_fiscal?.provincia || '',
-      pais: formData.domicilio_fiscal?.pais || 'Argentina',
+      provincia_estado: formData.domicilio_fiscal?.provincia_estado || '',
+      pais: formData.domicilio_fiscal?.pais || '',
       ...formData.domicilio_fiscal
     },
     ...formData
@@ -81,9 +81,9 @@ const EmpresaForm = ({ formData = {}, handleChange, handleBlur, errors = {}, isE
           <Typography variant="subtitle1" className="formSectionTitle">
             Domicilio fiscal
           </Typography>
-          {renderField("Calle", "domicilio_fiscal.calle", true)}
+          {renderField("Direccion", "domicilio_fiscal.direccion", true)}
           {renderField("Ciudad", "domicilio_fiscal.ciudad", true)}
-          {renderField("Provincia", "domicilio_fiscal.provincia", true)}
+          {renderField("Provincia / Estado", "domicilio_fiscal.provincia_estado", true)}
           {renderField("País", "domicilio_fiscal.pais", true)}
         </Grid>
       </Grid>

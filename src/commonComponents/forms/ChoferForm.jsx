@@ -2,15 +2,15 @@ import { Grid, TextField, Autocomplete, Box, Typography, IconButton, Modal, Butt
 import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { useEffect, useState } from 'react';
-import { Search, Business, DirectionsCar, Close } from '@mui/icons-material';
+import { Search, Business, DirectionsCar, Close, Upload } from '@mui/icons-material';
 import { grey } from '@mui/material/colors';
 import FieldContainer from '../formsComponents/FieldContainer';
 import IconButtonStyled from '../formsComponents/IconButtonStyled';
 import SelectionModal from '../formsComponents/SelectionModal';
 import axios from 'axios';
+import { format } from 'date-fns';
 
 const ChoferForm = ({ formData, handleChange, handleBlur, errors, isEditing = false }) => {
-  // Hooks de estado
   const [empresas, setEmpresas] = useState([]);
   const [vehiculosDisponibles, setVehiculosDisponibles] = useState([]);
   const [loadingStates, setLoadingStates] = useState({
@@ -26,8 +26,8 @@ const ChoferForm = ({ formData, handleChange, handleBlur, errors, isEditing = fa
     title: '',
     content: null
   });
+  const [licenciaFile, setLicenciaFile] = useState(null);
 
-  // Efectos para cargar datos
   useEffect(() => {
     if (modalStates.empresas && empresas.length === 0) {
       setLoadingStates(prev => ({ ...prev, empresas: true }));
@@ -46,7 +46,6 @@ const ChoferForm = ({ formData, handleChange, handleBlur, errors, isEditing = fa
     }
   }, [modalStates.vehiculos]);
 
-  // Manejadores de selección
   const onEmpresaSelect = (empresa) => {
     handleChange({ 
       target: { 
@@ -85,7 +84,32 @@ const ChoferForm = ({ formData, handleChange, handleBlur, errors, isEditing = fa
     setModalStates(prev => ({ ...prev, vehiculos: false }));
   };
 
-  // Manejador para mostrar detalles
+const handleFileChange = async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  setLicenciaFile(file);
+
+  const reader = new FileReader();
+  reader.onload = (event) => {
+    const arrayBuffer = event.target.result;
+    const buffer = Buffer.from(new Uint8Array(arrayBuffer)); // Conversión a Buffer
+
+    handleChange({
+      target: {
+        name: 'licenciaDocumento',
+        value: {
+          data: buffer, // Enviar el Buffer directamente
+          contentType: file.type,
+          fileName: file.name,
+          size: file.size,
+        },
+      },
+    });
+  };
+  reader.readAsArrayBuffer(file); // Leer como ArrayBuffer
+};
+
   const handleViewDetails = (item) => {
     let content;
     let title;
@@ -149,13 +173,12 @@ const ChoferForm = ({ formData, handleChange, handleBlur, errors, isEditing = fa
     setDetailModal({ open: true, title, content });
   };
 
-  // Renderizado del formulario
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
       <Box className="formContainer">
         <Grid container spacing={2}>
           {/* Sección de información personal */}
-          <Grid item xs={12} md={6}>
+          <Grid item xs={12} md={4}>
             <Typography variant="subtitle1" color="primary" sx={{ mb: 1, fontWeight: 'bold' }}>Información personal</Typography>
             {['nombre', 'apellido', 'cuil'].map((field) => (
               <FieldContainer key={field} label={field.charAt(0).toUpperCase() + field.slice(1)} error={errors[field]}>
@@ -188,7 +211,7 @@ const ChoferForm = ({ formData, handleChange, handleBlur, errors, isEditing = fa
           </Grid>
 
           {/* Sección de información laboral */}
-          <Grid item xs={12} md={6}>
+          <Grid item xs={12} md={4}>
             <Typography variant="subtitle1" color="primary" sx={{ mb: 1, fontWeight: 'bold' }}>Información laboral</Typography>
 
             <FieldContainer label="Empresa" error={errors.empresa}>
@@ -220,6 +243,11 @@ const ChoferForm = ({ formData, handleChange, handleBlur, errors, isEditing = fa
                 <IconButtonStyled onClick={() => setModalStates(prev => ({ ...prev, vehiculos: true }))} icon={Search} />
               </Box>
             </FieldContainer>
+          </Grid>
+
+          {/* Sección de licencia */}
+          <Grid item xs={12} md={4}>
+            <Typography variant="subtitle1" color="primary" sx={{ mb: 1, fontWeight: 'bold' }}>Licencia de conducir</Typography>
 
             <FieldContainer label="Número de Licencia" error={errors.licenciaNumero}>
               <TextField
@@ -257,6 +285,31 @@ const ChoferForm = ({ formData, handleChange, handleBlur, errors, isEditing = fa
                   }
                 }}
               />
+            </FieldContainer>
+
+            <FieldContainer label="Documento de Licencia" error={errors.licenciaDocumento}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Button
+                  variant="outlined"
+                  component="label"
+                  startIcon={<Upload />}
+                  sx={{ textTransform: 'none' }}
+                >
+                  Seleccionar Archivo
+                  <input
+                    type="file"
+                    hidden
+                    accept="application/pdf,image/*"
+                    onChange={handleFileChange}
+                  />
+                </Button>
+                <Typography variant="body2" sx={{ color: grey[600] }}>
+                  {licenciaFile?.name || (formData.licenciaDocumento?.name || 'Ningún archivo seleccionado')}
+                </Typography>
+              </Box>
+              <Typography variant="caption" sx={{ display: 'block', mt: 1 }}>
+                Formatos aceptados: PDF, imágenes (max 5MB)
+              </Typography>
             </FieldContainer>
           </Grid>
         </Grid>

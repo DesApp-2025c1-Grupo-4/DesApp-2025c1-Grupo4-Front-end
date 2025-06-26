@@ -94,109 +94,127 @@ const ListadoChoferes = () => {
     return choferesFiltrados.slice(inicio, inicio + itemsPorPagina);
   };
 
-  const handleOpenPopup = async (type, chofer = null) => {
-    setPopupType(type);
-    
-    if (type === 'confirmar-eliminar' && chofer) {
-      setSelectedChofer({ 
-        _id: chofer._id,
-        nombre: chofer.nombre
-      });
-      setPopupOpen(true);
-      return;
-    }
-
-if (type === 'modificar-chofer' && chofer) {
-  try {
-    const response = await axios.get(`/api/choferes/${chofer._id}`);
-    const choferData = response.data;
-
-    setSelectedChofer({
-      ...choferData,
-      _id: choferData._id,
-      nombre: choferData.nombre || '',
-      apellido: choferData.apellido || '',
-      cuil: choferData.cuil || '',
-      fechaNacimiento: choferData.fecha_nacimiento ? new Date(choferData.fecha_nacimiento) : null,
-      empresa: choferData.empresa ? {
-        _id: typeof choferData.empresa === 'object' ? choferData.empresa._id : choferData.empresa,
-        nombre_empresa: typeof choferData.empresa === 'object' ? choferData.empresa.nombre_empresa : ''
-      } : null,
-      vehiculoAsignado: choferData.vehiculo_defecto ? {
-        _id: typeof choferData.vehiculo_defecto === 'object' ? choferData.vehiculo_defecto._id : choferData.vehiculo_defecto,
-        patente: typeof choferData.vehiculo_defecto === 'object' ? choferData.vehiculo_defecto.patente : ''
-      } : null,
-      licenciaNumero: choferData.licencia?.numero || '',
-      licenciaTipo: choferData.licencia?.tipos || [],
-      licenciaExpiracion: choferData.licencia?.fecha_expiracion ? 
-        new Date(choferData.licencia.fecha_expiracion.split('/').reverse().join('-')) : null
+const handleOpenPopup = async (type, chofer = null) => {
+  setPopupType(type);
+  
+  if (type === 'confirmar-eliminar' && chofer) {
+    setSelectedChofer({ 
+      _id: chofer._id,
+      nombre: chofer.nombre
     });
-  } catch (error) {
-    console.error('Error al cargar detalles del chofer:', error);
-    setSelectedChofer({
-      ...chofer,
-      empresa: chofer.empresaObj ? {
-        _id: chofer.empresaObj._id,
-        nombre_empresa: chofer.empresaObj.nombre_empresa
-      } : null,
-      vehiculoAsignado: chofer.vehiculoObj ? {
-        _id: chofer.vehiculoObj._id,
-        patente: chofer.vehiculoObj.patente
-      } : null
-    });
-  }
-}
     setPopupOpen(true);
-  };
+    return;
+  }
 
-  const handleDeleteChofer = async (id) => {
-    try {
-      await axios.put(`/api/choferes/${id}`, { activo: false });
-      setChoferes(prev => prev.filter(c => c._id !== id));
-      setChoferesFiltrados(prev => prev.filter(c => c._id !== id));
-      setPopupOpen(false);
-      return { success: true };
-    } catch (error) {
-      return { 
-        success: false,
-        error: error.response?.data?.message || 'Error al eliminar chofer'
-      };
+  if (type === 'modificar-chofer') {
+    // Inicializar estructura básica para nuevo chofer
+    const newChoferTemplate = {
+      nombre: '',
+      apellido: '',
+      cuil: '',
+      fechaNacimiento: null,
+      empresa: null,
+      vehiculoAsignado: null,
+      licenciaNumero: '',
+      licenciaTipo: [],
+      licenciaExpiracion: null,
+      licenciaDocumento: null
+    };
+
+    if (chofer) {
+      // Caso modificar chofer existente
+      try {
+        const response = await axios.get(`/api/choferes/${chofer._id}`);
+        const choferData = response.data;
+
+        setSelectedChofer({
+          ...newChoferTemplate, // Estructura base
+          ...choferData, // Datos del API
+          _id: choferData._id,
+          nombre: choferData.nombre || '',
+          apellido: choferData.apellido || '',
+          cuil: choferData.cuil || '',
+          fechaNacimiento: choferData.fecha_nacimiento ? new Date(choferData.fecha_nacimiento) : null,
+          empresa: choferData.empresa ? {
+            _id: typeof choferData.empresa === 'object' ? choferData.empresa._id : choferData.empresa,
+            nombre_empresa: typeof choferData.empresa === 'object' ? choferData.empresa.nombre_empresa : ''
+          } : null,
+          vehiculoAsignado: choferData.vehiculo_defecto ? {
+            _id: typeof choferData.vehiculo_defecto === 'object' ? choferData.vehiculo_defecto._id : choferData.vehiculo_defecto,
+            patente: typeof choferData.vehiculo_defecto === 'object' ? choferData.vehiculo_defecto.patente : ''
+          } : null,
+          licenciaNumero: choferData.licencia?.numero || '',
+          licenciaTipo: choferData.licencia?.tipos || [],
+          licenciaExpiracion: choferData.licencia?.fecha_expiracion ? 
+            new Date(choferData.licencia.fecha_expiracion.split('/').reverse().join('-')) : null
+        });
+      } catch (error) {
+        console.error('Error al cargar detalles del chofer:', error);
+        setSelectedChofer({
+          ...newChoferTemplate,
+          ...chofer,
+          empresa: chofer.empresaObj ? {
+            _id: chofer.empresaObj._id,
+            nombre_empresa: chofer.empresaObj.nombre_empresa
+          } : null,
+          vehiculoAsignado: chofer.vehiculoObj ? {
+            _id: chofer.vehiculoObj._id,
+            patente: chofer.vehiculoObj.patente
+          } : null
+        });
+      }
+    } else {
+      // Caso nuevo chofer
+      setSelectedChofer(newChoferTemplate);
     }
-  };
+    setPopupOpen(true);
+  }
+};
 
-  const handleSubmitChofer = async (formData) => {
+const handleDeleteChofer = async (id) => {
+  try {
+    await axios.patch(`/api/choferes/${id}/delete`);
+    setChoferes(prev => prev.filter(c => c._id !== id));
+    setChoferesFiltrados(prev => prev.filter(c => c._id !== id));
+    setPopupOpen(false);
+    
+    return { success: true };
+  } catch (error) {
+    return { 
+      success: false,
+      error: error.response?.data?.message || 'Error al eliminar chofer'
+    };
+  }
+};
+
+const handleSubmitChofer = async (formData) => {
   try {
     const dataToSend = {
       nombre: formData.nombre,
       apellido: formData.apellido,
       cuil: formData.cuil,
       fecha_nacimiento: formData.fechaNacimiento,
-      empresa: typeof formData.empresa === 'object' ? formData.empresa._id : formData.empresa,
-      vehiculo_defecto: formData.vehiculoAsignado ? 
-        (typeof formData.vehiculoAsignado === 'object' ? formData.vehiculoAsignado._id : formData.vehiculoAsignado) : 
-        null,
+      empresa: formData.empresa?._id || formData.empresa,
+      vehiculo_defecto: formData.vehiculoAsignado?._id || formData.vehiculoAsignado,
       activo: true,
       licencia: {
         numero: formData.licenciaNumero,
         tipos: formData.licenciaTipo,
         fecha_expiracion: format(formData.licenciaExpiracion, 'dd/MM/yyyy'),
-        documento: {
-          data: "",
-          contentType: "application/pdf",
-          fileName: "licencia.pdf",
-          size: 0
-        }
-      }
+        documento: formData.licenciaDocumento, // Buffer ya preparado
+      },
     };
+
     const method = selectedChofer ? 'PUT' : 'POST';
     const url = selectedChofer ? `/api/choferes/${selectedChofer._id}` : '/api/choferes';
     await axios({ method, url, data: dataToSend });
     fetchChoferes();
     return { success: true };
   } catch (error) {
+    console.error('Error:', error.response?.data);
     return { 
       success: false, 
-      error: error.response?.data?.message || 'Error al guardar chofer' 
+      error: error.response?.data?.message || 'Error al guardar chofer',
     };
   }
 };

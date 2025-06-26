@@ -1,5 +1,5 @@
 import { createTheme } from '@mui/material/styles';
-import { grey } from "@mui/material/colors";
+import { grey, blue, indigo } from "@mui/material/colors";
 
 const customMuiTheme = createTheme({
   palette: {
@@ -37,7 +37,6 @@ const customMuiTheme = createTheme({
     },
   },
   components: {
-    // Estilos para Botones (usados en MenuBotones.jsx, Filtro.jsx, MenuGrid.jsx)
     MuiButton: {
       styleOverrides: {
         root: {
@@ -83,10 +82,17 @@ const customMuiTheme = createTheme({
             fontSize: '1rem',
           },
         },
+        {
+          props: { variant: 'modalCancel' },
+          style: {
+            mt: 2,
+            alignSelf: 'flex-end',
+            borderRadius: '8px',
+            textTransform: 'none'
+          }
+        }
       ],
     },
-
-    // Estilos para Tablas (Tabla.jsx)
     MuiTableCell: {
       styleOverrides: {
         root: {
@@ -107,8 +113,6 @@ const customMuiTheme = createTheme({
         },
       },
     },
-   
-    // Estilos para Cards (MenuGrid.jsx)
     MuiCard: {
       styleOverrides: {
         root: {
@@ -137,19 +141,17 @@ const customMuiTheme = createTheme({
         },
       },
     },
-
-    // Estilos para TextField (Buscador.jsx, Filtro.jsx)
     MuiTextField: {
       styleOverrides: {
         root: {
           '& .MuiOutlinedInput-root': {
             borderRadius: '8px',
+            '& fieldset': { borderColor: grey[300] },
           },
+          marginBottom: '16px',
         },
       },
     },
-
-    // Estilos para AppBar (Header.jsx)
     MuiAppBar: {
       styleOverrides: {
         root: {
@@ -172,21 +174,6 @@ const customMuiTheme = createTheme({
         },
       },
     },
-
-    // Estilos para IconButton (Header.jsx)
-    // MuiIconButton: {
-    //   styleOverrides: {
-    //     root: {
-    //       padding: '8px',
-    //       color: '#062B60',
-    //       '&:hover img': {
-    //         transform: 'scale(1.5)',
-    //         transition: 'transform 0.3s ease',
-    //       },
-    //     },
-    //   },
-    // },
-
     MuiIconButton: {
       variants: [
         {
@@ -211,7 +198,6 @@ const customMuiTheme = createTheme({
             color: grey[900],
             pointerEvents: "unset",
             cursor: "default",
-            // Hover state
             '&:hover': {
               transform: 'scale(1.1)',
               cursor: 'pointer',
@@ -228,10 +214,40 @@ const customMuiTheme = createTheme({
             cursor: "default",
           },
         },
+        
+        {
+          props: { variant: 'searchButton' },
+            style: {
+              borderRadius: '8px',
+              border: `1px solid ${grey[300]}`,
+              backgroundColor: 'background.paper',
+              padding: '4px',
+              width: '40px',    
+              height: '40px',   
+              '& svg': {
+                fontSize: '1.3rem', 
+              },
+              '&:hover': { 
+                backgroundColor: grey[100] 
+              }
+            }
+        },
+        {
+          props: { variant: 'listInfoButton' },
+          style: {
+            position: 'absolute',
+            right: 8,
+            top: '50%',
+            transform: 'translateY(-50%)',
+            color: indigo[500],
+            '&:hover': {
+              color: indigo[700],
+              backgroundColor: 'transparent'
+            }
+          }
+        }
       ],
     },
-
-    // Estilos para Paginación (Paginacion.jsx)
     MuiPagination: {
       styleOverrides: {
         root: {
@@ -241,7 +257,6 @@ const customMuiTheme = createTheme({
         },
       },
     },
-
     MuiSvgIcon: {
       variants: [
         {
@@ -273,24 +288,19 @@ const customMuiTheme = createTheme({
         },
       },
     },
-
-    // Estilos para Box (general)
     MuiBox: {
       styleOverrides: {
         root: {
-          // Estilo para el contenedor principal de páginas
           '&.pageContainer': {
             display: 'flex',
             flexDirection: 'column',
             minHeight: '100vh',
           },
-          // Estilo para el contenido principal
           '&.pageContent': {
             flex: 1,
             display: 'flex',
             flexDirection: 'column',
           },
-          // Estilo para el footer
           '&.footer': {
             backgroundColor: '#062B60',
             color: '#FFFFFF',
@@ -299,34 +309,98 @@ const customMuiTheme = createTheme({
             marginTop: 'auto',
             overflowX: 'auto',
           },
-          // Estilo para el contenedor del grid de menú
-          '&.menuGridContainer': {
-            width: '100%',
-            maxWidth: '1400px',
-            marginLeft: 'auto',
-            marginRight: 'auto',
-            padding: '32px',
+          '&.formContainer': {
+            padding: '16px'
           },
-          // Estilo para el contenedor del logo
-          '&.logoContainer': {
-            display: 'flex',
-            justifyContent: 'center',
-            marginBottom: '48px',
-          },
-          // Estilo para el contenedor de items del footer
-          '&.footerItems': {
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '8px',
-            flexWrap: 'nowrap',
-            whiteSpace: 'nowrap',
-          },
+          '&.fieldContainer': {
+            marginBottom: '16px'
+          }
         },
       },
     },
-
-    // Estilos para Stack (MenuBotones.jsx)
+    MuiInputLabel: {
+      styleOverrides: {
+        root: {
+          color: grey[700],
+          fontWeight: 'bold',
+          marginBottom: '4px',
+          '&.Mui-focused': {
+            color: grey[700],
+          },
+          '&.requiredLabel': {
+            color: grey[700],
+            fontWeight: 'bold',
+            marginBottom: '4px'
+          }
+        }
+      }
+    },
+    MuiList: {
+      styleOverrides: {
+        root: {
+          '&.selectionList': {
+            padding: 0
+          }
+        }
+      }
+    },
+    MuiListItem: {
+      variants: [
+        {
+          props: { variant: 'selectableItem' },
+          style: {
+            '&:hover': { 
+              backgroundColor: blue[50],
+              cursor: 'pointer'
+            },
+            position: 'relative',
+            paddingRight: '48px'
+          }
+        }
+      ]
+    },
+    MuiPaper: {
+      variants: [
+        {
+          props: { variant: 'selectionModal' },
+          style: {
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: 500,
+            boxShadow: 24,
+            padding: '24px',
+            borderRadius: '8px',
+            maxHeight: '80vh',
+            display: 'flex',
+            flexDirection: 'column'
+          }
+        },
+        {
+          props: { variant: 'detailModal' },
+          style: {
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: 400,
+            boxShadow: 24,
+            padding: '24px',
+            borderRadius: '8px'
+          }
+        },
+        {
+          props: { variant: 'modalContent' },
+          style: {
+            flex: 1,
+            overflow: 'auto',
+            border: `1px solid ${grey[200]}`,
+            borderRadius: '8px'
+          }
+        }
+      ]
+    },
     MuiStack: {
       styleOverrides: {
         root: {
@@ -340,8 +414,6 @@ const customMuiTheme = createTheme({
         },
       },
     },
-
-    // Estilos para Grid (MenuGrid.jsx, Filtro.jsx)
     MuiGrid: {
       styleOverrides: {
         root: {
@@ -361,9 +433,51 @@ const customMuiTheme = createTheme({
         },
       },
     },
-
-    // Estilos para CircularProgress
     MuiCircularProgress: {
+      styleOverrides: {
+        root: {
+          marginRight: '16px',
+        },
+      },
+    },
+    MuiModal: {
+      styleOverrides: {
+        root: {
+          '&.detailModal': {
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: 400,
+            boxShadow: 24,
+            padding: '24px',
+            borderRadius: '8px'
+          }
+        }
+      }
+    },
+    MuiTypography: {
+      styleOverrides: {
+        subtitle1: {
+          '&.formSectionTitle': {
+            color: 'primary.main',
+            fontWeight: 'bold',
+            marginBottom: '16px',
+          },
+        },
+      },
+    },
+    MuiCheckbox: {
+      styleOverrides: {
+        root: {
+          color: grey[700],
+          '&.Mui-checked': {
+            color: indigo[500],
+          },
+        },
+      },
+    },
+    MuiFormControlLabel: {
       styleOverrides: {
         root: {
           marginRight: '16px',

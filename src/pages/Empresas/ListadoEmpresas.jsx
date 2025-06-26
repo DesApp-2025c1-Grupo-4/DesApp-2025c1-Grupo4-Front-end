@@ -27,11 +27,16 @@ const ListadoEmpresas = () => {
         const res = await axios.get('/api/empresas');
         const datos = res.data.filter(e => e.activo !== false).map(e => ({
           ...e,
-          razonSocial: e.nombre_empresa || 'Sin nombre',
-          domicilioFiscal: e.domicilio_fiscal ? `${e.domicilio_fiscal.calle}, ${e.domicilio_fiscal.ciudad}, ${e.domicilio_fiscal.provincia}` : 'Sin domicilio',
-          telefono: e.datos_contacto?.telefono || 'Sin teléfono',
-          email: e.datos_contacto?.mail || 'Sin email'
-        }));
+            razonSocial: e.nombre_empresa || 'Sin nombre',
+            domicilioFiscal: e.domicilio_fiscal 
+              ? `${e.domicilio_fiscal.direccion || ''}, ${e.domicilio_fiscal.ciudad || ''}, ${e.domicilio_fiscal.provincia_estado || ''}, ${e.domicilio_fiscal.pais || ''}`
+                  .replace(/, ,/g, ', ')  // Elimina comas dobles
+                  .replace(/, $/, '')     // Elimina coma final
+                  .trim() || 'Sin domicilio' // Si queda string vacío, muestra 'Sin domicilio'
+              : 'Sin domicilio',
+            telefono: e.datos_contacto?.telefono || 'Sin teléfono',
+            email: e.datos_contacto?.mail || 'Sin email'
+          }));
         setEmpresas(datos);
         setEmpresasFiltradas(datos);
       } catch (err) {
@@ -72,11 +77,10 @@ const ListadoEmpresas = () => {
             telefono: res.data.datos_contacto?.telefono || ''
           },
           domicilio_fiscal: {
-            calle: res.data.domicilio_fiscal?.calle || '',
-            numero: res.data.domicilio_fiscal?.numero || '',
+            direccion: res.data.domicilio_fiscal?.direccion || '',
             ciudad: res.data.domicilio_fiscal?.ciudad || '',
-            provincia: res.data.domicilio_fiscal?.provincia || '',
-            pais: res.data.domicilio_fiscal?.pais || 'Argentina'
+            provincia_estado: res.data.domicilio_fiscal?.provincia_estado || '',
+            pais: res.data.domicilio_fiscal?.pais || '',
           }
         });
       } catch (err) {
@@ -98,7 +102,7 @@ const ListadoEmpresas = () => {
       const nueva = {
         ...res.data,
         razonSocial: res.data.nombre_empresa || 'Sin nombre',
-        domicilioFiscal: res.data.domicilio_fiscal ? `${res.data.domicilio_fiscal.calle}, ${res.data.domicilio_fiscal.ciudad}, ${res.data.domicilio_fiscal.provincia}` : 'Sin domicilio',
+        domicilioFiscal: res.data.domicilio_fiscal ? `${res.data.domicilio_fiscal.direccion}, ${res.data.domicilio_fiscal.ciudad}, ${res.data.domicilio_fiscal.provincia_estado}` : 'Sin domicilio',
         telefono: res.data.datos_contacto?.telefono || 'Sin teléfono',
         email: res.data.datos_contacto?.mail || 'Sin email'
       };
@@ -117,7 +121,7 @@ const ListadoEmpresas = () => {
       const actualizada = {
         ...res.data,
         razonSocial: res.data.nombre_empresa || 'Sin nombre',
-        domicilioFiscal: res.data.domicilio_fiscal ? `${res.data.domicilio_fiscal.calle}, ${res.data.domicilio_fiscal.ciudad}, ${res.data.domicilio_fiscal.provincia}` : 'Sin domicilio',
+        domicilioFiscal: res.data.domicilio_fiscal ? `${res.data.domicilio_fiscal.direccion}, ${res.data.domicilio_fiscal.ciudad}, ${res.data.domicilio_fiscal.provincia_estado}` : 'Sin domicilio',
         telefono: res.data.datos_contacto?.telefono || 'Sin teléfono',
         email: res.data.datos_contacto?.mail || 'Sin email'
       };

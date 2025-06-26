@@ -213,6 +213,46 @@ const DepositoForm = ({ formData = {}, handleChange, handleBlur, errors }) => {
             onBlur={handleBlur} 
             error={errors.pais} 
           />
+           <FormInput 
+  label="Coordenadas (lat, long)" 
+  name="coordenadas" 
+  required
+  value={
+    formData.coordenadasRaw 
+      ? `${formData.coordenadasRaw.coordinates[1]}, ${formData.coordenadasRaw.coordinates[0]}`
+      : (formData.coordenadas || '')
+  }
+  onChange={(e) => {
+    handleChange({
+      target: {
+        name: 'coordenadas',
+        value: e.target.value
+      }
+    });
+    // Limpiar error si existe
+    if (errors.coordenadas) {
+      handleBlur({ target: { name: 'coordenadas' } });
+    }
+  }}
+  onBlur={(e) => {
+    // Validar formato
+    if (e.target.value && !COORDENADAS_REGEX.test(e.target.value)) {
+      handleChange({
+        target: {
+          name: 'errors',
+          value: {
+            ...errors,
+            coordenadas: 'Formato inválido. Ejemplo: -34.603722, -58.381592'
+          }
+        }
+      });
+    }
+    handleBlur(e);
+  }}
+  error={errors.coordenadas}
+  placeholder="Ejemplo: -34.603722, -58.381592"
+/>
+
         </Grid>
       </Grid>
     </Box>

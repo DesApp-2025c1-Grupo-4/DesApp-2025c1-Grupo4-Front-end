@@ -67,7 +67,6 @@ const validationSchemas = {
   apellido: Yup.string().required('Requerido'),
   cuil: Yup.string().required('Requerido'),
   fechaNacimiento: Yup.date().required('Requerido'),
-  empresa: Yup.string().required('Requerido'),
   licenciaNumero: Yup.string().required('Requerido'),
   licenciaTipo: Yup.array().min(1, 'Seleccione al menos un tipo'),
   licenciaExpiracion: Yup.date().required('Requerido')
@@ -86,7 +85,6 @@ const validationSchemas = {
     .max(new Date().getFullYear(), 'Año no puede ser futuro'),
   volumen: Yup.number().required('El volumen es requerido en m³ (ej: 50)').min(0),
   peso: Yup.number().required('El peso es requerido en kg (ej: 3000)').min(0),
-  empresa: Yup.string().required('Seleccione la empresa asociada')
 }),
 
   empresa: Yup.object().shape({
@@ -103,9 +101,9 @@ const validationSchemas = {
         .matches(/^[0-9]{10,15}$/, 'Teléfono inválido. Debe tener 10-15 dígitos (ej: 1123456789)')
     }),
     domicilio_fiscal: Yup.object().shape({
-      calle: Yup.string().required('La calle es requerida (ej: Av. Libertador)'),
+      direccion: Yup.string().required('La direccion es requerida (ej: Av. Libertador)'),
       ciudad: Yup.string().required('La ciudad es requerida (ej: Buenos Aires)'),
-      provincia: Yup.string().required('La provincia es requerida (ej: Buenos Aires)'),
+      provincia_estado: Yup.string().required('La Provincia/Estado es requerida (ej: Buenos Aires)'),
       pais: Yup.string().required('El país es requerido (ej: Argentina)')
     })
   }),

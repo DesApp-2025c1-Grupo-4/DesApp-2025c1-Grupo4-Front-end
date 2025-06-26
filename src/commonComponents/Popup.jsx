@@ -79,7 +79,7 @@ const initialData = {
     nombre_empresa: '',
     cuit: '',
     datos_contacto: { mail: '', telefono: '' },
-    domicilio_fiscal: { calle: '', numero: '', ciudad: '', provincia: '', pais: '' }
+    domicilio_fiscal: { direccion: '', ciudad: '', provincia_estado: '', pais: '' }
   }
 };
 
@@ -120,7 +120,9 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem, onSucc
           newFormData.provincia = selectedItem?.localizacion?.provincia_estado || '';
           newFormData.ciudad = selectedItem?.localizacion?.ciudad || '';
           newFormData.pais = selectedItem?.localizacion?.pais || '';
-          newFormData.coordenadas = selectedItem?.localizacion?.coordenadas || '';
+          newFormData.coordenadas = selectedItem?.coordenadas?.coordinates 
+            ? `${selectedItem.coordenadas.coordinates[1]}, ${selectedItem.coordenadas.coordinates[0]}`
+            : '';
           newFormData.nombreContacto = selectedItem?.personal_contacto?.nombre || '';   
           newFormData.apellidoContacto = selectedItem?.personal_contacto?.apellido || ''; 
           newFormData.telefonoContacto = selectedItem?.personal_contacto?.telefono || ''; 
@@ -157,22 +159,28 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem, onSucc
           newFormData.licenciaExpiracion = selectedItem?.licenciaExpiracion || null;
         }
         else if (formType === 'vehiculo') {
-          newFormData._id = selectedItem?._id || '';
-          newFormData.patente = selectedItem?.patente || '';
-          newFormData.tipoVehiculo = selectedItem?.tipo_vehiculo || selectedItem?.tipo || '';
-          newFormData.marca = selectedItem?.marca || '';
-          newFormData.modelo = selectedItem?.modelo || '';
-          newFormData.año = selectedItem?.año || selectedItem?.anio || '';
-          newFormData.volumen = selectedItem?.capacidad_carga?.volumen || selectedItem?.volumen || '';
-          newFormData.peso = selectedItem?.capacidad_carga?.peso || selectedItem?.peso || '';
-          if (selectedItem?.empresa) {
-            newFormData.empresa = typeof selectedItem.empresa === 'object' ? selectedItem.empresa._id : selectedItem.empresa;
-            newFormData.empresaNombre = typeof selectedItem.empresa === 'object'? selectedItem.empresa.nombre_empresa: '';
-          } else {
-            newFormData.empresa = '';
-            newFormData.empresaNombre = '';
-          }
-        }
+  newFormData._id = selectedItem?._id || '';
+  newFormData.patente = selectedItem?.patente || '';
+  newFormData.tipoVehiculo = selectedItem?.tipo_vehiculo || selectedItem?.tipo || '';
+  newFormData.marca = selectedItem?.marca || '';
+  newFormData.modelo = selectedItem?.modelo || '';
+  newFormData.año = selectedItem?.año || selectedItem?.anio || '';
+  newFormData.volumen = selectedItem?.capacidad_carga?.volumen || selectedItem?.volumen || '';
+  newFormData.peso = selectedItem?.capacidad_carga?.peso || selectedItem?.peso || '';
+  
+  // Manejo mejorado del campo empresa
+  if (selectedItem?.empresa) {
+    newFormData.empresa = typeof selectedItem.empresa === 'object' 
+      ? selectedItem.empresa._id 
+      : selectedItem.empresa;
+    newFormData.empresaNombre = typeof selectedItem.empresa === 'object'
+      ? selectedItem.empresa.nombre_empresa
+      : selectedItem.empresaNombre || 'Sin empresa asignada';
+  } else {
+    newFormData.empresa = '';
+    newFormData.empresaNombre = '';
+  }
+}
         else if (formType === 'empresa') {
           newFormData.nombre_empresa = selectedItem?.nombre_empresa || '';
           newFormData.cuit = selectedItem?.cuit || '';
@@ -181,9 +189,9 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem, onSucc
             telefono: selectedItem?.datos_contacto?.telefono || ''
           };
           newFormData.domicilio_fiscal = {
-            calle: selectedItem?.domicilio_fiscal?.calle || '',
+            direccion: selectedItem?.domicilio_fiscal?.direccion || '',
             ciudad: selectedItem?.domicilio_fiscal?.ciudad || '',
-            provincia: selectedItem?.domicilio_fiscal?.provincia || '',
+            provincia_estado: selectedItem?.domicilio_fiscal?.provincia_estado || '',
             pais: selectedItem?.domicilio_fiscal?.pais || ''
           };
         }
@@ -303,6 +311,16 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem, onSucc
       let dataToSend = { ...formData };
 
       if (formType === 'deposito') {
+        // Parsear coordenadas si existen
+        let coordenadasParsed = null;
+        if (formData.coordenadas) {
+          const [lat, long] = formData.coordenadas.split(',').map(coord => parseFloat(coord.trim()));
+          coordenadasParsed = {
+            type: "Point",
+            coordinates: [long, lat] // MongoDB usa [longitud, latitud]
+          };
+        }
+
         dataToSend = {
           localizacion: {
             direccion: formData.direccion,
@@ -321,7 +339,8 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem, onSucc
             dias: formData.horarios?.dias || [],
             desde: formData.horarios?.desde || '',
             hasta: formData.horarios?.hasta || ''
-          }
+          },
+          coordenadas: coordenadasParsed
         };
       } else if (formType === 'vehiculo') {
           dataToSend = {
@@ -329,12 +348,12 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem, onSucc
             tipo_vehiculo: formData.tipoVehiculo,
             marca: formData.marca,
             modelo: formData.modelo,
-            anio: formData.año,
+            anio: Number(formData.año),
             capacidad_carga: { 
-              volumen: formData.volumen,
-              peso: formData.peso
+              volumen: Number(formData.volumen), 
+              peso: Number(formData.peso)         
             },
-            empresa: formData.empresa, // Envías solo el ID que ya está guardado
+            empresa: formData.empresa, 
             activo: true
           };
         } else if (formType === 'chofer') {
@@ -349,20 +368,20 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem, onSucc
                 null,
               activo: true,
               licencia: {
-                numero: formData.licenciaNumero || "00000000",
-                tipos: formData.licenciaTipo || ["C2"],
+                numero: formData.licenciaNumero || "",
+                tipos: formData.licenciaTipo || [],
                 fecha_expiracion: formData.licenciaExpiracion 
                   ? format(new Date(formData.licenciaExpiracion), 'dd/MM/yyyy')
-                  : format(new Date(), 'dd/MM/yyyy'),
-                documento: {
-                  data: "",
+                  : null,
+                documento: formData.licenciaDocumento || {
+                  data: {},
                   contentType: "application/pdf",
                   fileName: "licencia.pdf",
                   size: 0
                 }
               }
             };
-          }   else if (formType === 'viaje') {
+          }  else if (formType === 'viaje') {
               dataToSend = {
                 deposito_origen: formData.depositoOrigen._id || formData.depositoOrigen,
                 deposito_destino: formData.depositoDestino._id || formData.depositoDestino,
@@ -381,9 +400,9 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem, onSucc
                   nombre_empresa: formData.nombre_empresa,
                   cuit: formData.cuit,
                   domicilio_fiscal: {
-                    calle: formData.domicilio_fiscal.calle,
+                    direccion: formData.domicilio_fiscal.direccion,
                     ciudad: formData.domicilio_fiscal.ciudad,
-                    provincia: formData.domicilio_fiscal.provincia,
+                    provincia_estado: formData.domicilio_fiscal.provincia_estado,
                     pais: formData.domicilio_fiscal.pais,
                   },
                   datos_contacto: {
