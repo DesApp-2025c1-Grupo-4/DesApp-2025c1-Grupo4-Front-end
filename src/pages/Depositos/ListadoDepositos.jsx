@@ -24,13 +24,26 @@ const ListadoDepositos = () => {
   useEffect(() => {
     const fetchDepositos = async () => {
       try {
-        const response = await axios.get('/api/depositos');
-        const datosTransformados = response.data.map(item => ({
+        const response = await axios.get('/api/depositos?active=true'); // Usar query param
+        // Filtrar por activo: true como medida adicional
+        const depositosActivos = response.data.filter(item => item.activo !== false);
+        
+        const datosTransformados = depositosActivos.map(item => ({
           ...item,
-          direccionCompleta: `${item.localizacion?.direccion || ''}, ${item.localizacion?.ciudad || ''}, ${item.localizacion?.provincia_estado || ''}`,
+          direccionCompleta: [
+            item.localizacion?.direccion,
+            item.localizacion?.ciudad,
+            item.localizacion?.provincia_estado,
+            item.localizacion?.pais
+          ].filter(Boolean).join(', '),
           contacto: `${item.personal_contacto?.nombre || ''} ${item.personal_contacto?.apellido || ''}`.trim() || 'Sin contacto',
-          horarios: item.horarios ? `${item.horarios.dias.join(', ')}: ${item.horarios.desde} - ${item.horarios.hasta}` : 'Sin horarios'
+          horarios: item.horarios ? `${item.horarios.dias.join(', ')}: ${item.horarios.desde} - ${item.horarios.hasta}` : 'Sin horarios',
+          horariosRaw: item.horarios,
+          coordenadas: item.coordenadas?.coordinates 
+            ? `${item.coordenadas.coordinates[1]}, ${item.coordenadas.coordinates[0]}`
+            : 'Sin coordenadas'
         }));
+        
         setDepositos(datosTransformados);
         setDepositosFiltrados(datosTransformados);
       } catch (err) {
@@ -43,23 +56,34 @@ const ListadoDepositos = () => {
     fetchDepositos();
   }, []);
 
-  const aplicarFiltros = () => {
-    const filtered = depositos.filter(deposito => {
-      const searchTerm = filtros.busqueda.toLowerCase();
-      switch (filtros.criterio) {
-        case 'Localización':
-          return (deposito.direccionCompleta || '').toLowerCase().includes(searchTerm);
-        case 'Tipo':
-          return (deposito.tipo || '').toLowerCase().includes(searchTerm);
-        case 'Contacto':
-          return (deposito.contacto || '').toLowerCase().includes(searchTerm);
-        default:
-          return true;
-      }
-    });
-    setDepositosFiltrados(filtered);
-    setPagina(1);
-  };
+const aplicarFiltros = () => {
+  const searchTerm = filtros.busqueda.toLowerCase();
+
+  const filtered = depositos.filter(deposito => {
+    switch (filtros.criterio) {
+      case 'Localización':
+        return [
+          deposito.localizacion?.direccion || '',
+          deposito.localizacion?.ciudad || '',
+          deposito.localizacion?.provincia_estado || '',
+          deposito.localizacion?.pais || ''
+        ].some(field => field.toLowerCase().includes(searchTerm));
+
+      case 'Tipo':
+        return (deposito.tipo || '').toLowerCase().includes(searchTerm);
+
+      case 'Contacto':
+        return (deposito.contacto || '').toLowerCase().includes(searchTerm);
+
+      default:
+        return true;
+    }
+  });
+
+  setDepositosFiltrados(filtered);
+  setPagina(1);
+};
+
 
   const handleClear = () => {
     setFiltros({ criterio: 'Localización', busqueda: '' });
@@ -72,27 +96,36 @@ const ListadoDepositos = () => {
     return depositosFiltrados.slice(inicio, inicio + itemsPorPagina);
   };
 
-  const handleOpenPopup = async (type, deposito = null) => {
-    setPopupType(type);
-    
-    if (type === 'modificar-deposito' && deposito?._id) {
-      setIsLoadingDeposito(true);
-      try {
-        const response = await axios.get(`/api/depositos/${deposito._id}`);
-        setSelectedDeposito(response.data);
-      } catch (error) {
-        console.error('Error al cargar datos del depósito:', error);
-        setSelectedDeposito(deposito);
-      } finally {
-        setIsLoadingDeposito(false);
-        setPopupOpen(true);
-      }
-    } else {
+const handleOpenPopup = async (type, deposito = null) => {
+  setPopupType(type);
+  
+  if (type === 'modificar-deposito' && deposito?._id) {
+    setIsLoadingDeposito(true);
+    try {
+      const response = await axios.get(`/api/depositos/${deposito._id}`);
+      setSelectedDeposito({
+        ...response.data,
+        direccion: response.data.localizacion?.direccion || '',
+        provincia: response.data.localizacion?.provincia_estado || '',
+        ciudad: response.data.localizacion?.ciudad || '',
+        pais: response.data.localizacion?.pais || '',
+        nombreContacto: response.data.personal_contacto?.nombre || '',
+        apellidoContacto: response.data.personal_contacto?.apellido || '',
+        telefonoContacto: response.data.personal_contacto?.telefono || '',
+        coordenadasRaw: response.data.coordenadas
+      });
+    } catch (error) {
+      console.error('Error al cargar datos del depósito:', error);
       setSelectedDeposito(deposito);
+    } finally {
+      setIsLoadingDeposito(false);
       setPopupOpen(true);
     }
-  };
-
+  } else {
+    setSelectedDeposito(deposito);
+    setPopupOpen(true);
+  }
+};
   const handleAddDeposito = async (nuevoDeposito) => {
     try {
       const response = await axios.post('/api/depositos', nuevoDeposito);
@@ -111,58 +144,78 @@ const ListadoDepositos = () => {
     }
   };
 
-  const handleUpdateDeposito = async (depositoActualizado) => {
+const handleDeleteDeposito = async (depositoId) => {
   try {
-    // Transformar los datos al formato que espera el backend
-    const dataToSend = {
-      tipo: depositoActualizado.tipo,
-      activo: true, // Asumiendo que siempre queremos que esté activo al actualizar
+    const response = await axios.patch(`/api/depositos/${depositoId}/delete`, {
+      activo: false
+    });
+    
+    setDepositos(prev => prev.filter(d => d._id !== depositoId));
+    setDepositosFiltrados(prev => prev.filter(d => d._id !== depositoId));
+    
+    return { 
+      success: true,
+      message: response.data.message || 'Depósito desactivado correctamente'
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.message || 'Error al desactivar el depósito'
+    };
+  }
+};
+
+const handleUpdateDeposito = async (updatedData) => {
+  try {
+    const response = await axios.patch(`/api/depositos/${updatedData._id}`, {
+      tipo: updatedData.tipo,
       localizacion: {
-        direccion: depositoActualizado.direccion,
-        provincia_estado: depositoActualizado.provincia, // Nota: el backend espera provincia_estado
-        ciudad: depositoActualizado.ciudad,
-        pais: depositoActualizado.pais
+        direccion: updatedData.direccion,
+        ciudad: updatedData.ciudad,
+        provincia_estado: updatedData.provincia,
+        pais: updatedData.pais
       },
       personal_contacto: {
-        nombre: depositoActualizado.nombreContacto,
-        apellido: depositoActualizado.apellidoContacto,
-        telefono: depositoActualizado.telefonoContacto
+        nombre: updatedData.nombreContacto,
+        apellido: updatedData.apellidoContacto,
+        telefono: updatedData.telefonoContacto
       },
-      horarios: depositoActualizado.horarios
-    };
+      horarios: updatedData.horarios,
+      coordenadas: updatedData.coordenadasRaw || parseCoordinates(updatedData.coordenadas)
+    });
 
-    const response = await axios.put(`/api/depositos/${depositoActualizado._id}`, dataToSend);
-    
+    // Update local state
     const updatedDeposito = {
       ...response.data,
       direccionCompleta: `${response.data.localizacion?.direccion || ''}, ${response.data.localizacion?.ciudad || ''}, ${response.data.localizacion?.provincia_estado || ''}`,
       contacto: `${response.data.personal_contacto?.nombre || ''} ${response.data.personal_contacto?.apellido || ''}`.trim() || 'Sin contacto',
       horarios: response.data.horarios ? `${response.data.horarios.dias.join(', ')}: ${response.data.horarios.desde} - ${response.data.horarios.hasta}` : 'Sin horarios'
     };
+
+    setDepositos(prev => prev.map(d => d._id === updatedDeposito._id ? updatedDeposito : d));
+    setDepositosFiltrados(prev => prev.map(d => d._id === updatedDeposito._id ? updatedDeposito : d));
     
-    setDepositos(prev => prev.map(d => d._id === depositoActualizado._id ? updatedDeposito : d));
-    setDepositosFiltrados(prev => prev.map(d => d._id === depositoActualizado._id ? updatedDeposito : d));
     return { success: true };
   } catch (error) {
-    console.error('Error al actualizar depósito:', error.response?.data || error.message);
-    return { 
-      success: false, 
-      error: error.response?.data?.message || 'Error al actualizar el depósito' 
-    };
+    console.error('Error al actualizar depósito:', error);
+    return { success: false, error: error.message };
   }
 };
 
-  const handleDeleteDeposito = async (id) => {
-    try {
-      await axios.delete(`/api/depositos/${id}`);
-      setDepositos(prev => prev.filter(d => d._id !== id));
-      setDepositosFiltrados(prev => prev.filter(d => d._id !== id));
-      return { success: true };
-    } catch (error) {
-      console.error('Error al eliminar depósito:', error);
-      return { success: false, error: error.message };
-    }
+// Helper function to parse coordinates string to GeoJSON format
+const parseCoordinates = (coordString) => {
+  if (!coordString) return null;
+  
+  const [lat, long] = coordString.split(',').map(Number);
+  if (isNaN(lat) || isNaN(long)) return null;
+  
+  return {
+    type: "Point",
+    coordinates: [long, lat] // GeoJSON uses [longitude, latitude] order
   };
+};
+
+
 
   const columns = [
     { id: '_id', label: 'ID', minWidth: 100, align: 'left', render: (value) => value?.toString() || 'N/A' },
@@ -207,12 +260,15 @@ const ListadoDepositos = () => {
         onClose={() => setPopupOpen(false)}
         page={popupType}
         selectedItem={selectedDeposito}
-        onAddItem={handleAddDeposito}
-        onUpdateItem={handleUpdateDeposito}
-        onDelete={popupType === 'confirmar-eliminar' ? handleDeleteDeposito : null}
-        buttonName={popupType === 'modificar-deposito' ? 'Modificar Depósito' : 'Eliminar Depósito'}
+        onDelete={handleDeleteDeposito}
+        onSuccess={(result) => {
+          if (result.success) {
+            setPopupOpen(false); 
+          } else if (result.error) {
+            alert(`Atención: ${result.error}`);
+          }
+        }}
       />
-
       <Box mb={4}>
         <Filtro
           filtros={filtros}

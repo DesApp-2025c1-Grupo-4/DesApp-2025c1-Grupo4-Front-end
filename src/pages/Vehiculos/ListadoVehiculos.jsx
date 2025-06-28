@@ -8,6 +8,7 @@ import CreateOutlinedIcon from '@mui/icons-material/CreateOutlined';
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
 import axios from 'axios';
 
+
 const ListadoVehiculos = () => {
   const [filtros, setFiltros] = useState({
     criterio: 'Patente',
@@ -32,12 +33,16 @@ const ListadoVehiculos = () => {
     const fetchVehiculos = async () => {
       try {
         const response = await axios.get('/api/vehiculos');
-        setVehiculosOriginales([...response.data]);
-        const datosTransformados = response.data.map(item => ({
+        // Filtrar solo vehículos activos
+        const vehiculosActivos = response.data.filter(item => item.activo !== false);
+        
+        setVehiculosOriginales([...vehiculosActivos]);
+        const datosTransformados = vehiculosActivos.map(item => ({
           ...item,
+          _id: item._id, // Asegúrate de incluir esto
           empresa: item.empresa?.nombre_empresa || 'Sin empresa',
           capacidad: `${item.capacidad_carga?.volumen || 0}m³ - ${item.capacidad_carga?.peso || 0}kg`,
-          año: item.anio, // Para mostrar en tabla
+          año: item.anio,
           tipo_vehiculo: item.tipo_vehiculo,
           capacidad_carga: item.capacidad_carga,
           anio: item.anio
@@ -100,57 +105,68 @@ const ListadoVehiculos = () => {
     return vehiculosFiltrados.slice(inicio, fin);
   };
 
-  const handleOpenPopup = async (type, vehiculo) => {
-  setSelectedVehiculo(null);
+const handleOpenPopup = async (type, vehiculo) => {
   try {
-    if (!vehiculo._id) throw new Error('Vehículo sin _id');
     const response = await axios.get(`/api/vehiculos/${vehiculo._id}`);
-    const data = response.data;
-
+    const vehiculoCompleto = response.data;
+    
+    // Manejar correctamente el campo empresa
+    const empresaId = vehiculoCompleto.empresa?._id || vehiculoCompleto.empresa;
+    const empresaNombre = vehiculoCompleto.empresa?.nombre_empresa || 'Sin empresa asignada';
+    
     setSelectedVehiculo({
-      patente: data.patente,
-      marca: data.marca,
-      modelo: data.modelo,
-      tipoVehiculo: data.tipo_vehiculo,
-      año: data.anio,
-      volumen: data.capacidad_carga?.volumen,
-      peso: data.capacidad_carga?.peso,
-      empresa: data.empresa ? {
-        _id: data.empresa._id,
-        nombre_empresa: data.empresa.nombre_empresa
-      } : null
+      ...vehiculoCompleto,
+      tipoVehiculo: vehiculoCompleto.tipo_vehiculo,
+      año: vehiculoCompleto.anio,
+      volumen: vehiculoCompleto.capacidad_carga?.volumen,
+      peso: vehiculoCompleto.capacidad_carga?.peso,
+      empresa: empresaId, // Asegurarse de pasar el ID
+      empresaNombre: empresaNombre // Y el nombre para mostrar
     });
+    
+    setPopupType(type);
+    setPopupOpen(true);
   } catch (error) {
-    console.error('Error al obtener vehículo:', error);
-    setSelectedVehiculo({
-      ...vehiculo,
-      tipoVehiculo: vehiculo.tipo_vehiculo,
-      año: vehiculo.anio,
-      volumen: vehiculo.capacidad_carga?.volumen,
-      peso: vehiculo.capacidad_carga?.peso,
-      empresa: vehiculo.empresaObj ? {
-        _id: vehiculo.empresaObj._id,
-        nombre_empresa: vehiculo.empresaObj.nombre_empresa
-      } : null
-    });
+    console.error('Error al cargar datos del vehículo:', error);
+    setError('No se pudieron cargar los datos completos del vehículo');
   }
-  setPopupType(type);
-  setPopupOpen(true);
 };
 
+const handleDeleteVehiculo = async (id) => {
+  try {
+    const { data: currentData } = await axios.get(`/api/vehiculos/${id}`);
+    const empresaId = typeof currentData.empresa === 'object' 
+      ? currentData.empresa._id 
+      : currentData.empresa;
 
-  const handleDeleteVehiculo = async (patente) => {
-    try {
-      await axios.patch(`/api/vehiculos/${patente}/delete`);
-      setVehiculos(prev => prev.filter(v => v.patente !== patente));
-      setVehiculosFiltrados(prev => prev.filter(v => v.patente !== patente));
-      setVehiculosOriginales(prev => prev.filter(v => v.patente !== patente));
-      return { success: true };
-    } catch (error) {
-      console.error('Error al eliminar vehículo:', error);
-      return { success: false, error: error.message };
-    }
-  };
+    const dataToSend = {
+      patente: currentData.patente,
+      tipo_vehiculo: currentData.tipo_vehiculo,
+      marca: currentData.marca,
+      modelo: currentData.modelo,
+      anio: currentData.anio,
+      capacidad_carga: {
+        volumen: currentData.capacidad_carga?.volumen || 0,
+        peso: currentData.capacidad_carga?.peso || 0
+      },
+      empresa: empresaId,
+      activo: false
+    };
+
+    await axios.put(`/api/vehiculos/${id}`, dataToSend);
+    setVehiculos(prev => prev.filter(v => v._id !== id));
+    setVehiculosFiltrados(prev => prev.filter(v => v._id !== id));
+    setVehiculosOriginales(prev => prev.filter(v => v._id !== id));
+    return { success: true };
+  } catch (error) {
+    console.error('Error al desactivar vehículo:', error.response?.data || error.message);
+    return { 
+      success: false, 
+      error: error.response?.data?.message || 'Error al desactivar el vehículo',
+      details: error.response?.data
+    };
+  }
+};
 
   const columns = [
     { 
@@ -238,12 +254,6 @@ const ListadoVehiculos = () => {
         page={popupType}
         selectedItem={selectedVehiculo}
         onDelete={popupType === 'confirmar-eliminar' ? handleDeleteVehiculo : null}
-        buttonName={
-          popupType === 'modificar-vehiculo' ? 'Modificar Vehículo' : 
-          popupType === 'confirmar-eliminar' ? 'Eliminar Vehículo' : 
-          'Aceptar'
-        }
-        message={popupType === 'confirmar-eliminar' ? '¿Está seguro que desea eliminar este vehículo?' : ''}
       />
 
       <Box mb={4}>

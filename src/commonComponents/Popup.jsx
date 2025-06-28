@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import {
   Button, Dialog, DialogTitle, DialogContent,
-  DialogActions, Box, useTheme, useMediaQuery, Typography
+  DialogActions, Box, useTheme, useMediaQuery, Typography,
+  Alert, CircularProgress
 } from '@mui/material';
 import { ROUTE_CONFIG } from '../config/routesConfig';
 import validationSchemas from '../validations/validationSchemas';
@@ -14,6 +15,21 @@ import SeguimientoForm from './forms/SeguimientoForm';
 import axios from 'axios';
 import get from 'lodash.get';
 import set from 'lodash.set';
+import { format } from 'date-fns';
+
+const convertToBackendFormat = (dateTimeString) => {
+  if (!dateTimeString) return '';
+  const date = new Date(dateTimeString);
+  if (isNaN(date.getTime())) return '';
+  
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  
+  return `${day}/${month}/${year} ${hours}:${minutes}`;
+};
 
 const initialData = {
   deposito: {
@@ -64,26 +80,13 @@ const initialData = {
     nombre_empresa: '',
     cuit: '',
     datos_contacto: { mail: '', telefono: '' },
-    domicilio_fiscal: { calle: '', numero: '', ciudad: '', provincia: '', pais: '' }
+    domicilio_fiscal: { direccion: '', ciudad: '', provincia_estado: '', pais: '' }
   }
 };
 
-const Popup = ({ buttonName, page, open, onClose, children, selectedItem, onSuccess }) => {
+const Popup = ({ buttonName, page, open, onClose, children, selectedItem, onSuccess, onDelete }) => {
   const [internalOpen, setInternalOpen] = useState(false);
-
-  // Detectar tipo de formulario según page
-  const formType = useMemo(() => {
-    if (page.includes('deposito')) return 'deposito';
-    if (page.includes('viaje')) return 'viaje';
-    if (page.includes('chofer')) return 'chofer';
-    if (page.includes('vehiculo')) return 'vehiculo';
-    if (page.includes('empresa')) return 'empresa';
-    return 'default';
-  }, [page]);
-
-  // Estado del formulario inicializado según tipo
-  const [formData, setFormData] = useState(initialData[formType] || {});
-
+  const [formData, setFormData] = useState({});
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -93,145 +96,89 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem, onSucc
   const isControlled = open !== undefined;
   const currentOpen = isControlled ? open : internalOpen;
 
+  const formType = useMemo(() => {
+    if (page.includes('deposito')) return 'deposito';
+    if (page.includes('viaje')) return 'viaje';
+    if (page.includes('chofer')) return 'chofer';
+    if (page.includes('vehiculo')) return 'vehiculo';
+    if (page.includes('empresa')) return 'empresa';
+    return 'default';
+  }, [page]);
+
   useEffect(() => {
     if (currentOpen) {
-      const newFormData = { ...initialData[formType] };
-
-      if (selectedItem) {
-        if (formType === 'deposito') {
-          newFormData.tipo = selectedItem?.tipo || '';
-          // Asegurar que horarios sea objeto y no string
-          newFormData.horarios = selectedItem?.horarios || { dias: [], desde: '', hasta: '' };
-          newFormData.direccion = selectedItem?.localizacion?.direccion || '';
-          newFormData.provincia = selectedItem?.localizacion?.provincia_estado || '';
-          newFormData.ciudad = selectedItem?.localizacion?.ciudad || '';
-          newFormData.pais = selectedItem?.localizacion?.pais || '';
-          newFormData.coordenadas = selectedItem?.localizacion?.coordenadas || '';
-          newFormData.nombreContacto = selectedItem?.personal_contacto?.nombre || '';   
-          newFormData.apellidoContacto = selectedItem?.personal_contacto?.apellido || ''; 
-          newFormData.telefonoContacto = selectedItem?.personal_contacto?.telefono || ''; 
-        }
-        else if (formType === 'viaje') {
-          newFormData.idViaje = selectedItem?._id || '';
-          newFormData.depositoOrigen = selectedItem?.depositoOrigen?._id || selectedItem?.depositoOrigen || null;
-          newFormData.depositoDestino = selectedItem?.depositoDestino?._id || selectedItem?.depositoDestino || null;
-          newFormData.fechaInicio = selectedItem?.fechaInicio || '';
-          newFormData.fechaFin = selectedItem?.fechaFin || '';
-          newFormData.empresaTransportista = selectedItem?.empresaTransportista?._id || selectedItem?.empresaTransportista || null;
-          newFormData.choferAsignado = selectedItem?.choferAsignado?._id || selectedItem?.choferAsignado || null;
-          newFormData.vehiculoAsignado = selectedItem?.vehiculoAsignado?._id || selectedItem?.vehiculoAsignado || null;
-          newFormData.tipoViaje = selectedItem?.tipoViaje || '';
-        }
-        else if (formType === 'chofer') {
-          newFormData.nombre = selectedItem?.nombre || '';
-          newFormData.apellido = selectedItem?.apellido || '';
-          newFormData.cuil = selectedItem?.cuil || '';
-          newFormData.fechaNacimiento = selectedItem?.fechaNacimiento || '';
-          newFormData.empresa = selectedItem?.empresa || '';
-          newFormData.vehiculoAsignado = selectedItem?.vehiculoAsignado || '';
-        }
-        else if (formType === 'vehiculo') {
-          newFormData._id = selectedItem?._id || '';
-          newFormData.patente = selectedItem?.patente || '';
-          newFormData.tipoVehiculo = selectedItem?.tipo_vehiculo || selectedItem?.tipo || '';
-          newFormData.marca = selectedItem?.marca || '';
-          newFormData.modelo = selectedItem?.modelo || '';
-          newFormData.año = selectedItem?.año || selectedItem?.anio || '';
-          newFormData.volumen = selectedItem?.capacidad_carga?.volumen || selectedItem?.volumen || '';
-          newFormData.peso = selectedItem?.capacidad_carga?.peso || selectedItem?.peso || '';
-          newFormData.empresa = selectedItem?.empresa?._id || '';
-        }
-        else if (formType === 'empresa') {
-          newFormData.nombre_empresa = selectedItem?.nombre_empresa || '';
-          newFormData.cuit = selectedItem?.cuit || '';
-          newFormData.datos_contacto = {
-            mail: selectedItem?.datos_contacto?.mail || '',
-            telefono: selectedItem?.datos_contacto?.telefono || ''
-          };
-          newFormData.domicilio_fiscal = {
-            calle: selectedItem?.domicilio_fiscal?.calle || '',
-            ciudad: selectedItem?.domicilio_fiscal?.ciudad || '',
-            provincia: selectedItem?.domicilio_fiscal?.provincia || '',
-            pais: selectedItem?.domicilio_fiscal?.pais || ''
-          };
-        }
-      }
-
-      setFormData(newFormData);
+      setFormData(selectedItem ? { ...initialData[formType], ...selectedItem } : initialData[formType]);
       setErrors({});
       setTouched({});
     }
   }, [currentOpen, selectedItem, formType]);
 
   const handleClose = () => {
+    if (isSubmitting) return;
     setErrors({});
     setTouched({});
-    setIsSubmitting(false);
     if (isControlled) onClose();
     else setInternalOpen(false);
   };
 
   const handleChange = (e) => {
-  const { name, value } = e.target;
-
-  setFormData(prev => {
-    const newFormData = { ...prev };
-    set(newFormData, name, value);
-    return newFormData;
-  });
-  if (errors[name] || errors[name.split('.')[0]]) {
-    setErrors(prev => {
-      const newErrors = { ...prev };
-      if (name.includes('.')) {
-        const [parent, child] = name.split('.');
-        if (newErrors[parent]?.[child]) {
-          delete newErrors[parent][child];
-          if (Object.keys(newErrors[parent]).length === 0) {
-            delete newErrors[parent];
-          }
-        }
-      } else {
-        delete newErrors[name];
-      }
-      return newErrors;
+    const { name, value } = e.target;
+    setFormData(prev => {
+      const newData = { ...prev };
+      set(newData, name, value);
+      return newData;
     });
-  }
-};
+
+    // Clear error when field changes
+    if (errors[name]) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
+  };
 
   const handleBlur = (e) => {
     const { name } = e.target;
     setTouched(prev => ({ ...prev, [name]: true }));
-
     validationSchemas[formType].validateAt(name, formData)
-      .then(() => setErrors(prev => ({ ...prev, [name]: '' })))
-      .catch(error => setErrors(prev => ({ ...prev, [name]: error.message })));
+      .then(() => {
+        setErrors(prev => {
+          const newErrors = { ...prev };
+          delete newErrors[name];
+          return newErrors;
+        });
+      })
+      .catch(err => {
+        setErrors(prev => ({ ...prev, [name]: err.message }));
+      });
   };
 
   const handleSubmit = async () => {
+    if (isSubmitting) return;
+
     if (page.includes('confirmar-eliminar')) {
-      console.log('Eliminando elemento:', selectedItem);
-      handleClose();
+      setIsSubmitting(true);
+      try {
+        if (onDelete) {
+          await onDelete(selectedItem._id);
+          handleClose();
+        }
+      } catch (error) {
+        setErrors({ _general: error.message || 'Error al eliminar' });
+      } finally {
+        setIsSubmitting(false);
+      }
       return;
     }
 
+    // Validate all fields
     const allTouched = Object.keys(formData).reduce((acc, key) => ({ ...acc, [key]: true }), {});
     setTouched(allTouched);
 
     try {
-      let formDataToValidate = { ...formData };
-
-      if (formType === 'viaje') {
-        ['depositoOrigen', 'depositoDestino', 'empresaTransportista', 'choferAsignado', 'vehiculoAsignado'].forEach(field => {
-          const val = formDataToValidate[field];
-          if (val && typeof val === 'string') {
-            formDataToValidate[field] = { _id: val };
-          } else if (!val) {
-            formDataToValidate[field] = null;
-          }
-        });
-      }
-
-      await validationSchemas[formType].validate(formDataToValidate, { abortEarly: false });
+      await validationSchemas[formType].validate(formData, { abortEarly: false });
       setErrors({});
       setIsSubmitting(true);
 
@@ -245,130 +192,66 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem, onSucc
 
       const endpoint = endpointMap[formType];
       const method = selectedItem ? 'PUT' : 'POST';
-      const url = selectedItem && formData._id ? `${endpoint}/${formData._id}` : endpoint;
+      const url = selectedItem ? `${endpoint}/${selectedItem._id}` : endpoint;
 
       let dataToSend = { ...formData };
 
-      if (formType === 'deposito') {
+      // Transform data for specific types
+      if (formType === 'viaje') {
         dataToSend = {
-          localizacion: {
-            direccion: formData.direccion,
-            provincia_estado: formData.provincia, 
-            ciudad: formData.ciudad,
-            pais: formData.pais
-          },
-          tipo: formData.tipo,
-          activo: true, 
-          personal_contacto: {
-            nombre: formData.nombreContacto,
-            apellido: formData.apellidoContacto,
-            telefono: formData.telefonoContacto
-          },
-          horarios: {
-            dias: formData.horarios?.dias || [],
-            desde: formData.horarios?.desde || '',
-            hasta: formData.horarios?.hasta || ''
-          }
-        };
-      } else if (formType === 'vehiculo') {
-        dataToSend = {
-          patente: formData.patente,
-          tipo_vehiculo: formData.tipoVehiculo,
-          marca: formData.marca,
-          modelo: formData.modelo,
-          anio: formData.año,
-          capacidad_carga: { 
-            volumen: formData.volumen,
-            peso: formData.peso
-          },
-          empresa: {
-            _id: formData.empresa 
-          },
-          activo: true 
-        };
-      } else if (formType === 'chofer') {
-        dataToSend = {
-          ...dataToSend,
-          empresa: dataToSend.empresa?._id || dataToSend.empresa,
-          vehiculoAsignado: dataToSend.vehiculoAsignado?._id || dataToSend.vehiculoAsignado
-        };
-      } else if (formType === 'empresa') {
-        dataToSend = {
-          nombre_empresa: formData.nombre_empresa,
-          cuit: formData.cuit,
-          domicilio_fiscal: {
-            calle: formData.domicilio_fiscal.calle,
-            ciudad: formData.domicilio_fiscal.ciudad,
-            provincia: formData.domicilio_fiscal.provincia,
-            pais: formData.domicilio_fiscal.pais,
-          },
-          datos_contacto: {
-            telefono: String(formData.datos_contacto.telefono),
-            mail: formData.datos_contacto.mail
-          },
-          activo: true
+          deposito_origen: formData.depositoOrigen?._id || formData.depositoOrigen,
+          deposito_destino: formData.depositoDestino?._id || formData.depositoDestino,
+          inicio_viaje: convertToBackendFormat(formData.fechaInicio),
+          fin_viaje: convertToBackendFormat(formData.fechaFin),
+          empresa_asignada: formData.empresaTransportista?._id || formData.empresaTransportista,
+          chofer_asignado: formData.choferAsignado?._id || formData.choferAsignado,
+          vehiculo_asignado: formData.vehiculoAsignado?._id || formData.vehiculoAsignado,
+          tipo_viaje: formData.tipoViaje,
+          estado: 'planificado'
         };
       }
 
-      console.log('Payload enviado:', JSON.stringify(dataToSend, null, 2));
-
       const response = await axios({
         method,
-        url: selectedItem ? `${endpoint}/${selectedItem._id}` : endpoint,
+        url,
         data: dataToSend
       });
 
-      console.log('Registro creado/actualizado:', response.data);
-      if (onSuccess) onSuccess(response.data);
+      if (onSuccess) {
+        await onSuccess(response.data);
+      }
       handleClose();
-      window.location.reload();
-
     } catch (error) {
-  setIsSubmitting(false);
-  
-  if (error.response) {
-    const backendError = error.response.data;
-    let formattedErrors = {};
-    
-    // Manejar error específico de horarios
-    if (backendError.message?.includes('hora de cierre')) {
-      formattedErrors = {
-        ...formattedErrors,
-        horarios: {
-          hasta: backendError.message
-        }
-      };
-    } else if (backendError.errors) {
-      // Mapear otros errores de validación
-      Object.entries(backendError.errors).forEach(([field, err]) => {
-        formattedErrors[field] = err.message;
-      });
-    } else {
-      formattedErrors._general = backendError.message || 'Error al procesar la solicitud';
+      setIsSubmitting(false);
+      if (error.name === 'ValidationError') {
+        const validationErrors = {};
+        error.inner.forEach(err => {
+          validationErrors[err.path] = err.message;
+        });
+        setErrors(validationErrors);
+      } else {
+        setErrors({
+          _general: error.response?.data?.message || error.message || 'Error al procesar la solicitud'
+        });
+      }
     }
-    
-    setErrors(formattedErrors);
-    console.error('Errores del backend:', backendError);
-  } else {
-    setErrors({ _general: error.message || 'Error de conexión con el servidor' });
-    console.error('Error desconocido:', error);
-  }
-}
   };
 
   const renderForm = () => {
     if (page.includes('confirmar-eliminar')) {
       return (
-        <Box textAlign="center" sx={{ py: 2 }}>
-          <Typography variant="body1" sx={{ mb: 3, fontSize: isMobile ? '1rem' : '1.1rem', color: 'text.secondary' }}>
+        <Box textAlign="center" sx={{ py: 4 }}>
+          <Typography variant="h6" sx={{ mb: 3, color: theme.palette.text.secondary }}>
             ¿Estás seguro que deseas eliminar este elemento?
           </Typography>
-          <Typography variant="subtitle1" sx={{
+          <Typography variant="subtitle1" sx={{ 
             color: theme.palette.error.main,
-            fontWeight: 600,
-            fontSize: isMobile ? '1rem' : '1.1rem'
+            fontWeight: 'bold',
+            backgroundColor: theme.palette.error.light,
+            p: 1,
+            borderRadius: 1
           }}>
-            Esta acción no se puede deshacer.
+            Esta acción no se puede deshacer
           </Typography>
         </Box>
       );
@@ -381,6 +264,7 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem, onSucc
       handleChange,
       handleBlur,
       errors,
+      touched,
       isEditing: !!selectedItem
     };
 
@@ -389,9 +273,8 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem, onSucc
       case 'viaje': return <ViajeForm {...formProps} />;
       case 'chofer': return <ChoferForm {...formProps} />;
       case 'vehiculo': return <VehiculoForm {...formProps} />;
-      case 'seguimiento': return <SeguimientoForm formData={formData} />;
-      case 'empresa':
-      default: return <EmpresaForm {...formProps} />;
+      case 'empresa': return <EmpresaForm {...formProps} />;
+      default: return null;
     }
   };
 
@@ -399,20 +282,21 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem, onSucc
     <>
       {!isControlled && (
         <Button
-          fullWidth
           variant="contained"
           onClick={() => setInternalOpen(true)}
           sx={{
-            fontWeight: 600,
-            letterSpacing: 0.5,
-            py: 1.5,
-            fontSize: '0.875rem',
-            textTransform: 'none',
-            boxShadow: theme.shadows[2],
+            backgroundColor: theme.palette.primary.main,
+            color: theme.palette.primary.contrastText,
             '&:hover': {
-              boxShadow: theme.shadows[4],
-              backgroundColor: theme.palette.primary.dark
+              backgroundColor: theme.palette.primary.dark,
             },
+            px: 4,
+            py: 1.5,
+            borderRadius: 2,
+            textTransform: 'none',
+            fontSize: '1rem',
+            fontWeight: 600,
+            boxShadow: theme.shadows[2],
             transition: 'all 0.3s ease'
           }}
         >
@@ -428,102 +312,106 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem, onSucc
         fullScreen={isMobile}
         PaperProps={{
           sx: {
-            backgroundColor: page.includes('confirmar-eliminar')
-              ? 'rgba(255, 235, 235, 0.97)'
-              : 'rgba(255, 255, 255, 0.97)',
-            backdropFilter: 'blur(12px)',
-            borderRadius: isMobile ? 0 : '16px',
-            p: isMobile ? 1 : 3,
-            boxShadow: theme.shadows[10],
-            minHeight: isMobile ? '100vh' : 'auto',
+            borderRadius: isMobile ? 0 : 2,
+            backgroundImage: 'none',
+            backgroundColor: page.includes('confirmar-eliminar') 
+              ? theme.palette.error.lighter 
+              : theme.palette.background.paper,
             border: page.includes('confirmar-eliminar')
               ? `1px solid ${theme.palette.error.light}`
               : `1px solid ${theme.palette.divider}`,
-            overflow: 'hidden'
           }
         }}
       >
-        <Box sx={{
-          backgroundColor: 'transparent',
-          borderRadius: isMobile ? 0 : '12px',
-          pb: 2,
-          pt: isMobile ? 1 : 0
+        <DialogTitle sx={{
+          backgroundColor: page.includes('confirmar-eliminar')
+            ? theme.palette.error.light
+            : theme.palette.primary.main,
+          color: page.includes('confirmar-eliminar')
+            ? theme.palette.error.contrastText
+            : theme.palette.primary.contrastText,
+          py: 2,
+          px: 3,
+          fontSize: '1.25rem',
+          fontWeight: 600
         }}>
-          <DialogTitle sx={{
-            fontSize: isMobile ? '1.25rem' : '1.5rem',
-            fontWeight: 700,
-            color: page.includes('confirmar-eliminar')
-              ? theme.palette.error.main
-              : theme.palette.primary.main,
-            textAlign: 'center',
-            px: isMobile ? 1 : 3,
-            pt: isMobile ? 1 : 2,
-            pb: 1,
-            letterSpacing: '0.5px'
-          }}>
-            {page.includes('confirmar-eliminar')
-              ? 'Confirmar eliminación'
-              : ROUTE_CONFIG[`/${page}`]?.newButton || buttonName}
-          </DialogTitle>
+          {page.includes('confirmar-eliminar') 
+            ? 'Confirmar eliminación' 
+            : (selectedItem ? 'Editar' : 'Nuevo') + ' ' + buttonName}
+        </DialogTitle>
+        
+        <DialogContent sx={{
+          py: 3,
+          px: 3,
+          '&.MuiDialogContent-root': {
+            paddingTop: '24px !important'
+          }
+        }}>
+          {errors._general && (
+            <Alert 
+              severity="error" 
+              sx={{ 
+                mb: 3,
+                borderRadius: 1,
+                border: `1px solid ${theme.palette.error.light}`
+              }}
+            >
+              {errors._general}
+            </Alert>
+          )}
+          {renderForm()}
+        </DialogContent>
 
-          <Box sx={{
-            backgroundColor: page.includes('confirmar-eliminar')
-              ? 'rgba(255, 235, 235, 0.3)'
-              : 'rgba(245, 245, 245, 0.5)',
-            borderRadius: '12px',
-            p: isMobile ? 2 : 3,
-            mx: isMobile ? 0 : 1,
-            border: `1px solid ${theme.palette.divider}`,
-            boxShadow: theme.shadows[1]
-          }}>
-            <DialogContent sx={{
+        <DialogActions sx={{
+          px: 3,
+          py: 2,
+          borderTop: `1px solid ${theme.palette.divider}`,
+          backgroundColor: theme.palette.grey[50]
+        }}>
+          <Button 
+            onClick={handleClose} 
+            disabled={isSubmitting}
+            sx={{
+              px: 3,
               py: 1,
-              px: isMobile ? 0 : 2,
-              '&.MuiDialogContent-root': {
-                paddingTop: '16px'
+              borderRadius: 1,
+              border: `1px solid ${theme.palette.grey[400]}`,
+              color: theme.palette.text.primary,
+              '&:hover': {
+                backgroundColor: theme.palette.grey[200]
               }
-            }}>
-              {renderForm()}
-            </DialogContent>
-
-            <DialogActions sx={{
-              px: isMobile ? 0 : 2,
-              py: 2,
-              justifyContent: 'center',
-              gap: 2
-            }}>
-              <Button
-                onClick={handleClose}
-                variant="outlined"
-                sx={{
-                  minWidth: 120,
-                  py: 1.5,
-                  borderRadius: '8px',
-                  borderWidth: '2px',
-                  '&:hover': {
-                    borderWidth: '2px'
-                  }
-                }}
-              >
-                Cancelar
-              </Button>
-              {!page.includes('confirmar-eliminar') && (
-                <Button
-                  onClick={handleSubmit}
-                  variant="contained"
-                  sx={{
-                    minWidth: 120,
-                    py: 1.5,
-                    borderRadius: '8px'
-                  }}
-                  disabled={isSubmitting}
-                >
-                  Guardar
-                </Button>
-              )}
-            </DialogActions>
-          </Box>
-        </Box>
+            }}
+          >
+            Cancelar
+          </Button>
+          <Button 
+            onClick={handleSubmit} 
+            color={page.includes('confirmar-eliminar') ? 'error' : 'primary'}
+            variant="contained"
+            disabled={isSubmitting}
+            sx={{
+              px: 3,
+              py: 1,
+              borderRadius: 1,
+              textTransform: 'none',
+              fontSize: '0.9375rem',
+              fontWeight: 600,
+              minWidth: 100,
+              '&.Mui-disabled': {
+                backgroundColor: theme.palette.action.disabledBackground,
+                color: theme.palette.action.disabled
+              }
+            }}
+          >
+            {isSubmitting ? (
+              <CircularProgress size={24} sx={{ color: 'inherit' }} />
+            ) : page.includes('confirmar-eliminar') ? (
+              'Eliminar'
+            ) : (
+              selectedItem ? 'Guardar' : 'Crear'
+            )}
+          </Button>
+        </DialogActions>
       </Dialog>
     </>
   );

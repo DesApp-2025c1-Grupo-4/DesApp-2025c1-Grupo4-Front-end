@@ -9,10 +9,7 @@ import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
 import axios from 'axios';
 
 const ListadoEmpresas = () => {
-  const [filtros, setFiltros] = useState({
-    criterio: 'CUIT',
-    busqueda: ''
-  });
+  const [filtros, setFiltros] = useState({ criterio: 'Razón Social', busqueda: '' });
   const [pagina, setPagina] = useState(1);
   const [itemsPorPagina] = useState(10);
   const [empresas, setEmpresas] = useState([]);
@@ -27,201 +24,149 @@ const ListadoEmpresas = () => {
   useEffect(() => {
     const fetchEmpresas = async () => {
       try {
-        const response = await axios.get('/api/empresas');
-        
-        const datosTransformados = response.data.map(item => ({
-          ...item,
-          razonSocial: item.nombre_empresa || 'Sin nombre',
-          domicilioFiscal: item.domicilio_fiscal ? 
-            `${item.domicilio_fiscal.calle}, ${item.domicilio_fiscal.ciudad}, ${item.domicilio_fiscal.provincia}` : 
-            'Sin domicilio',
-          telefono: item.datos_contacto?.telefono || 'Sin teléfono',
-          email: item.datos_contacto?.mail || 'Sin email'
-        }));
-
-        setEmpresas(datosTransformados);
-        setEmpresasFiltradas(datosTransformados);
+        const res = await axios.get('/api/empresas');
+        const datos = res.data.filter(e => e.activo !== false).map(e => ({
+          ...e,
+            razonSocial: e.nombre_empresa || 'Sin nombre',
+            domicilioFiscal: e.domicilio_fiscal 
+              ? `${e.domicilio_fiscal.direccion || ''}, ${e.domicilio_fiscal.ciudad || ''}, ${e.domicilio_fiscal.provincia_estado || ''}, ${e.domicilio_fiscal.pais || ''}`
+                  .replace(/, ,/g, ', ')  // Elimina comas dobles
+                  .replace(/, $/, '')     // Elimina coma final
+                  .trim() || 'Sin domicilio' // Si queda string vacío, muestra 'Sin domicilio'
+              : 'Sin domicilio',
+            telefono: e.datos_contacto?.telefono || 'Sin teléfono',
+            email: e.datos_contacto?.mail || 'Sin email'
+          }));
+        setEmpresas(datos);
+        setEmpresasFiltradas(datos);
       } catch (err) {
         setError(`Error al cargar datos: ${err.message}`);
         console.error('Error fetching empresas:', err);
-      } finally {
-        setLoading(false);
-      }
+      } finally { setLoading(false); }
     };
-
     fetchEmpresas();
   }, []);
 
   const aplicarFiltros = () => {
-    const filtered = empresas.filter(empresa => {
-      const searchTerm = filtros.busqueda.toLowerCase();
-      switch (filtros.criterio) {
-        case 'Razón Social':
-          return (empresa.razonSocial || '').toLowerCase().includes(searchTerm);
-        case 'CUIT':
-          return (empresa.cuit || '').toLowerCase().includes(searchTerm);
-        case 'Domicilio':
-          return (empresa.domicilioFiscal || '').toLowerCase().includes(searchTerm);
-        case 'Teléfono':
-          return (empresa.telefono || '').toLowerCase().includes(searchTerm);
-        default:
-          return true;
-      }
+    const searchTerm = filtros.busqueda.toLowerCase();
+    const filtered = empresas.filter(e => {
+      const campo = {
+        'Razón Social': e.razonSocial,
+        'CUIT': e.cuit,
+        'Domicilio': e.domicilioFiscal,
+        'Teléfono': e.telefono
+      }[filtros.criterio] || '';
+      return (campo || '').toLowerCase().includes(searchTerm);
     });
     setEmpresasFiltradas(filtered);
     setPagina(1);
   };
 
-  const empresasPaginaActual = () => {
-    const inicio = (pagina - 1) * itemsPorPagina;
-    return empresasFiltradas.slice(inicio, inicio + itemsPorPagina);
-  };
-
   const handleOpenPopup = async (type, empresa = null) => {
-  setPopupType(type);
-  
-  if (type === 'modificar-empresa' && empresa?._id) {
-    setIsLoadingEmpresa(true);
-    try {
-      const response = await axios.get(`/api/empresas/${empresa._id}`);
-      
-      // Extraer número de calle si está combinado con el nombre
-      let calle = response.data.domicilio_fiscal?.calle || '';
-      let numero = '';
-      
-      const match = calle.match(/(.+?)\s*(\d+)\s*$/);
-      if (match) {
-        calle = match[1].trim();
-        numero = match[2].trim();
+    setPopupType(type);
+    if (type === 'modificar-empresa' && empresa?._id) {
+      setIsLoadingEmpresa(true);
+      try {
+        const res = await axios.get(`/api/empresas/${empresa._id}`);
+        setSelectedEmpresa({
+          _id: res.data._id,
+          nombre_empresa: res.data.nombre_empresa || '',
+          cuit: res.data.cuit || '',
+          datos_contacto: {
+            mail: res.data.datos_contacto?.mail || '',
+            telefono: res.data.datos_contacto?.telefono || ''
+          },
+          domicilio_fiscal: {
+            direccion: res.data.domicilio_fiscal?.direccion || '',
+            ciudad: res.data.domicilio_fiscal?.ciudad || '',
+            provincia_estado: res.data.domicilio_fiscal?.provincia_estado || '',
+            pais: res.data.domicilio_fiscal?.pais || '',
+          }
+        });
+      } catch (err) {
+        console.error('Error al cargar datos:', err);
+        setSelectedEmpresa(empresa);
+      } finally {
+        setIsLoadingEmpresa(false);
+        setPopupOpen(true);
       }
-
-      setSelectedEmpresa({
-        _id: response.data._id,
-        nombre_empresa: response.data.nombre_empresa || '',
-        cuit: response.data.cuit || '',
-        datos_contacto: {
-          mail: response.data.datos_contacto?.mail || '',
-          telefono: response.data.datos_contacto?.telefono || ''
-        },
-        domicilio_fiscal: {
-          calle: calle,
-          numero: numero || response.data.domicilio_fiscal?.numero || '',
-          ciudad: response.data.domicilio_fiscal?.ciudad || '',
-          provincia: response.data.domicilio_fiscal?.provincia || '',
-          pais: response.data.domicilio_fiscal?.pais || 'Argentina'
-        }
-      });
-    } catch (error) {
-      console.error('Error al cargar datos de la empresa:', error);
+    } else {
       setSelectedEmpresa(empresa);
-    } finally {
-      setIsLoadingEmpresa(false);
       setPopupOpen(true);
     }
-  } else {
-    setSelectedEmpresa(empresa);
-    setPopupOpen(true);
-  }
-};
+  };
 
-  const handleAddEmpresa = async (nuevaEmpresa) => {
+  const handleAddEmpresa = async (empresa) => {
     try {
-      const response = await axios.post('/api/empresas', nuevaEmpresa);
-      const newEmpresa = {
-        ...response.data,
-        razonSocial: response.data.nombre_empresa || 'Sin nombre',
-        domicilioFiscal: response.data.domicilio_fiscal ? 
-          `${response.data.domicilio_fiscal.calle}, ${response.data.domicilio_fiscal.ciudad}, ${response.data.domicilio_fiscal.provincia}` : 
-          'Sin domicilio',
-        telefono: response.data.datos_contacto?.telefono || 'Sin teléfono',
-        email: response.data.datos_contacto?.mail || 'Sin email'
+      const res = await axios.post('/api/empresas', empresa);
+      const nueva = {
+        ...res.data,
+        razonSocial: res.data.nombre_empresa || 'Sin nombre',
+        domicilioFiscal: res.data.domicilio_fiscal ? `${res.data.domicilio_fiscal.direccion}, ${res.data.domicilio_fiscal.ciudad}, ${res.data.domicilio_fiscal.provincia_estado}` : 'Sin domicilio',
+        telefono: res.data.datos_contacto?.telefono || 'Sin teléfono',
+        email: res.data.datos_contacto?.mail || 'Sin email'
       };
-      setEmpresas(prev => [newEmpresa, ...prev]);
-      setEmpresasFiltradas(prev => [newEmpresa, ...prev]);
+      setEmpresas(p => [nueva, ...p]);
+      setEmpresasFiltradas(p => [nueva, ...p]);
       return { success: true };
-    } catch (error) {
-      console.error('Error al agregar empresa:', error);
-      return { success: false, error: error.message };
+    } catch (err) {
+      console.error('Error al agregar empresa:', err);
+      return { success: false, error: err.message };
     }
   };
 
-  const handleUpdateEmpresa = async (empresaActualizada) => {
+  const handleUpdateEmpresa = async (empresa) => {
     try {
-      const response = await axios.put(`/api/empresas/${empresaActualizada._id}`, empresaActualizada);
-      const updatedEmpresa = {
-        ...response.data,
-        razonSocial: response.data.nombre_empresa || 'Sin nombre',
-        domicilioFiscal: response.data.domicilio_fiscal ? 
-          `${response.data.domicilio_fiscal.calle}, ${response.data.domicilio_fiscal.ciudad}, ${response.data.domicilio_fiscal.provincia}` : 
-          'Sin domicilio',
-        telefono: response.data.datos_contacto?.telefono || 'Sin teléfono',
-        email: response.data.datos_contacto?.mail || 'Sin email'
+      const res = await axios.put(`/api/empresas/${empresa._id}`, empresa);
+      const actualizada = {
+        ...res.data,
+        razonSocial: res.data.nombre_empresa || 'Sin nombre',
+        domicilioFiscal: res.data.domicilio_fiscal ? `${res.data.domicilio_fiscal.direccion}, ${res.data.domicilio_fiscal.ciudad}, ${res.data.domicilio_fiscal.provincia_estado}` : 'Sin domicilio',
+        telefono: res.data.datos_contacto?.telefono || 'Sin teléfono',
+        email: res.data.datos_contacto?.mail || 'Sin email'
       };
-      setEmpresas(prev => prev.map(e => e._id === empresaActualizada._id ? updatedEmpresa : e));
-      setEmpresasFiltradas(prev => prev.map(e => e._id === empresaActualizada._id ? updatedEmpresa : e));
+      setEmpresas(p => p.map(e => e._id === empresa._id ? actualizada : e));
+      setEmpresasFiltradas(p => p.map(e => e._id === empresa._id ? actualizada : e));
       return { success: true };
-    } catch (error) {
-      console.error('Error al actualizar empresa:', error);
-      return { success: false, error: error.message };
+    } catch (err) {
+      console.error('Error al actualizar empresa:', err);
+      return { success: false, error: err.message };
     }
   };
 
-  const handleDeleteEmpresa = async (_id) => {
+  const handleDeleteEmpresa = async (id) => {
     try {
-      await axios.patch(`/api/empresas/${_id}/delete`);
-      setEmpresas(prev => prev.filter(e => e._id !== _id));
-      setEmpresasFiltradas(prev => prev.filter(e => e._id !== _id));
+      const { data } = await axios.get(`/api/empresas/${id}`);
+      const { _id, ...empresa } = data;
+      delete empresa.domicilio_fiscal?._id;
+      delete empresa.datos_contacto?._id;
+      empresa.activo = false;
+      await axios.put(`/api/empresas/${id}`, empresa);
+      setEmpresas(p => p.filter(e => e._id !== id));
+      setEmpresasFiltradas(p => p.filter(e => e._id !== id));
       return { success: true };
-    } catch (error) {
-      console.error('Error al eliminar empresa:', error);
-      return { success: false, error: error.message };
+    } catch (err) {
+      console.error('Error al desactivar empresa:', err.response?.data || err.message);
+      return { success: false, error: err.response?.data?.message || 'Error al desactivar la empresa' };
     }
   };
+
+  const empresasPaginaActual = () => empresasFiltradas.slice((pagina - 1) * itemsPorPagina, pagina * itemsPorPagina);
 
   const columns = [
-    { 
-      id: 'razonSocial',
-      label: 'Razón Social',
-      minWidth: 200,
-      align: 'left'
-    },
-    { 
-      id: 'cuit', 
-      label: 'CUIT', 
-      minWidth: 120,
-      align: 'left'
-    },
-    {
-      id: 'domicilioFiscal',
-      label: 'Domicilio Fiscal',
-      minWidth: 250,
-      align: 'left'
-    },
-    {
-      id: 'telefono',
-      label: 'Teléfono',
-      minWidth: 120,
-      align: 'left'
-    },
-    {
-      id: 'email',
-      label: 'Email',
-      minWidth: 180,
-      align: 'left'
-    },
+    { id: 'razonSocial', label: 'Razón Social', minWidth: 200, align: 'left' },
+    { id: 'cuit', label: 'CUIT', minWidth: 120, align: 'left' },
+    { id: 'domicilioFiscal', label: 'Domicilio Fiscal', minWidth: 250, align: 'left' },
+    { id: 'telefono', label: 'Teléfono', minWidth: 120, align: 'left' },
+    { id: 'email', label: 'Email', minWidth: 180, align: 'left' },
     {
       id: 'modificar',
       label: 'Modificar',
       minWidth: 80,
       align: 'center',
       render: (_, row) => (
-        <IconButton 
-          onClick={() => handleOpenPopup('modificar-empresa', row)}
-          size="small"
-          color="primary"
-          disabled={isLoadingEmpresa}
-        >
-          {isLoadingEmpresa ? <CircularProgress size={20} /> : <CreateOutlinedIcon fontSize="small"/>}
+        <IconButton onClick={() => handleOpenPopup('modificar-empresa', row)} size="small" color="primary" disabled={isLoadingEmpresa}>
+          {isLoadingEmpresa ? <CircularProgress size={20} /> : <CreateOutlinedIcon fontSize="small" />}
         </IconButton>
       )
     },
@@ -231,12 +176,8 @@ const ListadoEmpresas = () => {
       minWidth: 80,
       align: 'center',
       render: (_, row) => (
-        <IconButton 
-          onClick={() => handleOpenPopup('confirmar-eliminar', row)}
-          size="small"
-          color="error"
-        >
-          <CloseOutlinedIcon fontSize="small"/>
+        <IconButton onClick={() => handleOpenPopup('confirmar-eliminar', row)} size="small" color="error">
+          <CloseOutlinedIcon fontSize="small" />
         </IconButton>
       )
     }
@@ -252,55 +193,25 @@ const ListadoEmpresas = () => {
         onClose={() => setPopupOpen(false)}
         page={popupType}
         selectedItem={selectedEmpresa}
-        onSuccess={(data) => {
-          if (popupType === 'empresas') {
-            handleAddEmpresa(data);
-          } else if (popupType === 'modificar-empresa') {
-            handleUpdateEmpresa(data);
-          }
-        }}
+        onSuccess={data => popupType === 'empresas' ? handleAddEmpresa(data) : handleUpdateEmpresa(data)}
         onDelete={popupType === 'confirmar-eliminar' ? handleDeleteEmpresa : null}
-        buttonName={
-          popupType === 'empresas' ? 'Crear Empresa' : 
-          popupType === 'modificar-empresa' ? 'Modificar Empresa' : 
-          popupType === 'confirmar-eliminar' ? 'Eliminar Empresa' : 
-          'Aceptar'
-        }
       />
-
       <Box mb={4}>
-        <Filtro 
-          filtros={filtros} 
-          setFiltros={setFiltros} 
+        <Filtro
+          filtros={filtros}
+          setFiltros={setFiltros}
           mode="empresas"
           onSearch={aplicarFiltros}
           onClear={() => {
-            setFiltros({
-              criterio: 'Cuit',
-              busqueda: ''
-            });
+            setFiltros({ criterio: 'Razón Social', busqueda: '' });
             setEmpresasFiltradas(empresas);
             setPagina(1);
           }}
         />
       </Box>
-      
-      <Box sx={{
-        width: '85vw',
-        marginLeft: 'calc(-43vw + 50%)',
-        marginRight: 'calc(-40vw + 50%)',
-        overflowX: 'hidden'
-      }}>
-        <Tabla2
-          columns={columns}
-          data={empresasPaginaActual()}
-          sx={{
-            tableLayout: 'auto',
-            width: '100%',
-          }}
-        />
+      <Box sx={{ width: '85vw', marginLeft: 'calc(-43vw + 50%)', marginRight: 'calc(-40vw + 50%)', overflowX: 'hidden' }}>
+        <Tabla2 columns={columns} data={empresasPaginaActual()} sx={{ tableLayout: 'auto', width: '100%' }} />
       </Box>
-            
       <Paginacion
         pagina={pagina}
         setPagina={setPagina}
@@ -312,4 +223,4 @@ const ListadoEmpresas = () => {
   );
 };
 
-export {ListadoEmpresas};
+export { ListadoEmpresas };

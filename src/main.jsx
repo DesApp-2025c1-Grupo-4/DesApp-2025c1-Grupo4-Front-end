@@ -5,6 +5,8 @@ import AppRoutes from './AppRouter';
 import { ThemeProvider } from '@mui/material/styles';
 import customMuiTheme from './config/customMuiTheme';
 import './assets/css/styles.css';
+import { Buffer } from 'buffer';
+window.Buffer = Buffer; 
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

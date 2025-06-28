@@ -1,12 +1,13 @@
 import { 
   Grid, InputLabel, TextField, Box, Typography, FormGroup, FormControlLabel, Checkbox, MenuItem 
 } from '@mui/material';
-import { grey } from "@mui/material/colors";
 import ErrorText from '../ErrorText';
 
+// Constantes para opciones del formulario
 const TIPOS_DEPOSITO = ['Propio', 'Tercerizado'];
-const DIAS_SEMANA = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes','sabado','domingo'];
+const DIAS_SEMANA = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
 
+// Componente reutilizable para inputs del formulario
 const FormInput = ({ 
   label, 
   name, 
@@ -20,10 +21,8 @@ const FormInput = ({
   children,
   placeholder
 }) => (
-  <Box sx={{ mb: 2 }}>
-    <InputLabel required={required} sx={{ color: grey[700], fontWeight: 'bold', mb: 0.5 }}>
-      {label}
-    </InputLabel>
+  <Box>
+    <InputLabel required={required}>{label}</InputLabel>
     <TextField
       fullWidth
       size="small"
@@ -35,12 +34,6 @@ const FormInput = ({
       type={type}
       select={select}
       placeholder={placeholder}
-      sx={{
-        '& .MuiOutlinedInput-root': {
-          borderRadius: 2,
-          '& fieldset': { borderColor: grey[300] },
-        }
-      }}
     >
       {select ? children : null}
     </TextField>
@@ -48,25 +41,16 @@ const FormInput = ({
   </Box>
 );
 
-const DepositoForm = ({ 
-  formData = {}, 
-  handleChange, 
-  handleBlur, 
-  errors, 
-  isEditing = false 
-}) => {
-  // Inicializo horarios seguro para evitar errores si no viene definido
+// Componente para el formulario de Depósito
+const DepositoForm = ({ formData = {}, handleChange, handleBlur, errors }) => {
+  // Datos de horarios con valores por defecto
   const horarios = formData.horarios || { dias: [], desde: '', hasta: '' };
 
-  // Handler para manejar cambios en los días seleccionados
+  // Manejador para días de horario
   const handleDiaChange = (dia) => {
-    const diasActuales = horarios.dias || [];
-    let nuevosDias;
-    if (diasActuales.includes(dia)) {
-      nuevosDias = diasActuales.filter(d => d !== dia);
-    } else {
-      nuevosDias = [...diasActuales, dia];
-    }
+    const nuevosDias = horarios.dias.includes(dia)
+      ? horarios.dias.filter(d => d !== dia)
+      : [...horarios.dias, dia];
     handleChange({
       target: {
         name: 'horarios',
@@ -75,36 +59,22 @@ const DepositoForm = ({
     });
   };
 
-  const validateHorarios = (horarios) => {
-    if (!horarios.desde || !horarios.hasta) return true;
-    const [fromHours, fromMinutes] = horarios.desde.split(':').map(Number);
-    const [toHours, toMinutes] = horarios.hasta.split(':').map(Number);
-    return toHours > fromHours || (toHours === fromHours && toMinutes > fromMinutes);
-  };
-
-
+  // Manejador para horas de horario
   const handleHorarioTimeChange = (field, value) => {
-  const newHorarios = { ...horarios, [field]: value };
-  handleChange({ target: { name: 'horarios', value: newHorarios } });
-};
-
-  const safeFormData = {
-    tipo: formData.tipo || '',
-    nombreContacto: formData.nombreContacto || '',
-    apellidoContacto: formData.apellidoContacto || '',
-    telefonoContacto: formData.telefonoContacto || '',
-    direccion: formData.direccion || '',
-    provincia: formData.provincia || '',
-    ciudad: formData.ciudad || '',
-    pais: formData.pais || '',
+    handleChange({ 
+      target: { 
+        name: 'horarios', 
+        value: { ...horarios, [field]: value } 
+      } 
+    });
   };
 
   return (
     <Box>
       <Grid container spacing={3}>
-        {/* Columna 1: Información del Depósito */}
+        {/* Sección: Información del Depósito */}
         <Grid item xs={12} md={4}>
-          <Typography variant="subtitle1" color="primary" sx={{ mb: 2, fontWeight: 'bold' }}>
+          <Typography variant="subtitle1" className="formSectionTitle">
             Información del Depósito
           </Typography>
           
@@ -112,7 +82,7 @@ const DepositoForm = ({
             label="Tipo de Depósito" 
             name="tipo" 
             required 
-            value={safeFormData.tipo} 
+            value={formData.tipo || ''} 
             onChange={handleChange} 
             onBlur={handleBlur} 
             error={errors.tipo}
@@ -124,10 +94,10 @@ const DepositoForm = ({
             ))}
           </FormInput>
 
-          <Typography variant="subtitle2" sx={{ mt: 1, fontWeight: 'bold' }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
             Días de Horario *
           </Typography>
-          <FormGroup row sx={{ mb: errors.horarios?.dias ? 0 : 2 }}>
+          <FormGroup row>
             {DIAS_SEMANA.map(dia => (
               <FormControlLabel
                 key={dia}
@@ -135,7 +105,6 @@ const DepositoForm = ({
                   <Checkbox
                     checked={horarios.dias.includes(dia)}
                     onChange={() => handleDiaChange(dia)}
-                    name={`dia-${dia}`}
                   />
                 }
                 label={dia.charAt(0).toUpperCase() + dia.slice(1)}
@@ -144,45 +113,40 @@ const DepositoForm = ({
           </FormGroup>
           {errors.horarios?.dias && <ErrorText>{errors.horarios.dias}</ErrorText>}
 
-          <TextField
-            label="Desde"
-            type="time"
-            name="horarios.desde"
-            value={horarios.desde || ''}
-            onChange={e => handleHorarioTimeChange('desde', e.target.value)}
-            onBlur={handleBlur}  
-            InputLabelProps={{ shrink: true }}
-            inputProps={{ step: 300 }}
-            error={!!errors.horarios?.desde}
-            helperText={errors.horarios?.desde}
-            sx={{ mt: 2, mr: 1, width: 120 }}
-          />
-
-          <TextField
-            label="Hasta"
-            type="time"
-            name="horarios.hasta"
-            value={horarios.hasta || ''}
-            onChange={e => handleHorarioTimeChange('hasta', e.target.value)}
-            onBlur={handleBlur} 
-            InputLabelProps={{ shrink: true }}
-            inputProps={{ step: 300 }}
-            error={!!errors.horarios?.hasta}
-            helperText={errors.horarios?.hasta}
-            sx={{ mt: 2, width: 120 }}
-          />
+          <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
+            <TextField
+              label="Desde"
+              type="time"
+              value={horarios.desde || ''}
+              onChange={(e) => handleHorarioTimeChange('desde', e.target.value)}
+              InputLabelProps={{ shrink: true }}
+              error={!!errors.horarios?.desde}
+              helperText={errors.horarios?.desde}
+              sx={{ width: 120 }}
+            />
+            <TextField
+              label="Hasta"
+              type="time"
+              value={horarios.hasta || ''}
+              onChange={(e) => handleHorarioTimeChange('hasta', e.target.value)}
+              InputLabelProps={{ shrink: true }}
+              error={!!errors.horarios?.hasta}
+              helperText={errors.horarios?.hasta}
+              sx={{ width: 120 }}
+            />
+          </Box>
         </Grid>
 
-        {/* Columna 2: Información de Contacto */}
+        {/* Sección: Información de Contacto */}
         <Grid item xs={12} md={4}>
-          <Typography variant="subtitle1" color="primary" sx={{ mb: 2, fontWeight: 'bold' }}>
+          <Typography variant="subtitle1" className="formSectionTitle">
             Información de Contacto
           </Typography>
           <FormInput 
             label="Nombre" 
             name="nombreContacto" 
             required 
-            value={safeFormData.nombreContacto} 
+            value={formData.nombreContacto || ''} 
             onChange={handleChange} 
             onBlur={handleBlur} 
             error={errors.nombreContacto} 
@@ -191,7 +155,7 @@ const DepositoForm = ({
             label="Apellido" 
             name="apellidoContacto" 
             required 
-            value={safeFormData.apellidoContacto} 
+            value={formData.apellidoContacto || ''} 
             onChange={handleChange} 
             onBlur={handleBlur} 
             error={errors.apellidoContacto} 
@@ -200,7 +164,7 @@ const DepositoForm = ({
             label="Teléfono" 
             name="telefonoContacto" 
             required 
-            value={safeFormData.telefonoContacto} 
+            value={formData.telefonoContacto || ''} 
             onChange={handleChange} 
             onBlur={handleBlur} 
             error={errors.telefonoContacto} 
@@ -208,16 +172,16 @@ const DepositoForm = ({
           />
         </Grid>
 
-        {/* Columna 3: Ubicación */}
+        {/* Sección: Ubicación */}
         <Grid item xs={12} md={4}>
-          <Typography variant="subtitle1" color="primary" sx={{ mb: 2, fontWeight: 'bold' }}>
+          <Typography variant="subtitle1" className="formSectionTitle">
             Ubicación
           </Typography>
           <FormInput 
             label="Direccion" 
             name="direccion" 
             required 
-            value={safeFormData.direccion} 
+            value={formData.direccion || ''} 
             onChange={handleChange} 
             onBlur={handleBlur} 
             error={errors.direccion} 
@@ -226,7 +190,7 @@ const DepositoForm = ({
             label="Ciudad" 
             name="ciudad" 
             required 
-            value={safeFormData.ciudad} 
+            value={formData.ciudad || ''} 
             onChange={handleChange} 
             onBlur={handleBlur} 
             error={errors.ciudad} 
@@ -235,7 +199,7 @@ const DepositoForm = ({
             label="Provincia" 
             name="provincia" 
             required 
-            value={safeFormData.provincia} 
+            value={formData.provincia || ''} 
             onChange={handleChange} 
             onBlur={handleBlur} 
             error={errors.provincia} 
@@ -244,11 +208,51 @@ const DepositoForm = ({
             label="País" 
             name="pais" 
             required 
-            value={safeFormData.pais} 
+            value={formData.pais || ''} 
             onChange={handleChange} 
             onBlur={handleBlur} 
             error={errors.pais} 
           />
+           <FormInput 
+  label="Coordenadas (lat, long)" 
+  name="coordenadas" 
+  required
+  value={
+    formData.coordenadasRaw 
+      ? `${formData.coordenadasRaw.coordinates[1]}, ${formData.coordenadasRaw.coordinates[0]}`
+      : (formData.coordenadas || '')
+  }
+  onChange={(e) => {
+    handleChange({
+      target: {
+        name: 'coordenadas',
+        value: e.target.value
+      }
+    });
+    // Limpiar error si existe
+    if (errors.coordenadas) {
+      handleBlur({ target: { name: 'coordenadas' } });
+    }
+  }}
+  onBlur={(e) => {
+    // Validar formato
+    if (e.target.value && !COORDENADAS_REGEX.test(e.target.value)) {
+      handleChange({
+        target: {
+          name: 'errors',
+          value: {
+            ...errors,
+            coordenadas: 'Formato inválido. Ejemplo: -34.603722, -58.381592'
+          }
+        }
+      });
+    }
+    handleBlur(e);
+  }}
+  error={errors.coordenadas}
+  placeholder="Ejemplo: -34.603722, -58.381592"
+/>
+
         </Grid>
       </Grid>
     </Box>

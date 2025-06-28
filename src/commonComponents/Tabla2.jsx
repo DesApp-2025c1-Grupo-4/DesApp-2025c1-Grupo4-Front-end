@@ -50,7 +50,7 @@ const Tabla2 = ({
                     const value = row[column.id];
                     return (
                       <TableCell key={column.id} align={column.align || 'left'}>
-                        {column.render ? column.render(value, row) : value}
+                        {column.render ? column.render(value || '', row) : (value || '')}
                       </TableCell>
                     );
                   })}
