@@ -29,7 +29,6 @@ const ListadoDeViajes = () => {
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [isLoadingAction, setIsLoadingAction] = useState(false);
 
-  // Función para formatear fechas
   const formatDate = (dateString) => {
     if (!dateString || dateString === 'Sin fecha') return 'Sin fecha';
     
@@ -54,13 +53,13 @@ const ListadoDeViajes = () => {
     }
   };
 
-  // Obtener viajes del backend
   useEffect(() => {
     const fetchViajes = async () => {
       try {
         const response = await axios.get('/api/viajes', {
           params: {
-            populate: 'empresa_asignada,chofer_asignado,vehiculo_asignado,deposito_origen,deposito_destino'
+            populate: 'empresa_asignada,chofer_asignado,vehiculo_asignado,deposito_origen,deposito_destino',
+            activo: true
           }
         });
 
@@ -95,29 +94,57 @@ const ListadoDeViajes = () => {
     fetchViajes();
   }, []);
 
-  // Filtrar viajes
   useEffect(() => {
     const filtered = viajes.filter(viaje => {
-      if (!filtros.busqueda) return true;
+      // Search filter (mantener igual)
       
-      const searchTerm = filtros.busqueda.toLowerCase();
-      switch (filtros.criterio) {
-        case 'Empresa transportista':
-          return (viaje.empresaTransportista || '').toLowerCase().includes(searchTerm);
-        case 'Chofer':
-          return (viaje.nombreChofer || '').toLowerCase().includes(searchTerm);
-        case 'Vehículo':
-          return (viaje.patenteVehiculo || '').toLowerCase().includes(searchTerm);
-        default:
-          return true;
+      // Date filter
+      if (filtros.fechaDesde) {
+        const fechaInicioStr = viaje.inicio_viaje;
+        if (!fechaInicioStr || fechaInicioStr === 'Sin fecha') return false;
+        
+        try {
+          const [datePart, timePart] = fechaInicioStr.split(' ');
+          const [day, month, year] = datePart.split('/');
+          const fechaInicio = new Date(`${year}-${month}-${day}`);
+          const filtroDesde = new Date(filtros.fechaDesde);
+          
+          if (fechaInicio < filtroDesde) return false;
+        } catch {
+          return false;
+        }
       }
+      
+      if (filtros.fechaHasta) {
+        const fechaFinStr = viaje.fin_viaje;
+        if (!fechaFinStr || fechaFinStr === 'Sin fecha') return false;
+        
+        try {
+          const [datePart, timePart] = fechaFinStr.split(' ');
+          const [day, month, year] = datePart.split('/');
+          const fechaFin = new Date(`${year}-${month}-${day}`);
+          const filtroHasta = new Date(filtros.fechaHasta);
+          
+          if (fechaFin > filtroHasta) return false;
+        } catch {
+          return false;
+        }
+      }
+      
+      return true;
     });
+    
     setViajesFiltrados(filtered);
     setPagina(1);
   }, [filtros, viajes]);
 
   const handleClear = () => {
-    setFiltros({ criterio: 'Empresa transportista', fechaDesde: '', fechaHasta: '', busqueda: '' });
+    setFiltros({ 
+      criterio: 'Empresa transportista', 
+      fechaDesde: '', 
+      fechaHasta: '', 
+      busqueda: '' 
+    });
     setViajesFiltrados(viajes);
     setPagina(1);
   };
@@ -128,114 +155,112 @@ const ListadoDeViajes = () => {
   };
 
   const handleOpenPopup = async (type, viaje = null) => {
-  setPopupType(type);
-  
-  if (type === 'modificar-viaje' && viaje) {
-    try {
-      // Obtener datos frescos del viaje (sin populate adicional)
-      const response = await axios.get(`/api/viajes/${viaje._id}`);
-      // Usar los datos transformados que ya vienen del listado
-      const viajeExistente = viajes.find(v => v._id === viaje._id);
+    setPopupType(type);
+    
+    if (type === 'modificar-viaje' && viaje) {
+      try {
+        const response = await axios.get(`/api/viajes/${viaje._id}`, {
+          params: { 
+            populate: 'deposito_origen,deposito_destino,empresa_asignada,chofer_asignado,vehiculo_asignado',
+            activo: true
+          }
+        });
+        
+        setSelectedViaje({
+          _id: response.data._id,
+          depositoOrigen: response.data.deposito_origen,
+          depositoDestino: response.data.deposito_destino,
+          fechaInicio: response.data.inicio_viaje,
+          fechaFin: response.data.fin_viaje,
+          empresaTransportista: response.data.empresa_asignada,
+          choferAsignado: response.data.chofer_asignado,
+          vehiculoAsignado: response.data.vehiculo_asignado,
+          tipoViaje: response.data.tipo_viaje
+        });
+      } catch (error) {
+        console.error('Error loading viaje data:', error);
+      }
+    } else if (type === 'nuevo-viaje') {
       setSelectedViaje({
-      _id: viaje._id,
-      depositoOrigen: viaje.deposito_origen?._id || viaje.deposito_origen,
-      depositoDestino: viaje.deposito_destino?._id || viaje.deposito_destino,
-      fechaInicio: viaje.inicio_viaje,
-      fechaFin: viaje.fin_viaje,
-      empresaTransportista: viaje.empresa_asignada?._id || viaje.empresa_asignada,
-      choferAsignado: viaje.chofer_asignado?._id || viaje.chofer_asignado,
-      vehiculoAsignado: viaje.vehiculo_asignado?._id || viaje.vehiculo_asignado,
-      tipoViaje: viaje.tipo_viaje
-    });
-    } catch (error) {
-      console.error('Error al cargar datos del viaje:', error);
-      // Usar datos locales como fallback
-      setSelectedViaje({
-        _id: viaje._id,
-        depositoOrigen: viaje.deposito_origen,
-        depositoDestino: viaje.deposito_destino,
-        fechaInicio: viaje.inicio_viaje,
-        fechaFin: viaje.fin_viaje,
-        empresaTransportista: viaje.empresa_asignada,
-        choferAsignado: viaje.chofer_asignado,
-        vehiculoAsignado: viaje.vehiculo_asignado,
-        tipoViaje: viaje.tipo_viaje
+        idViaje: '',
+        depositoOrigen: null,
+        depositoDestino: null,
+        fechaInicio: '',
+        fechaFin: '',
+        empresaTransportista: null,
+        choferAsignado: null,
+        vehiculoAsignado: null,
+        tipoViaje: ''
       });
+    } else if (type === 'confirmar-eliminar') {
+      setSelectedViaje(viaje);
     }
-  } else {
-    setSelectedViaje({
-      idViaje: '',
-      depositoOrigen: null,
-      depositoDestino: null,
-      fechaInicio: '',
-      fechaFin: '',
-      empresaTransportista: null,
-      choferAsignado: null,
-      vehiculoAsignado: null,
-      tipoViaje: ''
-    });
-  }
-  
-  setPopupOpen(true);
-};
-
-  const handleDeleteViaje = async () => {
-    try {
-      setIsLoadingAction(true);
-      await axios.patch(`/api/viajes/${selectedViaje._id}/delete`);
-      
-      setViajes(prev => prev.filter(v => v._id !== selectedViaje._id));
-      setViajesFiltrados(prev => prev.filter(v => v._id !== selectedViaje._id));
-      
-      setSnackbarMessage('Viaje eliminado correctamente');
-      setSnackbarOpen(true);
-      setPopupOpen(false);
-    } catch (error) {
-      console.error('Error al eliminar viaje:', error);
-      setSnackbarMessage('Error al eliminar el viaje');
-      setSnackbarOpen(true);
-    } finally {
-      setIsLoadingAction(false);
-    }
+    
+    setPopupOpen(true);
   };
+
+const handleDeleteViaje = async (id) => {
+  try {
+    setIsLoadingAction(true);
+
+    await axios.patch(`/api/viajes/${id}`, {
+      estado: 'cancelado',
+    });
+
+    setViajes(prev => prev.filter(v => v._id !== id));
+    setViajesFiltrados(prev => prev.filter(v => v._id !== id));
+
+    setSnackbarMessage('Viaje eliminado correctamente');
+    setSnackbarOpen(true);
+    setPopupOpen(false);
+  } catch (error) {
+    console.error('Error al eliminar viaje:', error);
+    setSnackbarMessage('Error al eliminar el viaje');
+    setSnackbarOpen(true);
+  } finally {
+    setIsLoadingAction(false);
+  }
+};
 
   const handleUpdateViaje = async (viajeActualizado) => {
     try {
-    setIsLoadingAction(true);
-    
-    // Función para convertir formato de fecha
-    const convertToBackendFormat = (dateTimeString) => {
-      if (!dateTimeString) return '';
-      const date = new Date(dateTimeString);
-      if (isNaN(date.getTime())) return '';
+      setIsLoadingAction(true);
       
-      const day = String(date.getDate()).padStart(2, '0');
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const year = date.getFullYear();
-      const hours = String(date.getHours()).padStart(2, '0');
-      const minutes = String(date.getMinutes()).padStart(2, '0');
-      
-      return `${day}/${month}/${year} ${hours}:${minutes}`;
-    };
+      const convertToBackendFormat = (dateTimeString) => {
+        if (!dateTimeString) return '';
+        const date = new Date(dateTimeString);
+        if (isNaN(date.getTime())) return '';
+        
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = date.getFullYear();
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        
+        return `${day}/${month}/${year} ${hours}:${minutes}`;
+      };
 
-    const payload = {
-      ...viajeActualizado,
-      inicio_viaje: convertToBackendFormat(viajeActualizado.fechaInicio),
-      fin_viaje: convertToBackendFormat(viajeActualizado.fechaFin),
-      deposito_origen: viajeActualizado.depositoOrigen?._id || viajeActualizado.depositoOrigen,
-      deposito_destino: viajeActualizado.depositoDestino?._id || viajeActualizado.depositoDestino,
-      empresa_asignada: viajeActualizado.empresaTransportista?._id || viajeActualizado.empresaTransportista,
-      chofer_asignado: viajeActualizado.choferAsignado?._id || viajeActualizado.choferAsignado,
-      vehiculo_asignado: viajeActualizado.vehiculoAsignado?._id || viajeActualizado.vehiculoAsignado,
-      tipo_viaje: viajeActualizado.tipoViaje,
-      estado: 'planificado'
-    };
-    await axios.put(`/api/viajes/${viajeActualizado._id}`, payload);
-    const response = await axios.get('/api/viajes', {
-      params: {
-        populate: 'empresa_asignada,chofer_asignado,vehiculo_asignado,deposito_origen,deposito_destino'
-      }
-    });
+      const payload = {
+        deposito_origen: viajeActualizado.depositoOrigen?._id || viajeActualizado.depositoOrigen,
+        deposito_destino: viajeActualizado.depositoDestino?._id || viajeActualizado.depositoDestino,
+        inicio_viaje: convertToBackendFormat(viajeActualizado.fechaInicio),
+        fin_viaje: convertToBackendFormat(viajeActualizado.fechaFin),
+        empresa_asignada: viajeActualizado.empresaTransportista?._id || viajeActualizado.empresaTransportista,
+        chofer_asignado: viajeActualizado.choferAsignado?._id || viajeActualizado.choferAsignado,
+        vehiculo_asignado: viajeActualizado.vehiculoAsignado?._id || viajeActualizado.vehiculoAsignado,
+        tipo_viaje: viajeActualizado.tipoViaje,
+        estado: 'planificado'
+      };
+      
+      await axios.put(`/api/viajes/${viajeActualizado._id}`, payload);
+      
+      const response = await axios.get('/api/viajes', {
+        params: {
+          populate: 'empresa_asignada,chofer_asignado,vehiculo_asignado,deposito_origen,deposito_destino',
+          activo: true
+        }
+      });
+      
       const datosTransformados = response.data.map(item => ({
         ...item,
         guid_viaje: item.guid_vieje || item._id,
@@ -252,6 +277,7 @@ const ListadoDeViajes = () => {
         destino: item.deposito_destino?.localizacion?.direccion || 'Sin destino',
         estado: item.estado || 'planificado'
       }));
+      
       setViajes(datosTransformados);
       setViajesFiltrados(datosTransformados);
       setSnackbarMessage('Viaje actualizado correctamente');
@@ -266,94 +292,93 @@ const ListadoDeViajes = () => {
     }
   };
 
-const handleCreateViaje = async (nuevoViaje) => {
-  try {
-    setIsLoadingAction(true);
-    const camposRequeridos = {
-      depositoOrigen: 'Depósito origen',
-      depositoDestino: 'Depósito destino',
-      empresaTransportista: 'Empresa transportista',
-      choferAsignado: 'Chofer asignado',
-      vehiculoAsignado: 'Vehículo asignado'
-    };
+  const handleCreateViaje = async (nuevoViaje) => {
+    try {
+      setIsLoadingAction(true);
+      
+      const camposRequeridos = {
+        depositoOrigen: 'Depósito origen',
+        depositoDestino: 'Depósito destino',
+        empresaTransportista: 'Empresa transportista',
+        choferAsignado: 'Chofer asignado',
+        vehiculoAsignado: 'Vehículo asignado'
+      };
 
-    for (const [campo, nombre] of Object.entries(camposRequeridos)) {
-      if (!nuevoViaje[campo]?._id) {
-        throw new Error(`Debe seleccionar un ${nombre} válido`);
+      for (const [campo, nombre] of Object.entries(camposRequeridos)) {
+        if (!nuevoViaje[campo]?._id) {
+          throw new Error(`Debe seleccionar un ${nombre} válido`);
+        }
       }
+
+      const convertToBackendFormat = (dateTimeString) => {
+        if (!dateTimeString) return '';
+        const date = new Date(dateTimeString);
+        if (isNaN(date.getTime())) return '';
+        
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = date.getFullYear();
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        
+        return `${day}/${month}/${year} ${hours}:${minutes}`;
+      };
+
+      const payload = {
+        deposito_origen: nuevoViaje.depositoOrigen._id,
+        deposito_destino: nuevoViaje.depositoDestino._id,
+        inicio_viaje: convertToBackendFormat(nuevoViaje.fechaInicio),
+        fin_viaje: convertToBackendFormat(nuevoViaje.fechaFin),
+        empresa_asignada: nuevoViaje.empresaTransportista._id,
+        chofer_asignado: nuevoViaje.choferAsignado._id,
+        vehiculo_asignado: nuevoViaje.vehiculoAsignado._id,
+        tipo_viaje: nuevoViaje.tipoViaje || 
+                   (nuevoViaje.depositoOrigen?.localizacion?.pais === 'Argentina' && 
+                    nuevoViaje.depositoDestino?.localizacion?.pais === 'Argentina' ? 'Nacional' : 'Internacional'),
+        estado: 'planificado',
+        activo: true
+      };
+
+      await axios.post('/api/viajes', payload);
+      
+      const response = await axios.get('/api/viajes', {
+        params: { 
+          populate: 'empresa_asignada,chofer_asignado,vehiculo_asignado,deposito_origen,deposito_destino',
+          activo: true
+        }
+      });
+
+      const datosTransformados = response.data.map(item => ({
+        ...item,
+        guid_viaje: item.guid_vieje || item._id,
+        numeroViaje: item.guid_vieje?.toString() || item._id?.toString() || 'N/A',
+        empresaTransportista: item.empresa_asignada?.nombre_empresa || 'Sin empresa',
+        nombreChofer: `${item.chofer_asignado?.nombre || ''} ${item.chofer_asignado?.apellido || ''}`.trim() || 'Sin chofer',
+        patenteVehiculo: item.vehiculo_asignado?.patente || 'Sin patente',
+        fechaInicio: formatDate(item.inicio_viaje),
+        fechaFin: formatDate(item.fin_viaje),
+        tipo_viaje: item.tipo_viaje || 
+                  (item.deposito_origen?.localizacion?.pais === 'Argentina' && 
+                    item.deposito_destino?.localizacion?.pais === 'Argentina' ? 'Nacional' : 'Internacional'),
+        origen: item.deposito_origen?.localizacion?.direccion || 'Sin origen',
+        destino: item.deposito_destino?.localizacion?.direccion || 'Sin destino',
+        estado: item.estado || 'planificado'
+      }));
+
+      setViajes(datosTransformados);
+      setViajesFiltrados(datosTransformados);
+      
+      setSnackbarMessage('Viaje creado correctamente');
+      setSnackbarOpen(true);
+      setPopupOpen(false);
+    } catch (error) {
+      console.error('Error:', error.response?.data || error.message);
+      setSnackbarMessage(error.response?.data?.mensaje || error.message);
+      setSnackbarOpen(true);
+    } finally {
+      setIsLoadingAction(false);
     }
-
-    // Función para convertir fechas al formato del backend
-    const convertToBackendFormat = (dateTimeString) => {
-      if (!dateTimeString) return '';
-      const date = new Date(dateTimeString);
-      if (isNaN(date.getTime())) return '';
-      
-      const day = String(date.getDate()).padStart(2, '0');
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const year = date.getFullYear();
-      const hours = String(date.getHours()).padStart(2, '0');
-      const minutes = String(date.getMinutes()).padStart(2, '0');
-      
-      return `${day}/${month}/${year} ${hours}:${minutes}`;
-    };
-
-    // Prepara el payload para POST (solo IDs, no objetos completos)
-    const payload = {
-      deposito_origen: nuevoViaje.depositoOrigen._id || nuevoViaje.depositoOrigen,
-      deposito_destino: nuevoViaje.depositoDestino._id || nuevoViaje.depositoDestino,
-      inicio_viaje: convertToBackendFormat(nuevoViaje.fechaInicio),
-      fin_viaje: convertToBackendFormat(nuevoViaje.fechaFin),
-      empresa_asignada: nuevoViaje.empresaTransportista._id || nuevoViaje.empresaTransportista,
-      chofer_asignado: nuevoViaje.choferAsignado._id || nuevoViaje.choferAsignado,
-      vehiculo_asignado: nuevoViaje.vehiculoAsignado._id || nuevoViaje.vehiculoAsignado,
-      tipo_viaje: nuevoViaje.tipoViaje || 
-                 (nuevoViaje.depositoOrigen?.localizacion?.pais === 'Argentina' && 
-                  nuevoViaje.depositoDestino?.localizacion?.pais === 'Argentina' ? 'Nacional' : 'Internacional'),
-      estado: 'planificado'
-    };
-
-    console.log('Payload verificado:', payload);
-
-    await axios.post('/api/viajes', payload);
-    
-    // Actualiza el listado después de crear
-    const response = await axios.get('/api/viajes', {
-      params: { populate: 'empresa_asignada,chofer_asignado,vehiculo_asignado,deposito_origen,deposito_destino' }
-    });
-
-    const datosTransformados = response.data.map(item => ({
-      ...item,
-      guid_viaje: item.guid_vieje || item._id,
-      numeroViaje: item.guid_vieje?.toString() || item._id?.toString() || 'N/A',
-      empresaTransportista: item.empresa_asignada?.nombre_empresa || 'Sin empresa',
-      nombreChofer: `${item.chofer_asignado?.nombre || ''} ${item.chofer_asignado?.apellido || ''}`.trim() || 'Sin chofer',
-      patenteVehiculo: item.vehiculo_asignado?.patente || 'Sin patente',
-      fechaInicio: formatDate(item.inicio_viaje),
-      fechaFin: formatDate(item.fin_viaje),
-      tipo_viaje: item.tipo_viaje || 
-                (item.deposito_origen?.localizacion?.pais === 'Argentina' && 
-                  item.deposito_destino?.localizacion?.pais === 'Argentina' ? 'Nacional' : 'Internacional'),
-      origen: item.deposito_origen?.localizacion?.direccion || 'Sin origen',
-      destino: item.deposito_destino?.localizacion?.direccion || 'Sin destino',
-      estado: item.estado || 'planificado'
-    }));
-
-    setViajes(datosTransformados);
-    setViajesFiltrados(datosTransformados);
-    
-    setSnackbarMessage('Viaje creado correctamente');
-    setSnackbarOpen(true);
-    setPopupOpen(false);
-  } catch (error) {
-    console.error('Error:', error.response?.data || error.message);
-    setSnackbarMessage(error.response?.data?.mensaje || error.message);
-    setSnackbarOpen(true);
-  } finally {
-    setIsLoadingAction(false);
-  }
-};
-  
+  };
 
   const columns = [
     { id: 'numeroViaje', label: 'Número', minWidth: 80, align: 'left' },
@@ -421,21 +446,15 @@ const handleCreateViaje = async (nuevoViaje) => {
         onClose={() => setPopupOpen(false)}
         page={popupType}
         selectedItem={selectedViaje}
-        FormComponent={popupType === 'modificar-viaje' ? ViajeForm : null}
-        onConfirm={popupType === 'confirmar-eliminar' ? handleDeleteViaje : null}
-        onSubmit={
-          popupType === 'modificar-viaje' ? handleUpdateViaje : 
-          popupType === 'nuevo-viaje' ? handleCreateViaje : 
-          null
-        }
+        onSuccess={popupType === 'modificar-viaje' ? handleUpdateViaje : 
+                  popupType === 'nuevo-viaje' ? handleCreateViaje : null}
+        onDelete={popupType === 'confirmar-eliminar' ? handleDeleteViaje : null}
         buttonName={
           popupType === 'modificar-viaje' ? 'Guardar Cambios' :
           popupType === 'nuevo-viaje' ? 'Crear Viaje' :
           popupType === 'confirmar-eliminar' ? 'Eliminar Viaje' :
           'Aceptar'
         }
-        message={popupType === 'confirmar-eliminar' ? '¿Está seguro que desea eliminar este viaje?' : ''}
-        isLoading={isLoadingAction}
       />
 
       <Snackbar
@@ -451,7 +470,7 @@ const handleCreateViaje = async (nuevoViaje) => {
           setFiltros={setFiltros} 
           mode="viajes"
           onClear={handleClear}
-          onBuscar={() => setFiltros(prev => ({...prev}))}
+          onSearch={() => setFiltros(prev => ({...prev}))}
         />
       </Box>
 

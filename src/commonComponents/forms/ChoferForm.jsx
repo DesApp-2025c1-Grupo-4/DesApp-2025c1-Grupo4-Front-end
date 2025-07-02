@@ -2,7 +2,7 @@ import { Grid, TextField, Autocomplete, Box, Typography, IconButton, Modal, Butt
 import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { useEffect, useState } from 'react';
-import { Search, Business, DirectionsCar, Close, Upload } from '@mui/icons-material';
+import { Search, Business, DirectionsCar, Close, Upload, Visibility } from '@mui/icons-material';
 import { grey } from '@mui/material/colors';
 import FieldContainer from '../formsComponents/FieldContainer';
 import IconButtonStyled from '../formsComponents/IconButtonStyled';
@@ -27,24 +27,92 @@ const ChoferForm = ({ formData, handleChange, handleBlur, errors, isEditing = fa
     content: null
   });
   const [licenciaFile, setLicenciaFile] = useState(null);
+const [existingFileName, setExistingFileName] = useState(
+  formData.licenciaDocumento?.fileName || ''
+);
+
+
+useEffect(() => {
+  if (formData.licenciaDocumento) {
+    // Asegurar que la estructura del documento sea correcta
+    const doc = formData.licenciaDocumento;
+    if (doc.fileName) {
+      setExistingFileName(doc.fileName);
+    } else {
+      setExistingFileName('');
+    }
+
+    // Asegurar que data tenga la estructura correcta
+    if (doc.data && !doc.data.type) {
+      handleChange({
+        target: {
+          name: 'licenciaDocumento',
+          value: {
+            ...doc,
+            data: {
+              type: 'Buffer',
+              data: doc.data.data || []
+            }
+          }
+        }
+      });
+    }
+  } else {
+    setExistingFileName('');
+  }
+
+  // Manejar fecha de expiración
+  if (formData.licenciaExpiracion && typeof formData.licenciaExpiracion === 'string') {
+    const [day, month, year] = formData.licenciaExpiracion.split('/');
+    if (day && month && year) {
+      const date = new Date(`${year}-${month}-${day}`);
+      if (!isNaN(date.getTime())) {
+        handleChange({ target: { name: 'licenciaExpiracion', value: date } });
+      }
+    }
+  }
+}, [formData.licenciaDocumento, formData.licenciaExpiracion]);
 
   useEffect(() => {
     if (modalStates.empresas && empresas.length === 0) {
       setLoadingStates(prev => ({ ...prev, empresas: true }));
       axios.get('/api/empresas')
-        .then(res => setEmpresas(res.data))
+        .then(res => {
+          const empresasActivas = res.data.filter(empresa => empresa.activo !== false);
+          setEmpresas(empresasActivas);
+        })
         .finally(() => setLoadingStates(prev => ({ ...prev, empresas: false })));
     }
   }, [modalStates.empresas]);
 
+
   useEffect(() => {
-    if (modalStates.vehiculos && vehiculosDisponibles.length === 0) {
+    if (modalStates.vehiculos) {
       setLoadingStates(prev => ({ ...prev, vehiculos: true }));
-      axios.get('/api/vehiculos?activo=true')
-        .then(res => setVehiculosDisponibles(res.data))
+      
+      let url = '/api/vehiculos';
+      const params = { activo: true };
+      
+      if (formData.empresa?._id) {
+        params.empresa = formData.empresa._id;
+      }
+
+      axios.get(url, { params })
+        .then(res => {
+          let vehiculosFiltrados = res.data;
+          if (params.activo) {
+            vehiculosFiltrados = vehiculosFiltrados.filter(v => v.activo !== false);
+          }
+          if (params.empresa) {
+            vehiculosFiltrados = vehiculosFiltrados.filter(v => 
+              v.empresa && (v.empresa._id === params.empresa || v.empresa === params.empresa)
+            );
+          }
+          setVehiculosDisponibles(vehiculosFiltrados);
+        })
         .finally(() => setLoadingStates(prev => ({ ...prev, vehiculos: false })));
     }
-  }, [modalStates.vehiculos]);
+  }, [modalStates.vehiculos, formData.empresa]);
 
   const onEmpresaSelect = (empresa) => {
     handleChange({ 
@@ -86,29 +154,74 @@ const ChoferForm = ({ formData, handleChange, handleBlur, errors, isEditing = fa
 
 const handleFileChange = async (e) => {
   const file = e.target.files[0];
-  if (!file) return;
+  if (!file) {
+    setLicenciaFile(null);
+    setExistingFileName('');
+    handleChange({
+      target: {
+        name: 'licenciaDocumento',
+        value: null
+      }
+    });
+    return;
+  }
+
+  // Validaciones estrictas
+  if (file.size > 10 * 1024 * 1024) {
+    alert('El tamaño máximo permitido es 10MB');
+    return;
+  }
+
+  const validTypes = [
+    'application/pdf', 
+    'image/jpeg', 
+    'image/png',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+  ];
+
+  if (!validTypes.includes(file.type)) {
+    alert('Formato de archivo no válido. Use PDF, JPG, PNG o DOC');
+    return;
+  }
 
   setLicenciaFile(file);
+  setExistingFileName(file.name);
 
-  const reader = new FileReader();
-  reader.onload = (event) => {
-    const arrayBuffer = event.target.result;
-    const buffer = Buffer.from(new Uint8Array(arrayBuffer)); // Conversión a Buffer
-
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    
     handleChange({
       target: {
         name: 'licenciaDocumento',
         value: {
-          data: buffer, // Enviar el Buffer directamente
+          data: {
+            type: 'Buffer', // Añade este campo
+            data: Array.from(new Uint8Array(arrayBuffer))
+          },
           contentType: file.type,
           fileName: file.name,
-          size: file.size,
-        },
-      },
+          size: file.size
+        }
+      }
     });
-  };
-  reader.readAsArrayBuffer(file); // Leer como ArrayBuffer
+  } catch (error) {
+    console.error("Error al leer el archivo:", error);
+    alert('Error al procesar el archivo');
+  }
 };
+
+  const handleViewDocument = () => {
+    if (licenciaFile) {
+      const url = URL.createObjectURL(licenciaFile);
+      window.open(url, '_blank');
+    } else if (formData.licenciaDocumento?.data) {
+      const byteArray = new Uint8Array(formData.licenciaDocumento.data.data);
+      const blob = new Blob([byteArray], { type: formData.licenciaDocumento.contentType });
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank');
+    }
+  };
 
   const handleViewDetails = (item) => {
     let content;
@@ -177,7 +290,6 @@ const handleFileChange = async (e) => {
     <LocalizationProvider dateAdapter={AdapterDateFns}>
       <Box className="formContainer">
         <Grid container spacing={2}>
-          {/* Sección de información personal */}
           <Grid item xs={12} md={4}>
             <Typography variant="subtitle1" color="primary" sx={{ mb: 1, fontWeight: 'bold' }}>Información personal</Typography>
             {['nombre', 'apellido', 'cuil'].map((field) => (
@@ -196,21 +308,20 @@ const handleFileChange = async (e) => {
               </FieldContainer>
             ))}
             <FieldContainer label="Fecha de Nacimiento" error={errors.fechaNacimiento}>
-              <DatePicker
-                value={formData.fechaNacimiento || null}
-                onChange={(date) => handleChange({ target: { name: 'fechaNacimiento', value: date } })}
-                slotProps={{
-                  textField: {
-                    fullWidth: true,
-                    size: 'small',
-                    error: !!errors.fechaNacimiento
-                  }
-                }}
-              />
-            </FieldContainer>
+  <DatePicker
+    value={formData.fechaNacimiento instanceof Date ? formData.fechaNacimiento : null}
+    onChange={(date) => handleChange({ target: { name: 'fechaNacimiento', value: date } })}
+    slotProps={{
+      textField: {
+        fullWidth: true,
+        size: 'small',
+        error: !!errors.fechaNacimiento
+      }
+    }}
+  />
+</FieldContainer>
           </Grid>
 
-          {/* Sección de información laboral */}
           <Grid item xs={12} md={4}>
             <Typography variant="subtitle1" color="primary" sx={{ mb: 1, fontWeight: 'bold' }}>Información laboral</Typography>
 
@@ -245,7 +356,6 @@ const handleFileChange = async (e) => {
             </FieldContainer>
           </Grid>
 
-          {/* Sección de licencia */}
           <Grid item xs={12} md={4}>
             <Typography variant="subtitle1" color="primary" sx={{ mb: 1, fontWeight: 'bold' }}>Licencia de conducir</Typography>
 
@@ -274,18 +384,18 @@ const handleFileChange = async (e) => {
             </FieldContainer>
 
             <FieldContainer label="Fecha Expiración Licencia" error={errors.licenciaExpiracion}>
-              <DatePicker
-                value={formData.licenciaExpiracion || null}
-                onChange={(date) => handleChange({ target: { name: 'licenciaExpiracion', value: date } })}
-                slotProps={{
-                  textField: {
-                    fullWidth: true,
-                    size: 'small',
-                    error: !!errors.licenciaExpiracion
-                  }
-                }}
-              />
-            </FieldContainer>
+  <DatePicker
+    value={formData.licenciaExpiracion instanceof Date ? formData.licenciaExpiracion : null}
+    onChange={(date) => handleChange({ target: { name: 'licenciaExpiracion', value: date } })}
+    slotProps={{
+      textField: {
+        fullWidth: true,
+        size: 'small',
+        error: !!errors.licenciaExpiracion
+      }
+    }}
+  />
+</FieldContainer>
 
             <FieldContainer label="Documento de Licencia" error={errors.licenciaDocumento}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -304,17 +414,21 @@ const handleFileChange = async (e) => {
                   />
                 </Button>
                 <Typography variant="body2" sx={{ color: grey[600] }}>
-                  {licenciaFile?.name || (formData.licenciaDocumento?.name || 'Ningún archivo seleccionado')}
+                  {licenciaFile?.name || existingFileName || 'Ningún archivo seleccionado'}
                 </Typography>
+                {(licenciaFile || formData.licenciaDocumento) && (
+                  <IconButton onClick={handleViewDocument} color="primary">
+                    <Visibility fontSize="small" />
+                  </IconButton>
+                )}
               </Box>
               <Typography variant="caption" sx={{ display: 'block', mt: 1 }}>
-                Formatos aceptados: PDF, imágenes (max 5MB)
+                Formatos aceptados: PDF, imágenes (max 10MB)
               </Typography>
             </FieldContainer>
           </Grid>
         </Grid>
 
-        {/* Modales de selección */}
         <SelectionModal
           open={modalStates.empresas}
           onClose={() => setModalStates(prev => ({ ...prev, empresas: false }))}
@@ -333,17 +447,19 @@ const handleFileChange = async (e) => {
           open={modalStates.vehiculos}
           onClose={() => setModalStates(prev => ({ ...prev, vehiculos: false }))}
           title="Seleccionar Vehículo"
-          items={[{ _id: 'null', patente: 'Sin asignar' }, ...vehiculosDisponibles]}
+          items={[
+            ...(formData.empresa ? [{ _id: 'null', patente: 'Sin asignar' }] : []),
+            ...vehiculosDisponibles
+          ]}
           loading={loadingStates.vehiculos}
           onSelect={onVehiculoSelect}
           getText={(item) => item.patente}
           getSecondaryText={(item) => item.marca ? `${item.marca} ${item.modelo}` : ''}
-          emptyText="No hay vehículos registrados"
+          emptyText={formData.empresa ? "No hay vehículos disponibles para esta empresa" : "No hay vehículos registrados"}
           icon={DirectionsCar}
           onViewDetails={handleViewDetails}
         />
 
-        {/* Modal de detalles */}
         <Modal
           open={detailModal.open}
           onClose={() => setDetailModal(prev => ({ ...prev, open: false }))}

@@ -1,7 +1,6 @@
-import { 
-  Grid, InputLabel, TextField, Box, Typography, FormGroup, FormControlLabel, Checkbox, MenuItem 
-} from '@mui/material';
+import { Grid, InputLabel, TextField, Box, Typography, FormGroup, FormControlLabel, Checkbox, MenuItem, Button } from '@mui/material';
 import ErrorText from '../ErrorText';
+import { LocationOn } from '@mui/icons-material';
 
 // Constantes para opciones del formulario
 const TIPOS_DEPOSITO = ['Propio', 'Tercerizado'];
@@ -42,7 +41,14 @@ const FormInput = ({
 );
 
 // Componente para el formulario de Depósito
-const DepositoForm = ({ formData = {}, handleChange, handleBlur, errors }) => {
+const DepositoForm = ({ 
+  formData = {}, 
+  handleChange, 
+  handleBlur, 
+  errors, 
+  onOpenMap,
+  selectedLocation 
+}) => {
   // Datos de horarios con valores por defecto
   const horarios = formData.horarios || { dias: [], desde: '', hasta: '' };
 
@@ -178,7 +184,7 @@ const DepositoForm = ({ formData = {}, handleChange, handleBlur, errors }) => {
             Ubicación
           </Typography>
           <FormInput 
-            label="Direccion" 
+            label="Dirección" 
             name="direccion" 
             required 
             value={formData.direccion || ''} 
@@ -213,46 +219,57 @@ const DepositoForm = ({ formData = {}, handleChange, handleBlur, errors }) => {
             onBlur={handleBlur} 
             error={errors.pais} 
           />
-           <FormInput 
-  label="Coordenadas (lat, long)" 
-  name="coordenadas" 
-  required
-  value={
-    formData.coordenadasRaw 
-      ? `${formData.coordenadasRaw.coordinates[1]}, ${formData.coordenadasRaw.coordinates[0]}`
-      : (formData.coordenadas || '')
-  }
-  onChange={(e) => {
-    handleChange({
-      target: {
-        name: 'coordenadas',
-        value: e.target.value
-      }
-    });
-    // Limpiar error si existe
-    if (errors.coordenadas) {
-      handleBlur({ target: { name: 'coordenadas' } });
-    }
-  }}
-  onBlur={(e) => {
-    // Validar formato
-    if (e.target.value && !COORDENADAS_REGEX.test(e.target.value)) {
-      handleChange({
-        target: {
-          name: 'errors',
-          value: {
-            ...errors,
-            coordenadas: 'Formato inválido. Ejemplo: -34.603722, -58.381592'
-          }
-        }
-      });
-    }
-    handleBlur(e);
-  }}
-  error={errors.coordenadas}
-  placeholder="Ejemplo: -34.603722, -58.381592"
-/>
-
+          <Box sx={{ mt: 2 }}>
+            <InputLabel required>Coordenadas (lat, long)</InputLabel>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <TextField
+                fullWidth
+                size="small"
+                name="coordenadas"
+                value={
+                  formData.coordenadasRaw 
+                    ? `${formData.coordenadasRaw.coordinates[1]}, ${formData.coordenadasRaw.coordinates[0]}`
+                    : (formData.coordenadas || '')
+                }
+                onChange={(e) => {
+                  handleChange({
+                    target: {
+                      name: 'coordenadas',
+                      value: e.target.value
+                    }
+                  });
+                  if (errors.coordenadas) {
+                    handleBlur({ target: { name: 'coordenadas' } });
+                  }
+                }}
+                onBlur={(e) => {
+                  if (e.target.value && !/^-?\d+\.?\d*,\s*-?\d+\.?\d*$/.test(e.target.value)) {
+                    handleChange({
+                      target: {
+                        name: 'errors',
+                        value: {
+                          ...errors,
+                          coordenadas: 'Formato inválido. Ejemplo: -34.603722, -58.381592'
+                        }
+                      }
+                    });
+                  }
+                  handleBlur(e);
+                }}
+                error={!!errors.coordenadas}
+                placeholder="Ejemplo: -34.603722, -58.381592"
+              />
+              <Button
+                variant="outlined"
+                onClick={onOpenMap}
+                startIcon={<LocationOn />}
+                sx={{ minWidth: 'auto', height: '40px' }}
+              >
+                Mapa
+              </Button>
+            </Box>
+            {errors.coordenadas && <ErrorText>{errors.coordenadas}</ErrorText>}
+          </Box>
         </Grid>
       </Grid>
     </Box>

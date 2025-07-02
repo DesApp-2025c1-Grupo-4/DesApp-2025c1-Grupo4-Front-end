@@ -34,7 +34,7 @@ const validationSchemas = {
       const [toH, toM] = value.split(':').map(Number);
       return (toH > fromH) || (toH === fromH && toM > fromM);
     }
-  )
+  ),
 }),
   direccion: Yup.string().required('La dirección es requerida (ej: Av. Corrientes 123)'),
   provincia: Yup.string().required('La provincia es requerida (ej: Buenos Aires)'),
@@ -62,14 +62,23 @@ const validationSchemas = {
   }),
 
 
-  chofer: Yup.object().shape({
+chofer: Yup.object().shape({
   nombre: Yup.string().required('Requerido'),
   apellido: Yup.string().required('Requerido'),
-  cuil: Yup.string().required('Requerido'),
-  fechaNacimiento: Yup.date().required('Requerido'),
+  cuil: Yup.string()
+    .required('Requerido')
+    .matches(/^[0-9]{11}$/, 'CUIL debe tener 11 dígitos'),
+  fechaNacimiento: Yup.date()
+    .required('Requerido')
+    .max(new Date(), 'Fecha no puede ser futura'),
+  empresa: Yup.object().shape({
+    _id: Yup.string().required('Empresa es requerida')
+  }).required('Empresa es requerida'),
   licenciaNumero: Yup.string().required('Requerido'),
   licenciaTipo: Yup.array().min(1, 'Seleccione al menos un tipo'),
-  licenciaExpiracion: Yup.date().required('Requerido')
+  licenciaExpiracion: Yup.date()
+    .required('Requerido')
+    .min(Yup.ref('fechaNacimiento'), 'Debe ser posterior a fecha de nacimiento')
 }),
 
   vehiculo: Yup.object().shape({

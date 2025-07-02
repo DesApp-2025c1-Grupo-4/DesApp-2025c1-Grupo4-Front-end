@@ -11,7 +11,6 @@ const Filtro = ({
   onSearch,
   onClear
 }) => {
-  // Configuración por modo
   const config = {
     viajes: {
       showCriterio: true,
@@ -19,33 +18,36 @@ const Filtro = ({
       searchLabel: 'Buscar',
       registerButton: 'Registrar Viaje',
       seguimientoButton: 'Seguimiento',
-      criterios: ['Empresa transportista', 'Chofer', 'Vehículo', 'Tipo de viaje']
+      criterios: ['Empresa transportista', 'Chofer', 'Vehículo', 'Tipo de viaje'],
+      searchField: null
     },
     empresas: {
       showCriterio: false,
       showDates: false,
       searchLabel: 'Buscar por CUIT',
       registerButton: 'Registrar Empresa',
-      criterios: ['CUIT']
+      searchField: 'cuit'
     },
     choferes: {
       showCriterio: false,
       showDates: false,
       searchLabel: 'Buscar por CUIL',
       registerButton: 'Registrar Chofer',
-      criterios: ['CUIL']
+      searchField: 'cuil'
     },
     depositos: {
       showCriterio: false,
       showDates: false,
       searchLabel: 'Buscar por Provincia/País',
-      registerButton: 'Registrar Deposito'
+      registerButton: 'Registrar Deposito',
+      searchField: 'localizacion'
     },
     vehiculos: {
       showCriterio: false,
       showDates: false,
       searchLabel: 'Buscar por Patente',
-      registerButton: 'Registrar Vehiculo'
+      registerButton: 'Registrar Vehiculo',
+      searchField: 'patente'
     }
   };
 
@@ -54,13 +56,17 @@ const Filtro = ({
   const fechaDesdeValue = filtros.fechaDesde ? new Date(filtros.fechaDesde) : null;
   const fechaHastaValue = filtros.fechaHasta ? new Date(filtros.fechaHasta) : null;
 
-  // Setea automáticamente el criterio CUIT si es modo empresas
   useEffect(() => {
-    if (mode === 'empresas') {
-      setFiltros(prev => ({ ...prev, criterio: 'CUIT' }));
-    }
-    if (mode === 'choferes') {
-      setFiltros(prev => ({ ...prev, criterio: 'CUIL' }));
+    const defaultCriteria = {
+      empresas: 'CUIT',
+      choferes: 'CUIL',
+      depositos: 'Provincia/País',
+      vehiculos: 'Patente',
+      viajes: 'Empresa transportista'
+    };
+    
+    if (defaultCriteria[mode]) {
+      setFiltros(prev => ({ ...prev, criterio: defaultCriteria[mode] }));
     }
   }, [mode, setFiltros]);
 
@@ -73,15 +79,13 @@ const Filtro = ({
 
   const handleSearch = () => {
     if (onSearch) {
-      // Para empresas, siempre usamos el criterio CUIT
-      const searchFilters = mode === 'empresas' 
-        ? { ...filtros, criterio: 'CUIT' }
+      const searchFilters = currentConfig.searchField 
+        ? { ...filtros, criterio: currentConfig.searchField }
         : filtros;
       onSearch(searchFilters);
     }
   };
 
-  // Manejar la tecla Enter en el campo de búsqueda
   const handleKeyPress = (e) => {
     if (e.key === 'Enter') {
       handleSearch();
@@ -95,7 +99,7 @@ const Filtro = ({
           {mode === 'viajes' && (
             <>
               <Grid item xs={12} sm={6} md={1.5}>
-                <Popup buttonName={currentConfig.registerButton} page={mode}/>
+                <Popup buttonName={currentConfig.registerButton} page="nuevo-viaje"/>
               </Grid>
               <Grid item xs={12} sm={6} md={1.5}>
                 <Button 
@@ -146,7 +150,8 @@ const Filtro = ({
               sx={{
                 '& .MuiOutlinedInput-root': {
                   height: '58px', 
-                },}}
+                },
+              }}
             />
           </Grid>
 
@@ -189,8 +194,16 @@ const Filtro = ({
               fullWidth 
               variant="outlined" 
               onClick={() => {
+                const defaultCriteria = {
+                  empresas: 'CUIT',
+                  choferes: 'CUIL',
+                  depositos: 'Provincia/País',
+                  vehiculos: 'Patente',
+                  viajes: 'Empresa transportista'
+                };
+                
                 setFiltros({ 
-                  criterio: mode === 'empresas' ? 'CUIT' : '', 
+                  criterio: defaultCriteria[mode] || '', 
                   fechaDesde: '', 
                   fechaHasta: '', 
                   busqueda: '' 
