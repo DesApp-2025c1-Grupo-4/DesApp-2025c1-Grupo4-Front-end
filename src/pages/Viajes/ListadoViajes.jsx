@@ -96,9 +96,6 @@ const ListadoDeViajes = () => {
 
   useEffect(() => {
     const filtered = viajes.filter(viaje => {
-      // Search filter (mantener igual)
-      
-      // Date filter
       if (filtros.fechaDesde) {
         const fechaInicioStr = viaje.inicio_viaje;
         if (!fechaInicioStr || fechaInicioStr === 'Sin fecha') return false;
@@ -381,56 +378,58 @@ const handleDeleteViaje = async (id) => {
   };
 
   const columns = [
-    { id: 'numeroViaje', label: 'Número', minWidth: 80, align: 'left' },
-    { id: 'empresaTransportista', label: 'Empresa', minWidth: 150, align: 'left' },
-    { id: 'nombreChofer', label: 'Chofer', minWidth: 120, align: 'left' },
-    { id: 'patenteVehiculo', label: 'Vehículo', minWidth: 100, align: 'left' },
+    { id: 'numeroViaje', label: 'Número', minWidth: 70, align: 'left' },
+    { id: 'empresaTransportista', label: 'Empresa', minWidth: 140, align: 'left' },
+    { id: 'nombreChofer', label: 'Chofer', minWidth: 110, align: 'left' },
+    { id: 'patenteVehiculo', label: 'Vehículo', minWidth: 90, align: 'left' },
     { 
       id: 'fechaInicio', 
       label: 'Fecha Inicio', 
-      minWidth: 120, 
+      minWidth: 110, 
       align: 'left',
       render: (value) => value
     },
     { 
       id: 'fechaFin', 
       label: 'Fecha Fin', 
-      minWidth: 120, 
+      minWidth: 110, 
       align: 'left',
       render: (value) => value
     },
-    { id: 'tipo_viaje', label: 'Tipo', minWidth: 100, align: 'left' },
-    { id: 'origen', label: 'Origen', minWidth: 150, align: 'left' },
-    { id: 'destino', label: 'Destino', minWidth: 150, align: 'left' },
+    { id: 'tipo_viaje', label: 'Tipo', minWidth: 90, align: 'left' },
+    { id: 'origen', label: 'Origen', minWidth: 130, align: 'left' },
+    { id: 'destino', label: 'Destino', minWidth: 130, align: 'left' },
     {
       id: 'modificar', 
       label: 'Modificar', 
-      minWidth: 80, 
+      minWidth: 70, 
       align: 'center',
       render: (_, row) => (
         <IconButton 
           onClick={() => handleOpenPopup('modificar-viaje', row)} 
           size="small" 
           color="primary"
+          variant="tableButtons"
           disabled={isLoadingAction}
         >
-          <CreateOutlinedIcon fontSize="small" />
+          <CreateOutlinedIcon fontSize="small" variant="tableButtons" />
         </IconButton>
       )
     },
     {
       id: 'eliminar', 
       label: 'Eliminar', 
-      minWidth: 80, 
+      minWidth: 70, 
       align: 'center',
       render: (_, row) => (
         <IconButton 
           onClick={() => handleOpenPopup('confirmar-eliminar', row)} 
           size="small" 
           color="error"
+          variant="tableButtons"
           disabled={isLoadingAction}
         >
-          <CloseOutlinedIcon fontSize="small" />
+          <CloseOutlinedIcon fontSize="small" variant="tableButtons" />
         </IconButton>
       )
     }
@@ -474,8 +473,33 @@ const handleDeleteViaje = async (id) => {
         />
       </Box>
 
-      <Box sx={{ width: '85vw', marginLeft: 'calc(-43vw + 50%)', marginRight: 'calc(-40vw + 50%)', overflowX: 'hidden' }}>
-        <Tabla2 columns={columns} data={viajesPaginaActual()} sx={{ tableLayout: 'auto', width: '100%' }} />
+      <Box sx={{ 
+        width: '85vw', 
+        marginLeft: 'calc(-43vw + 50%)', 
+        marginRight: 'calc(-40vw + 50%)', 
+        overflowX: 'hidden' 
+      }}>
+        <Tabla2 
+          columns={columns} 
+          data={viajesPaginaActual()} 
+          sx={{ 
+            tableLayout: 'auto', 
+            width: '100%',
+            "& .MuiTableCell-root": {
+              padding: "12px 16px",
+              fontSize: "0.875rem",
+              textAlign: "center",
+              fontWeight: 500
+            },
+            "& .MuiTableCell-head": {
+              backgroundColor: "#062B60",
+              color: "white",
+              fontWeight: "bold",
+              textAlign: "center",
+              fontSize: "0.875rem"
+            }
+          }} 
+        />
       </Box>
 
       <Paginacion

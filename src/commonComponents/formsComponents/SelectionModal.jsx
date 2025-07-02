@@ -1,32 +1,9 @@
 import React, { useState, useMemo } from 'react';
-import {
-  Modal,
-  Paper,
-  Box,
-  Typography,
-  IconButton,
-  List,
-  ListItem,
-  ListItemText,
-  CircularProgress,
-  TextField
-} from '@mui/material';
+import {Modal,Paper,Box,Typography,IconButton,List,ListItem,ListItemText,CircularProgress,TextField} from '@mui/material';
 import { Close, Search, InfoOutlined } from '@mui/icons-material';
 import { grey } from '@mui/material/colors';
 
-const SelectionModal = ({
-  open,
-  onClose,
-  title,
-  items,
-  onSelect,
-  loading,
-  getText,
-  getSecondaryText,
-  emptyText,
-  icon: Icon,
-  onViewDetails
-}) => {
+const SelectionModal = ({open,onClose,title,items,onSelect,loading,getText,getSecondaryText,emptyText,icon: Icon,onViewDetails}) => {
   const [searchTerm, setSearchTerm] = useState('');
 
   const filteredItems = useMemo(() => {

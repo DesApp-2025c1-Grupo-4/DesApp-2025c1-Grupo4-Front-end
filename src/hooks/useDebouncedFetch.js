@@ -1,4 +1,3 @@
-// useDebouncedFetch.js
 import { useEffect } from 'react';
 import axios from 'axios';
 
@@ -14,7 +13,6 @@ const useDebouncedFetch = (url, paramName, value, setData, setLoading) => {
           params: {},
           signal 
         });
-        // Filtra solo items activos como en la versión original
         const activos = Array.isArray(res.data) ? res.data.filter(e => e.activo !== false) : [];
         setData(activos);
       } catch (error) {

@@ -7,10 +7,9 @@ import Popup from '../../commonComponents/Popup';
 import CreateOutlinedIcon from '@mui/icons-material/CreateOutlined';
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
 import VisibilityIcon from '@mui/icons-material/Visibility';
-import axios from 'axios';
-import { dateFormat } from '../../helpers/dateFormat';
-import ChoferForm from '../../commonComponents/forms/ChoferForm';
 import { format } from 'date-fns';
+import { getActiveChoferes,getChoferById,createChofer,updateChofer,deleteChofer} from '../../services/Choferes/ChoferService';
+import ChoferForm from '../../commonComponents/forms/ChoferForm';
 
 const ListadoChoferes = () => {
   const [filtros, setFiltros] = useState({ criterio: 'CUIL', busqueda: '' });
@@ -31,55 +30,51 @@ const ListadoChoferes = () => {
   }, []);
 
   const fetchChoferes = async () => {
-  try {
-    setLoading(true);
-    const response = await axios.get('/api/choferes?activo=true');
+    try {
+      setLoading(true);
+      const response = await getActiveChoferes();
 
-    const datosTransformados = response.data
-      .filter(item => item.activo !== false)
-      .map(item => ({
-        ...item,
-        _id: item._id,
-        nombre: item.nombre || '',
-        apellido: item.apellido || '',
-        cuil: item.cuil || '',
-        // Formatear fechas para mostrar en la tabla
-        fechaNacimiento: item.fecha_nacimiento 
-          ? format(new Date(item.fecha_nacimiento), 'dd/MM/yyyy')
-          : '',
-        empresa: item.empresa?.nombre_empresa || '',
-        vehiculoAsignado: item.vehiculo_defecto 
-          ? `${item.vehiculo_defecto.patente}` 
-          : 'Sin vehículo',
-        // Mantener los objetos Date para el formulario
-        fechaNacimientoObj: item.fecha_nacimiento ? new Date(item.fecha_nacimiento) : null,
-        empresaObj: item.empresa || null,
-        vehiculoObj: item.vehiculo_defecto || null,
-        licencia: item.licencia ? {
-          ...item.licencia,
-          fecha_expiracion: item.licencia.fecha_expiracion,
-          // Formatear fecha de expiración para mostrar
-          fechaExpiracionFormatted: item.licencia.fecha_expiracion || '',
-          // Mantener objeto Date para el formulario
-          fechaExpiracionObj: item.licencia.fecha_expiracion 
-            ? parseDateFromDDMMYYYY(item.licencia.fecha_expiracion)
-            : null,
-          documento: item.licencia.documento ? {
-            ...item.licencia.documento,
-            data: item.licencia.documento.data
+      const datosTransformados = response
+        .filter(item => item.activo !== false)
+        .map(item => ({
+          ...item,
+          _id: item._id,
+          nombre: item.nombre || '',
+          apellido: item.apellido || '',
+          cuil: item.cuil || '',
+          fechaNacimiento: item.fecha_nacimiento 
+            ? format(new Date(item.fecha_nacimiento), 'dd/MM/yyyy')
+            : '',
+          empresa: item.empresa?.nombre_empresa || '',
+          vehiculoAsignado: item.vehiculo_defecto 
+            ? `${item.vehiculo_defecto.patente}` 
+            : 'Sin vehículo',
+          fechaNacimientoObj: item.fecha_nacimiento ? new Date(item.fecha_nacimiento) : null,
+          empresaObj: item.empresa || null,
+          vehiculoObj: item.vehiculo_defecto || null,
+          licencia: item.licencia ? {
+            ...item.licencia,
+            fecha_expiracion: item.licencia.fecha_expiracion,
+            fechaExpiracionFormatted: item.licencia.fecha_expiracion || '',
+            fechaExpiracionObj: item.licencia.fecha_expiracion 
+              ? parseDateFromDDMMYYYY(item.licencia.fecha_expiracion)
+              : null,
+            documento: item.licencia.documento ? {
+              ...item.licencia.documento,
+              data: item.licencia.documento.data
+            } : null
           } : null
-        } : null
-      }));
+        }));
 
-    setChoferes(datosTransformados);
-    setChoferesFiltrados(datosTransformados);
-    setError(null);
-  } catch (err) {
-    setError(`Error al cargar datos: ${err.message}`);
-  } finally {
-    setLoading(false);
-  }
-};
+      setChoferes(datosTransformados);
+      setChoferesFiltrados(datosTransformados);
+      setError(null);
+    } catch (err) {
+      setError(`Error al cargar datos: ${err.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     const filtered = choferes.filter(chofer => {
@@ -109,12 +104,12 @@ const ListadoChoferes = () => {
     setFiltrosAplicados({ ...filtros });
     setIsSearching(false);
   };
-const parseDateFromDDMMYYYY = (dateString) => {
-  if (!dateString) return null;
-  const [day, month, year] = dateString.split('/');
-  return new Date(`${year}-${month}-${day}`);
-};
 
+  const parseDateFromDDMMYYYY = (dateString) => {
+    if (!dateString) return null;
+    const [day, month, year] = dateString.split('/');
+    return new Date(`${year}-${month}-${day}`);
+  };
 
   const limpiarFiltros = () => {
     setFiltros({ criterio: 'CUIL', busqueda: '' });
@@ -126,96 +121,92 @@ const parseDateFromDDMMYYYY = (dateString) => {
     return choferesFiltrados.slice(inicio, inicio + itemsPorPagina);
   };
 
-const handleOpenPopup = async (type, chofer = null) => {
-  setPopupType(type);
-  
-  if (type === 'confirmar-eliminar' && chofer) {
-    setSelectedChofer({ 
-      _id: chofer._id,
-      nombre: chofer.nombre
-    });
-    setPopupOpen(true);
-    return;
-  }
-
-  if (type === 'modificar-chofer') {
-    const newChoferTemplate = {
-      nombre: '',
-      apellido: '',
-      cuil: '',
-      fechaNacimiento: null,
-      empresa: null,
-      vehiculoAsignado: null,
-      licenciaNumero: '',
-      licenciaTipo: [],
-      licenciaExpiracion: null,
-      licenciaDocumento: null
-    };
-
-    if (chofer) {
-      try {
-        const response = await axios.get(`/api/choferes/${chofer._id}`);
-        const choferData = response.data;
-
-        // Asegurar que los datos de la licencia se carguen correctamente
-        const licenciaDocumento = choferData.licencia?.documento 
-          ? {
-              ...choferData.licencia.documento,
-              data: choferData.licencia.documento.data || { type: 'Buffer', data: [] }
-            }
-          : null;
-
-        setSelectedChofer({
-          ...newChoferTemplate,
-          ...choferData,
-          _id: choferData._id,
-          nombre: choferData.nombre || '',
-          apellido: choferData.apellido || '',
-          cuil: choferData.cuil || '',
-          fechaNacimiento: choferData.fecha_nacimiento ? new Date(choferData.fecha_nacimiento) : null,
-          empresa: choferData.empresa ? {
-            _id: typeof choferData.empresa === 'object' ? choferData.empresa._id : choferData.empresa,
-            nombre_empresa: typeof choferData.empresa === 'object' ? choferData.empresa.nombre_empresa : ''
-          } : null,
-          vehiculoAsignado: choferData.vehiculo_defecto ? {
-            _id: typeof choferData.vehiculo_defecto === 'object' ? choferData.vehiculo_defecto._id : choferData.vehiculo_defecto,
-            patente: typeof choferData.vehiculo_defecto === 'object' ? choferData.vehiculo_defecto.patente : ''
-          } : null,
-          licenciaNumero: choferData.licencia?.numero || '',
-          licenciaTipo: choferData.licencia?.tipos || [],
-          licenciaExpiracion: choferData.licencia?.fecha_expiracion ? 
-            new Date(choferData.licencia.fecha_expiracion.split('/').reverse().join('-')) : null,
-          licenciaDocumento: licenciaDocumento
-        });
-      } catch (error) {
-        console.error('Error al cargar detalles del chofer:', error);
-        setSelectedChofer({
-          ...newChoferTemplate,
-          ...chofer,
-          empresa: chofer.empresaObj ? {
-            _id: chofer.empresaObj._id,
-            nombre_empresa: chofer.empresaObj.nombre_empresa
-          } : null,
-          vehiculoAsignado: chofer.vehiculoObj ? {
-            _id: chofer.vehiculoObj._id,
-            patente: chofer.vehiculoObj.patente
-          } : null
-        });
-      }
-    } else {
-      setSelectedChofer(newChoferTemplate);
+  const handleOpenPopup = async (type, chofer = null) => {
+    setPopupType(type);
+    
+    if (type === 'confirmar-eliminar' && chofer) {
+      setSelectedChofer({ 
+        _id: chofer._id,
+        nombre: chofer.nombre
+      });
+      setPopupOpen(true);
+      return;
     }
-    setPopupOpen(true);
-  }
-};
+
+    if (type === 'modificar-chofer') {
+      const newChoferTemplate = {
+        nombre: '',
+        apellido: '',
+        cuil: '',
+        fechaNacimiento: null,
+        empresa: null,
+        vehiculoAsignado: null,
+        licenciaNumero: '',
+        licenciaTipo: [],
+        licenciaExpiracion: null,
+        licenciaDocumento: null
+      };
+
+      if (chofer) {
+        try {
+          const choferData = await getChoferById(chofer._id);
+          const licenciaDocumento = choferData.licencia?.documento 
+            ? {
+                ...choferData.licencia.documento,
+                data: choferData.licencia.documento.data || { type: 'Buffer', data: [] }
+              }
+            : null;
+
+          setSelectedChofer({
+            ...newChoferTemplate,
+            ...choferData,
+            _id: choferData._id,
+            nombre: choferData.nombre || '',
+            apellido: choferData.apellido || '',
+            cuil: choferData.cuil || '',
+            fechaNacimiento: choferData.fecha_nacimiento ? new Date(choferData.fecha_nacimiento) : null,
+            empresa: choferData.empresa ? {
+              _id: typeof choferData.empresa === 'object' ? choferData.empresa._id : choferData.empresa,
+              nombre_empresa: typeof choferData.empresa === 'object' ? choferData.empresa.nombre_empresa : ''
+            } : null,
+            vehiculoAsignado: choferData.vehiculo_defecto ? {
+              _id: typeof choferData.vehiculo_defecto === 'object' ? choferData.vehiculo_defecto._id : choferData.vehiculo_defecto,
+              patente: typeof choferData.vehiculo_defecto === 'object' ? choferData.vehiculo_defecto.patente : ''
+            } : null,
+            licenciaNumero: choferData.licencia?.numero || '',
+            licenciaTipo: choferData.licencia?.tipos || [],
+            licenciaExpiracion: choferData.licencia?.fecha_expiracion ? 
+              new Date(choferData.licencia.fecha_expiracion.split('/').reverse().join('-')) : null,
+            licenciaDocumento: licenciaDocumento
+          });
+        } catch (error) {
+          console.error('Error al cargar detalles del chofer:', error);
+          setSelectedChofer({
+            ...newChoferTemplate,
+            ...chofer,
+            empresa: chofer.empresaObj ? {
+              _id: chofer.empresaObj._id,
+              nombre_empresa: chofer.empresaObj.nombre_empresa
+            } : null,
+            vehiculoAsignado: chofer.vehiculoObj ? {
+              _id: chofer.vehiculoObj._id,
+              patente: chofer.vehiculoObj.patente
+            } : null
+          });
+        }
+      } else {
+        setSelectedChofer(newChoferTemplate);
+      }
+      setPopupOpen(true);
+    }
+  };
 
   const handleDeleteChofer = async (id) => {
     try {
-      await axios.patch(`/api/choferes/${id}/delete`);
+      await deleteChofer(id);
       setChoferes(prev => prev.filter(c => c._id !== id));
       setChoferesFiltrados(prev => prev.filter(c => c._id !== id));
       setPopupOpen(false);
-      
       return { success: true };
     } catch (error) {
       return { 
@@ -225,55 +216,68 @@ const handleOpenPopup = async (type, chofer = null) => {
     }
   };
 
-const handleSubmitChofer = async (formData) => {
-  try {
-    console.log("Datos del formulario:", formData); // Para depuración
-
-    const response = await axios({
-      method: selectedChofer?._id ? 'PUT' : 'POST',
-      url: selectedChofer?._id 
-        ? `/api/choferes/${selectedChofer._id}` 
-        : '/api/choferes',
-      data: {
-        ...formData,
-        licencia: {
-          numero: formData.licenciaNumero || "",
-          tipos: formData.licenciaTipo || [],
-          fecha_expiracion: formData.licenciaExpiracion 
-            ? format(formData.licenciaExpiracion, 'dd/MM/yyyy') 
-            : null,
-          documento: formData.licenciaDocumento || {
-            data: {
-              type: 'Buffer',
-              data: []
-            },
-            contentType: "application/pdf",
-            fileName: "licencia.pdf",
-            size: 0
+  const handleSubmitChofer = async (formData) => {
+    try {
+      let response;
+      if (selectedChofer?._id) {
+        response = await updateChofer(selectedChofer._id, {
+          ...formData,
+          licencia: {
+            numero: formData.licenciaNumero || "",
+            tipos: formData.licenciaTipo || [],
+            fecha_expiracion: formData.licenciaExpiracion 
+              ? format(formData.licenciaExpiracion, 'dd/MM/yyyy') 
+              : null,
+            documento: formData.licenciaDocumento || {
+              data: {
+                type: 'Buffer',
+                data: []
+              },
+              contentType: "application/pdf",
+              fileName: "licencia.pdf",
+              size: 0
+            }
           }
-        }
+        });
+      } else {
+        response = await createChofer({
+          ...formData,
+          licencia: {
+            numero: formData.licenciaNumero || "",
+            tipos: formData.licenciaTipo || [],
+            fecha_expiracion: formData.licenciaExpiracion 
+              ? format(formData.licenciaExpiracion, 'dd/MM/yyyy') 
+              : null,
+            documento: formData.licenciaDocumento || {
+              data: {
+                type: 'Buffer',
+                data: []
+              },
+              contentType: "application/pdf",
+              fileName: "licencia.pdf",
+              size: 0
+            }
+          }
+        });
       }
-    });
 
-    fetchChoferes();
-    return { success: true, data: response.data };
-  } catch (error) {
-    console.error("Error detallado:", error.response?.data || error.message);
-    
-    let errorMessage = "Error al guardar el chofer";
-    if (error.response?.data?.error) {
-      errorMessage = error.response.data.error;
-    } else if (error.response?.data?.message) {
-      errorMessage = error.response.data.message;
+      fetchChoferes();
+      return { success: true, data: response };
+    } catch (error) {
+      console.error("Error detallado:", error.response?.data || error.message);
+      let errorMessage = "Error al guardar el chofer";
+      if (error.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+      return { 
+        success: false, 
+        error: errorMessage,
+        details: error.response?.data?.details 
+      };
     }
-    
-    return { 
-      success: false, 
-      error: errorMessage,
-      details: error.response?.data?.details 
-    };
-  }
-};
+  };
 
   const columns = [
     { id: 'nombre', label: 'Nombre', minWidth: 120, align: 'left' },
@@ -291,7 +295,6 @@ const handleSubmitChofer = async (formData) => {
         row.licencia?.documento ? (
           <IconButton 
             onClick={() => {
-              // Crear Blob desde los datos del buffer
               const byteArray = new Uint8Array(row.licencia.documento.data.data);
               const blob = new Blob([byteArray], { type: row.licencia.documento.contentType });
               const url = URL.createObjectURL(blob);
@@ -310,8 +313,13 @@ const handleSubmitChofer = async (formData) => {
       minWidth: 80,
       align: 'center',
       render: (_, row) => (
-        <IconButton onClick={() => handleOpenPopup('modificar-chofer', row)} size="small" color="primary">
-          <CreateOutlinedIcon fontSize="small" />
+        <IconButton 
+          onClick={() => handleOpenPopup('modificar-chofer', row)} 
+          size="small" 
+          color="primary"
+          variant="tableButtons"
+        >
+          <CreateOutlinedIcon fontSize="small" variant="tableButtons" />
         </IconButton>
       )
     },
@@ -329,8 +337,9 @@ const handleSubmitChofer = async (formData) => {
           }}
           size="small"
           color="error"
+          variant="tableButtons"
         >
-          <CloseOutlinedIcon fontSize="small" />
+          <CloseOutlinedIcon fontSize="small" variant="tableButtons" />
         </IconButton>
       )
     }
@@ -386,7 +395,27 @@ const handleSubmitChofer = async (formData) => {
           overflowX: 'hidden'
         }}
       >
-        <Tabla2 columns={columns} data={choferesPaginaActual()} sx={{ tableLayout: 'auto', width: '100%' }} />
+        <Tabla2 
+          columns={columns} 
+          data={choferesPaginaActual()} 
+          sx={{ 
+            tableLayout: 'auto', 
+            width: '100%',
+            "& .MuiTableCell-root": {
+              padding: "12px 16px",
+              fontSize: "0.875rem",
+              textAlign: "center",
+              fontWeight: 500
+            },
+            "& .MuiTableCell-head": {
+              backgroundColor: "#062B60",
+              color: "white",
+              fontWeight: "bold",
+              textAlign: "center",
+              fontSize: "0.875rem"
+            }
+          }} 
+        />
       </Box>
 
       <Paginacion
