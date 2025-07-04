@@ -3,7 +3,7 @@ import * as Yup from 'yup';
 const parseCustomDate = (value, originalValue) => {
   if (value instanceof Date && !isNaN(value)) return value;
 
-  if (typeof originalValue !== 'string') return new Date(''); // inválido
+  if (typeof originalValue !== 'string') return new Date('');
 
   const [datePart, timePart] = originalValue.split(' ');
   if (!datePart || !timePart) return new Date('');
@@ -63,22 +63,55 @@ const validationSchemas = {
 
 
 chofer: Yup.object().shape({
-  nombre: Yup.string().required('Requerido'),
-  apellido: Yup.string().required('Requerido'),
+  nombre: Yup.string()
+    .required('Requerido')
+    .matches(/^[A-Za-zÁ-Úá-ú\s]+$/, 'Solo letras permitidas'),
+  apellido: Yup.string()
+    .required('Requerido')
+    .matches(/^[A-Za-zÁ-Úá-ú\s]+$/, 'Solo letras permitidas'),
   cuil: Yup.string()
     .required('Requerido')
-    .matches(/^[0-9]{11}$/, 'CUIL debe tener 11 dígitos'),
+    .matches(/^[0-9]{11}$/, 'Debe tener 11 dígitos')
+    .test('valid-cuil', 'CUIL inválido', value => {
+      if (!value) return true;
+      return value.length === 11;
+    }),
   fechaNacimiento: Yup.date()
     .required('Requerido')
-    .max(new Date(), 'Fecha no puede ser futura'),
+    .max(new Date(), 'Fecha no puede ser futura')
+    .test('age', 'Debe tener al menos 18 años', value => {
+      if (!value) return true;
+      const today = new Date();
+      const birthDate = new Date(value);
+      let age = today.getFullYear() - birthDate.getFullYear();
+      const monthDiff = today.getMonth() - birthDate.getMonth();
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+      }
+      return age >= 18;
+    }),
   empresa: Yup.object().shape({
     _id: Yup.string().required('Empresa es requerida')
   }).required('Empresa es requerida'),
-  licenciaNumero: Yup.string().required('Requerido'),
-  licenciaTipo: Yup.array().min(1, 'Seleccione al menos un tipo'),
+  licenciaNumero: Yup.string()
+    .required('Requerido')
+    .matches(/^[A-Za-z0-9]+$/, 'Solo letras y números permitidos'),
+  licenciaTipo: Yup.array()
+    .min(1, 'Seleccione al menos un tipo')
+    .max(3, 'Máximo 3 tipos permitidos'),
   licenciaExpiracion: Yup.date()
     .required('Requerido')
-    .min(Yup.ref('fechaNacimiento'), 'Debe ser posterior a fecha de nacimiento')
+    .min(new Date(), 'La licencia debe ser válida (fecha futura)')
+    .test(
+      'min-age',
+      'La licencia debe tener al menos 6 meses de validez',
+      value => {
+        if (!value) return true;
+        const sixMonthsLater = new Date();
+        sixMonthsLater.setMonth(sixMonthsLater.getMonth() + 6);
+        return value >= sixMonthsLater;
+      }
+    ),
 }),
 
   vehiculo: Yup.object().shape({

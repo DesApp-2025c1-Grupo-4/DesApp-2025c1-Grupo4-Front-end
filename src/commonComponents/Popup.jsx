@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef , useCallback} from 'react';
 import {
   Button, Dialog, DialogTitle, DialogContent,
   DialogActions, Box, useTheme, useMediaQuery, Typography, TextField
@@ -149,22 +149,24 @@ const Popup= ({ buttonName, page, open, onClose, children, selectedItem, onSucce
           newFormData.tipoViaje = selectedItem?.tipoViaje || '';
         } 
         else if (formType === 'chofer') {
-  newFormData._id = selectedItem?._id || '';
-  newFormData.nombre = selectedItem?.nombre || '';
-  newFormData.apellido = selectedItem?.apellido || '';
-  newFormData.cuil = selectedItem?.cuil || '';
-  newFormData.fechaNacimiento = selectedItem?.fechaNacimiento || null;
-  newFormData.empresa = selectedItem?.empresa || null;
-  newFormData.vehiculoAsignado = selectedItem?.vehiculoAsignado?._id || selectedItem?.vehiculoAsignado || null;
-  newFormData.licenciaNumero = selectedItem?.licencia?.numero || '';
-  newFormData.licenciaTipo = selectedItem?.licencia?.tipos || [];
-  newFormData.licenciaExpiracion = selectedItem?.licencia?.fecha_expiracion || null;
-  newFormData.licenciaDocumento = selectedItem?.licencia?.documento 
-    ? {
-        ...selectedItem.licencia.documento,
-        data: selectedItem.licencia.documento.data || { type: 'Buffer', data: [] }
-      }
-    : null;
+          newFormData._id = selectedItem?._id || '';
+          newFormData.nombre = selectedItem?.nombre || '';
+          newFormData.apellido = selectedItem?.apellido || '';
+          newFormData.cuil = selectedItem?.cuil || '';
+          newFormData.fechaNacimiento = selectedItem?.fechaNacimiento || null;
+          newFormData.empresa = selectedItem?.empresa || null;
+          newFormData.vehiculoAsignado = selectedItem?.vehiculo_defecto?._id || null;
+          newFormData.vehiculoAsignadoData = selectedItem?.vehiculo_defecto 
+            ? { _id: selectedItem.vehiculo_defecto._id, patente: selectedItem.vehiculo_defecto.patente } : null;
+          newFormData.licenciaNumero = selectedItem?.licencia?.numero || '';
+          newFormData.licenciaTipo = selectedItem?.licencia?.tipos || [];
+          newFormData.licenciaExpiracion = selectedItem?.licencia?.fecha_expiracion || null;
+          newFormData.licenciaDocumento = selectedItem?.licencia?.documento 
+            ? {
+                ...selectedItem.licencia.documento,
+                data: selectedItem.licencia.documento.data || { type: 'Buffer', data: [] }
+              }
+            : null;
 }
         else if (formType === 'vehiculo') {
           newFormData._id = selectedItem?._id || '';
@@ -203,22 +205,9 @@ const Popup= ({ buttonName, page, open, onClose, children, selectedItem, onSucce
         }
       }
 
-      setFormData(newFormData);
-      setErrors({});
-      setTouched({});
-
-      // Inicializar ubicación si hay coordenadas
-      if (formType === 'deposito' && newFormData.coordenadas) {
-        const coords = newFormData.coordenadas.split(',');
-        if (coords.length === 2) {
-          const lat = parseFloat(coords[0].trim());
-          const lng = parseFloat(coords[1].trim());
-          if (!isNaN(lat) && !isNaN(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
-            setSelectedLocation({ lat, lng });
-            setMapCenter({ lat, lng });
-          }
-        }
-      }
+     setFormData(newFormData);
+    setTouched({}); 
+    setErrors({}); 
     }
   }, [currentOpen, selectedItem, formType]);
 
@@ -230,43 +219,29 @@ const Popup= ({ buttonName, page, open, onClose, children, selectedItem, onSucce
     else setInternalOpen(false);
   };
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-
-    setFormData(prev => {
-      const newFormData = { ...prev };
-      set(newFormData, name, value);
-      return newFormData;
-    });
-
-    if (errors[name] || errors[name.split('.')[0]]) {
-      setErrors(prev => {
-        const newErrors = { ...prev };
-        if (name.includes('.')) {
-          const [parent, child] = name.split('.');
-          if (newErrors[parent]?.[child]) {
-            delete newErrors[parent][child];
-            if (Object.keys(newErrors[parent]).length === 0) {
-              delete newErrors[parent];
-            }
-          }
-        } else {
-          delete newErrors[name];
-        }
-        return newErrors;
-      });
+const handleChange = useCallback((e) => {
+  const { name, value } = e.target;
+  setFormData(prev => {
+    const newFormData = { ...prev, [name]: value };
+    if (touched[name] || errors[name]) {
+      validationSchemas[formType].validateAt(name, newFormData)
+        .then(() => setErrors(prev => ({ ...prev, [name]: undefined })))
+        .catch(err => setErrors(prev => ({ ...prev, [name]: err.message })));
     }
-  };
+    return newFormData;
+  });
+}, [touched, errors, formType]);
 
-const handleBlur = (e) => {
+const handleBlur = useCallback((e) => {
   const { name } = e.target;
-  setTouched(prev => ({ ...prev, [name]: true }));
-  if (validationSchemas[formType].fields[name]) {
+  if (!touched[name]) {
+    setTouched(prev => ({ ...prev, [name]: true }));
     validationSchemas[formType].validateAt(name, formData)
-      .then(() => setErrors(prev => ({ ...prev, [name]: '' })))
-      .catch(error => setErrors(prev => ({ ...prev, [name]: error.message })));
+      .then(() => setErrors(prev => ({ ...prev, [name]: undefined })))
+      .catch(err => setErrors(prev => ({ ...prev, [name]: err.message })));
   }
-};
+}, [touched, formData, formType]);
+
 
 const handleMapClick = async (e) => {
   const { lat, lng } = e.latlng;
@@ -292,7 +267,7 @@ const handleMapClick = async (e) => {
     };
     
     setPosition(locationData);
-    onSelect(locationData); // Envía todos los datos al componente padre
+    onSelect(locationData);
   } catch (error) {
     console.error('Error al obtener detalles de la ubicación:', error);
     setPosition({
@@ -309,7 +284,7 @@ const handleSubmit = async () => {
       setIsSubmitting(true);
       try {
         if (onDelete) {
-          const result = await onDelete(selectedItem._id); // Asegúrate de usar _id
+          const result = await onDelete(selectedItem._id); 
           
           if (result?.success) {
             if (onSuccess) onSuccess();
@@ -318,14 +293,14 @@ const handleSubmit = async () => {
           } else {
             setErrors({
               _general: result?.error || 'Error al eliminar el elemento',
-              _details: result?.details // Mostrar detalles adicionales
+              _details: result?.details 
             });
           }
         }
       } catch (error) {
         setErrors({
           _general: error.message || 'Error al procesar la eliminación',
-          _details: error.response?.data // Mostrar detalles del error
+          _details: error.response?.data
         });
       } finally {
         setIsSubmitting(false);
@@ -488,7 +463,6 @@ const handleSubmit = async () => {
     const backendError = error.response.data;
     let formattedErrors = {};
     
-    // Handle validation errors from backend
     if (backendError.details) {
       Object.entries(backendError.details).forEach(([field, err]) => {
         formattedErrors[field] = err.message || err;

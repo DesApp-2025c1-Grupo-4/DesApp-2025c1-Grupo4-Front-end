@@ -178,17 +178,17 @@ const customMuiTheme = createTheme({
       variants: [
         {
           props: { variant: 'tableButtons' },
-          style: {
-            background: 'transparent',
-            color: grey[900],
-            border: '2px solid',
-            borderColor: grey[900],
-            padding: '0.2em',
-            '&:hover': {
-              transform: 'scale(1.1)',
-              cursor: 'not-allowed',
-            },
-          },
+      style: {
+        background: 'transparent',
+        color: grey[900],
+        border: '2px solid',
+        borderColor: grey[900],
+        padding: '0.2em',
+        '&:hover': {
+          transform: 'scale(1.1)',
+          cursor: 'pointer',
+        },
+      },
         },
         {
           props: { variant: 'header' },

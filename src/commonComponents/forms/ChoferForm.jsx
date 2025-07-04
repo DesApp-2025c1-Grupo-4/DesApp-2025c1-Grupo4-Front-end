@@ -14,7 +14,7 @@ import IconButtonStyled from '../formsComponents/IconButtonStyled';
 import SelectionModal from '../formsComponents/SelectionModal';
 import axios from 'axios';
 
-const ChoferForm = ({ formData, handleChange, handleBlur, errors, isEditing = false }) => {
+const ChoferForm = ({ formData, handleChange, handleBlur, errors, isEditing = false}) => {
   const [empresas, setEmpresas] = useState([]);
   const [vehiculosDisponibles, setVehiculosDisponibles] = useState([]);
   const [loadingStates, setLoadingStates] = useState({ empresas: false, vehiculos: false });
@@ -74,16 +74,26 @@ const ChoferForm = ({ formData, handleChange, handleBlur, errors, isEditing = fa
     setModalStates(p => ({ ...p, empresas: false }));
   };
 
-  const onVehiculoSelect = (v) => {
-    if (v._id === 'null') {
-      handleChange({ target: { name: 'vehiculoAsignado', value: null } });
-      handleChange({ target: { name: 'vehiculoAsignadoData', value: null } });
-    } else {
-      handleChange({ target: { name: 'vehiculoAsignado', value: v._id } });
-      handleChange({ target: { name: 'vehiculoAsignadoData', value: { patente: v.patente, marca: v.marca, modelo: v.modelo } } });
-    }
-    setModalStates(p => ({ ...p, vehiculos: false }));
-  };
+const onVehiculoSelect = (v) => {
+  if (v._id === 'null') {
+    handleChange({ target: { name: 'vehiculoAsignado', value: null } });
+    handleChange({ target: { name: 'vehiculoAsignadoData', value: null } });
+  } else {
+    handleChange({ target: { name: 'vehiculoAsignado', value: v._id } });
+    handleChange({ 
+      target: { 
+        name: 'vehiculoAsignadoData', 
+        value: { 
+          _id: v._id,
+          patente: v.patente, 
+          marca: v.marca, 
+          modelo: v.modelo 
+        } 
+      } 
+    });
+  }
+  setModalStates(p => ({ ...p, vehiculos: false }));
+};
 
   const handleFileChange = async (e) => {
     const file = e.target.files[0];

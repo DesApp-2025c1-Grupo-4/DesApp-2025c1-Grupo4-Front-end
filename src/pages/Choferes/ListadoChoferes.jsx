@@ -121,85 +121,90 @@ const ListadoChoferes = () => {
     return choferesFiltrados.slice(inicio, inicio + itemsPorPagina);
   };
 
-  const handleOpenPopup = async (type, chofer = null) => {
-    setPopupType(type);
-    
-    if (type === 'confirmar-eliminar' && chofer) {
-      setSelectedChofer({ 
-        _id: chofer._id,
-        nombre: chofer.nombre
-      });
-      setPopupOpen(true);
-      return;
-    }
+const handleOpenPopup = async (type, chofer = null) => {
+  setPopupType(type);
+  
+  if (type === 'confirmar-eliminar' && chofer) {
+    setSelectedChofer({ 
+      _id: chofer._id,
+      nombre: chofer.nombre
+    });
+    setPopupOpen(true);
+    return;
+  }
 
-    if (type === 'modificar-chofer') {
-      const newChoferTemplate = {
-        nombre: '',
-        apellido: '',
-        cuil: '',
-        fechaNacimiento: null,
-        empresa: null,
-        vehiculoAsignado: null,
-        licenciaNumero: '',
-        licenciaTipo: [],
-        licenciaExpiracion: null,
-        licenciaDocumento: null
-      };
+  if (type === 'modificar-chofer') {
+    const newChoferTemplate = {
+      nombre: '',
+      apellido: '',
+      cuil: '',
+      fechaNacimiento: null,
+      empresa: null,
+      vehiculoAsignado: null,
+      licenciaNumero: '',
+      licenciaTipo: [],
+      licenciaExpiracion: null,
+      licenciaDocumento: null
+    };
 
-      if (chofer) {
-        try {
-          const choferData = await getChoferById(chofer._id);
-          const licenciaDocumento = choferData.licencia?.documento 
-            ? {
-                ...choferData.licencia.documento,
-                data: choferData.licencia.documento.data || { type: 'Buffer', data: [] }
-              }
-            : null;
+    if (chofer) {
+      try {
+        const choferData = await getChoferById(chofer._id);
 
-          setSelectedChofer({
-            ...newChoferTemplate,
-            ...choferData,
-            _id: choferData._id,
-            nombre: choferData.nombre || '',
-            apellido: choferData.apellido || '',
-            cuil: choferData.cuil || '',
-            fechaNacimiento: choferData.fecha_nacimiento ? new Date(choferData.fecha_nacimiento) : null,
-            empresa: choferData.empresa ? {
-              _id: typeof choferData.empresa === 'object' ? choferData.empresa._id : choferData.empresa,
-              nombre_empresa: typeof choferData.empresa === 'object' ? choferData.empresa.nombre_empresa : ''
-            } : null,
-            vehiculoAsignado: choferData.vehiculo_defecto ? {
-              _id: typeof choferData.vehiculo_defecto === 'object' ? choferData.vehiculo_defecto._id : choferData.vehiculo_defecto,
-              patente: typeof choferData.vehiculo_defecto === 'object' ? choferData.vehiculo_defecto.patente : ''
-            } : null,
-            licenciaNumero: choferData.licencia?.numero || '',
-            licenciaTipo: choferData.licencia?.tipos || [],
-            licenciaExpiracion: choferData.licencia?.fecha_expiracion ? 
-              new Date(choferData.licencia.fecha_expiracion.split('/').reverse().join('-')) : null,
-            licenciaDocumento: licenciaDocumento
-          });
-        } catch (error) {
-          console.error('Error al cargar detalles del chofer:', error);
-          setSelectedChofer({
-            ...newChoferTemplate,
-            ...chofer,
-            empresa: chofer.empresaObj ? {
-              _id: chofer.empresaObj._id,
-              nombre_empresa: chofer.empresaObj.nombre_empresa
-            } : null,
-            vehiculoAsignado: chofer.vehiculoObj ? {
-              _id: chofer.vehiculoObj._id,
-              patente: chofer.vehiculoObj.patente
-            } : null
-          });
-        }
-      } else {
-        setSelectedChofer(newChoferTemplate);
+        const licenciaDocumento = choferData.licencia?.documento 
+        
+          ? {
+              ...choferData.licencia.documento,
+              data: choferData.licencia.documento.data || { type: 'Buffer', data: [] }
+            }
+          : null;
+        const vehiculoAsignado = choferData.vehiculo_defecto 
+          ? {
+              _id: choferData.vehiculo_defecto._id || choferData.vehiculo_defecto,
+              patente: choferData.vehiculo_defecto.patente || ''
+            }
+          : null;
+
+        setSelectedChofer({
+          ...newChoferTemplate,
+          ...choferData,
+          _id: choferData._id,
+          nombre: choferData.nombre || '',
+          apellido: choferData.apellido || '',
+          cuil: choferData.cuil || '',
+          fechaNacimiento: choferData.fecha_nacimiento ? new Date(choferData.fecha_nacimiento) : null,
+          empresa: choferData.empresa ? {
+            _id: typeof choferData.empresa === 'object' ? choferData.empresa._id : choferData.empresa,
+            nombre_empresa: typeof choferData.empresa === 'object' ? choferData.empresa.nombre_empresa : ''
+          } : null,
+          vehiculoAsignado: vehiculoAsignado,
+          licenciaNumero: choferData.licencia?.numero || '',
+          licenciaTipo: choferData.licencia?.tipos || [],
+          licenciaExpiracion: choferData.licencia?.fecha_expiracion ? 
+            new Date(choferData.licencia.fecha_expiracion.split('/').reverse().join('-')) : null,
+          licenciaDocumento: licenciaDocumento
+        });
+      } catch (error) {
+        console.error('Error al cargar detalles del chofer:', error);
+        setSelectedChofer({
+          ...newChoferTemplate,
+          ...chofer,
+          empresa: chofer.empresaObj ? {
+            _id: chofer.empresaObj._id,
+            nombre_empresa: chofer.empresaObj.nombre_empresa
+          } : null,
+          vehiculoAsignado: chofer.vehiculoObj ? {
+            _id: chofer.vehiculoObj._id,
+            patente: chofer.vehiculoObj.patente
+          } : null
+        });
       }
-      setPopupOpen(true);
+    } else {
+      setSelectedChofer(newChoferTemplate);
     }
-  };
+    setPopupOpen(true);
+  }
+};
 
   const handleDeleteChofer = async (id) => {
     try {
@@ -216,68 +221,47 @@ const ListadoChoferes = () => {
     }
   };
 
-  const handleSubmitChofer = async (formData) => {
-    try {
-      let response;
-      if (selectedChofer?._id) {
-        response = await updateChofer(selectedChofer._id, {
-          ...formData,
-          licencia: {
-            numero: formData.licenciaNumero || "",
-            tipos: formData.licenciaTipo || [],
-            fecha_expiracion: formData.licenciaExpiracion 
-              ? format(formData.licenciaExpiracion, 'dd/MM/yyyy') 
-              : null,
-            documento: formData.licenciaDocumento || {
-              data: {
-                type: 'Buffer',
-                data: []
-              },
-              contentType: "application/pdf",
-              fileName: "licencia.pdf",
-              size: 0
-            }
-          }
-        });
-      } else {
-        response = await createChofer({
-          ...formData,
-          licencia: {
-            numero: formData.licenciaNumero || "",
-            tipos: formData.licenciaTipo || [],
-            fecha_expiracion: formData.licenciaExpiracion 
-              ? format(formData.licenciaExpiracion, 'dd/MM/yyyy') 
-              : null,
-            documento: formData.licenciaDocumento || {
-              data: {
-                type: 'Buffer',
-                data: []
-              },
-              contentType: "application/pdf",
-              fileName: "licencia.pdf",
-              size: 0
-            }
-          }
-        });
+ const handleSubmitChofer = async (formData) => {
+  try {
+    const choferData = {
+      nombre: formData.nombre,
+      apellido: formData.apellido,
+      cuil: formData.cuil,
+      fecha_nacimiento: formData.fechaNacimiento,
+      empresa: formData.empresa?._id || formData.empresa,
+      vehiculo_defecto: formData.vehiculoAsignadoData?._id || formData.vehiculoAsignado,
+      licencia: {
+        numero: formData.licenciaNumero || "",
+        tipos: formData.licenciaTipo || [],
+        fecha_expiracion: formData.licenciaExpiracion 
+          ? format(formData.licenciaExpiracion, 'dd/MM/yyyy') 
+          : null,
+        documento: formData.licenciaDocumento || {
+          data: { type: 'Buffer', data: [] },
+          contentType: "application/pdf",
+          fileName: "licencia.pdf",
+          size: 0
+        }
       }
+    };
 
-      fetchChoferes();
-      return { success: true, data: response };
-    } catch (error) {
-      console.error("Error detallado:", error.response?.data || error.message);
-      let errorMessage = "Error al guardar el chofer";
-      if (error.response?.data?.error) {
-        errorMessage = error.response.data.error;
-      } else if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
-      }
-      return { 
-        success: false, 
-        error: errorMessage,
-        details: error.response?.data?.details 
-      };
+    let response;
+    if (selectedChofer?._id) {
+      response = await updateChofer(selectedChofer._id, choferData);
+    } else {
+      response = await createChofer(choferData);
     }
-  };
+
+    fetchChoferes();
+    return { success: true, data: response };
+  } catch (error) {
+    console.error("Error:", error.response?.data || error.message);
+    return { 
+      success: false, 
+      error: error.response?.data?.message || 'Error al guardar el chofer'
+    };
+  }
+};
 
   const columns = [
     { id: 'nombre', label: 'Nombre', minWidth: 120, align: 'left' },

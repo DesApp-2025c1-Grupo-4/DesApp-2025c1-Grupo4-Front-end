@@ -10,7 +10,6 @@ import Search from '@mui/icons-material/Search';
 import FieldContainer from '../formsComponents/FieldContainer';
 import IconButtonStyled from '../formsComponents/IconButtonStyled';
 import SelectionModal from '../formsComponents/SelectionModal';
-import useDebouncedFetch from '../../hooks/useDebouncedFetch';
 
 const TIPOS_VEHICULO = ['Camión', 'Furgón', 'Camioneta', 'Auto', 'Otros'];
 
@@ -32,19 +31,40 @@ const VehiculoForm = ({ formData, handleChange, handleBlur, errors, isEditing = 
   const [modalStates, setModalStates] = useState({ empresas: false });
   const [detailModal, setDetailModal] = useState({ open: false, title: '', content: null });
 
-  useEffect(() => {
-    if (isEditing && formData?.empresa) {
-      setInputValues(p => ({ ...p, empresa: formData.empresa.nombre_empresa }));
+  // Función para cargar empresas
+  const fetchEmpresas = async (searchTerm = '') => {
+    setLoadingStates(p => ({ ...p, empresas: true }));
+    try {
+      const res = await axios.get('/api/empresas', {
+        params: {
+          nombre_empresa: searchTerm,
+          activo: true
+        }
+      });
+      setEmpresas(Array.isArray(res.data) ? res.data : []);
+    } catch (error) {
+      console.error('Error fetching empresas:', error);
+      setEmpresas([]);
+    } finally {
+      setLoadingStates(p => ({ ...p, empresas: false }));
     }
-  }, [isEditing, formData?.empresa]);
+  };
 
-  useDebouncedFetch(
-    '/api/empresas', 'nombre', inputValues.empresa,
-    setEmpresas, (loading) => setLoadingStates(p => ({ ...p, empresas: loading }))
-  );
+  // Cargar empresas iniciales
+  useEffect(() => {
+    fetchEmpresas();
+  }, []);
 
-  const handleInputChange = (key, value) => setInputValues(p => ({ ...p, [key]: value }));
-  const toggleModal = (key) => setModalStates(p => ({ ...p, [key]: !p[key] }));
+  // Búsqueda con debounce
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (modalStates.empresas) {
+        fetchEmpresas(inputValues.empresa);
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [inputValues.empresa, modalStates.empresas]);
 
   const handleViewDetails = (empresa) => {
     setDetailModal({
@@ -69,10 +89,10 @@ const VehiculoForm = ({ formData, handleChange, handleBlur, errors, isEditing = 
             <>
               <Typography><strong>Domicilio:</strong></Typography>
               <Box sx={{ pl: 2 }}>
-                <Typography><strong>Direccion:</strong> {empresa.domicilio_fiscal.calle}</Typography>
-                <Typography><strong>Ciudad:</strong> {empresa.domicilio_fiscal.ciudad}</Typography>
-                <Typography><strong>Provincia:</strong> {empresa.domicilio_fiscal.provincia}</Typography>
-                <Typography><strong>País:</strong> {empresa.domicilio_fiscal.pais}</Typography>
+                <Typography><strong>Dirección:</strong> {empresa.domicilio_fiscal.direccion || 'No especificado'}</Typography>
+                <Typography><strong>Ciudad:</strong> {empresa.domicilio_fiscal.ciudad || 'No especificado'}</Typography>
+                <Typography><strong>Provincia:</strong> {empresa.domicilio_fiscal.provincia_estado || 'No especificado'}</Typography>
+                <Typography><strong>País:</strong> {empresa.domicilio_fiscal.pais || 'No especificado'}</Typography>
               </Box>
             </>
           )}
@@ -141,7 +161,7 @@ const VehiculoForm = ({ formData, handleChange, handleBlur, errors, isEditing = 
                 }}
               />
               <IconButtonStyled
-                onClick={() => toggleModal('empresas')}
+                onClick={() => setModalStates(p => ({ ...p, empresas: true }))}
                 icon={Search}
                 variant="searchButton"
               />
@@ -150,17 +170,19 @@ const VehiculoForm = ({ formData, handleChange, handleBlur, errors, isEditing = 
 
           <SelectionModal
             open={modalStates.empresas}
-            onClose={() => toggleModal('empresas')}
+            onClose={() => {
+              setModalStates(p => ({ ...p, empresas: false }));
+              setInputValues(p => ({ ...p, empresa: formData?.empresaNombre || '' }));
+            }}
             title="Seleccionar Empresa"
             items={empresas}
             onSelect={(empresa) => {
               handleChange({ target: { name: 'empresa', value: empresa._id } });
               handleChange({ target: { name: 'empresaNombre', value: empresa.nombre_empresa } });
-              handleInputChange('empresa', empresa.nombre_empresa);
-              toggleModal('empresas');
+              setModalStates(p => ({ ...p, empresas: false }));
             }}
             searchValue={inputValues.empresa}
-            onSearchChange={(val) => handleInputChange('empresa', val)}
+            onSearchChange={(val) => setInputValues(p => ({ ...p, empresa: val }))}
             loading={loadingStates.empresas}
             getText={(i) => i.nombre_empresa}
             getSecondaryText={(i) => i.cuit && `CUIT: ${i.cuit}`}
@@ -172,7 +194,17 @@ const VehiculoForm = ({ formData, handleChange, handleBlur, errors, isEditing = 
       </Grid>
 
       <Modal open={detailModal.open} onClose={() => setDetailModal(p => ({ ...p, open: false }))}>
-        <Paper variant="detailModal">
+        <Paper sx={{ 
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          width: 400,
+          bgcolor: 'background.paper',
+          boxShadow: 24,
+          p: 4,
+          outline: 'none'
+        }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
             <Typography variant="h6" color="primary">{detailModal.title}</Typography>
             <IconButton onClick={() => setDetailModal(p => ({ ...p, open: false }))}><Close /></IconButton>
