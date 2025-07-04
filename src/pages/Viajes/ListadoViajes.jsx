@@ -28,6 +28,8 @@ const ListadoDeViajes = () => {
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [isLoadingAction, setIsLoadingAction] = useState(false);
+  const [seguimientoOpen, setSeguimientoOpen] = useState(false);
+  const [viajeSeguimiento, setViajeSeguimiento] = useState(null);
 
   const formatDate = (dateString) => {
     if (!dateString || dateString === 'Sin fecha') return 'Sin fecha';
@@ -153,7 +155,6 @@ const ListadoDeViajes = () => {
 
   const handleOpenPopup = async (type, viaje = null) => {
     setPopupType(type);
-    
     if (type === 'modificar-viaje' && viaje) {
       try {
         const response = await axios.get(`/api/viajes/${viaje._id}`, {
@@ -195,18 +196,68 @@ const ListadoDeViajes = () => {
     
     setPopupOpen(true);
   };
+const handleOpenSeguimiento = (viaje) => {
+  setViajeSeguimiento({
+    ...viaje,
+    seguimiento: []
+  });
+  setSeguimientoOpen(true);
+};
+
+const handleUpdateSeguimiento = async (data) => {
+  try {
+    setIsLoadingAction(true);
+    const ultimoEstado = data.seguimiento[data.seguimiento.length - 1];
+    await axios.patch(`/api/viajes/${data._id}/estado`, {
+      estado: ultimoEstado.estado,
+      seguimiento: data.seguimiento,
+      fechaActualizacion: ultimoEstado.fechaHora
+    });
+    const response = await axios.get('/api/viajes', {
+      params: {
+        populate: 'empresa_asignada,chofer_asignado,vehiculo_asignado,deposito_origen,deposito_destino',
+        activo: true
+      }
+    });
+    const datosTransformados = response.data.map(item => ({
+      ...item,
+      guid_viaje: item.guid_vieje || item._id,
+      numeroViaje: item.guid_vieje?.toString() || item._id?.toString() || 'N/A',
+      empresaTransportista: item.empresa_asignada?.nombre_empresa || 'Sin empresa',
+      nombreChofer: `${item.chofer_asignado?.nombre || ''} ${item.chofer_asignado?.apellido || ''}`.trim() || 'Sin chofer',
+      patenteVehiculo: item.vehiculo_asignado?.patente || 'Sin patente',
+      fechaInicio: formatDate(item.inicio_viaje),
+      fechaFin: formatDate(item.fin_viaje),
+      tipo_viaje: item.tipo_viaje || 
+                 (item.deposito_origen?.localizacion?.pais === 'Argentina' && 
+                  item.deposito_destino?.localizacion?.pais === 'Argentina' ? 'Nacional' : 'Internacional'),
+      origen: item.deposito_origen?.localizacion?.direccion || 'Sin origen',
+      destino: item.deposito_destino?.localizacion?.direccion || 'Sin destino',
+      estado: item.estado || 'planificado'
+    }));
+
+    setViajes(datosTransformados);
+    setViajesFiltrados(datosTransformados);
+    setSnackbarMessage('Estado del viaje actualizado correctamente');
+    setSnackbarOpen(true);
+    setSeguimientoOpen(false); 
+  } catch (error) {
+    console.error('Error al actualizar el seguimiento:', error);
+    setSnackbarMessage('Error al actualizar el estado del viaje');
+    setSnackbarOpen(true);
+  } finally {
+    setIsLoadingAction(false);
+  }
+};
 
 const handleDeleteViaje = async (id) => {
   try {
     setIsLoadingAction(true);
-
     await axios.patch(`/api/viajes/${id}`, {
       estado: 'cancelado',
     });
-
     setViajes(prev => prev.filter(v => v._id !== id));
     setViajesFiltrados(prev => prev.filter(v => v._id !== id));
-
     setSnackbarMessage('Viaje eliminado correctamente');
     setSnackbarOpen(true);
     setPopupOpen(false);
@@ -222,18 +273,15 @@ const handleDeleteViaje = async (id) => {
   const handleUpdateViaje = async (viajeActualizado) => {
     try {
       setIsLoadingAction(true);
-      
       const convertToBackendFormat = (dateTimeString) => {
         if (!dateTimeString) return '';
         const date = new Date(dateTimeString);
         if (isNaN(date.getTime())) return '';
-        
         const day = String(date.getDate()).padStart(2, '0');
         const month = String(date.getMonth() + 1).padStart(2, '0');
         const year = date.getFullYear();
         const hours = String(date.getHours()).padStart(2, '0');
         const minutes = String(date.getMinutes()).padStart(2, '0');
-        
         return `${day}/${month}/${year} ${hours}:${minutes}`;
       };
 
@@ -470,6 +518,7 @@ const handleDeleteViaje = async (id) => {
           mode="viajes"
           onClear={handleClear}
           onSearch={() => setFiltros(prev => ({...prev}))}
+          handleOpenPopup={handleOpenPopup}
         />
       </Box>
 

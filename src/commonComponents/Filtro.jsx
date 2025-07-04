@@ -4,7 +4,7 @@ import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import Popup from './Popup';
 
-const Filtro = ({ filtros, setFiltros, mode, onSearch, onClear }) => {
+const Filtro = ({ filtros, setFiltros, mode, onSearch, onClear, handleOpenPopup }) => {
   const config = {
     viajes: {
       showCriterio: true, showDates: true, searchLabel: 'Buscar',
@@ -40,9 +40,14 @@ const Filtro = ({ filtros, setFiltros, mode, onSearch, onClear }) => {
           {mode === 'viajes' && <>
             <Grid item xs={12} sm={6} md={1.5}><Popup buttonName={currentConfig.registerButton} page="nuevo-viaje"/></Grid>
             <Grid item xs={12} sm={6} md={1.5}>
-              <Button fullWidth variant="contained" color="primary" onClick={() => console.log('Ir a Seguimiento')}>
-                {currentConfig.seguimientoButton}
-              </Button>
+              <Button 
+  fullWidth 
+  variant="contained" 
+  color="primary" 
+  onClick={() => handleOpenPopup('seguimiento')}
+>
+  {currentConfig.seguimientoButton}
+</Button>
             </Grid>
           </>}
 

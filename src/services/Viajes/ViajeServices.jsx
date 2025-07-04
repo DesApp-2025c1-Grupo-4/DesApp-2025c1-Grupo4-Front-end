@@ -2,8 +2,9 @@ import api from '../api';
 
 export const getViajes = async (filtros = {}) => {
   try {
-    const response = await api.get('/viajes?detalles=true', { 
+    const response = await api.get('/viajes', { 
       params: {
+        detalles: true,
         ...filtros,
         fechaDesde: filtros.fechaDesde || undefined,
         fechaHasta: filtros.fechaHasta || undefined
@@ -43,5 +44,21 @@ export const getViajesConIncidentes = async () => {
   } catch (error) {
     console.error("Error al obtener viajes con incidentes:", error);
     throw error;
+  }
+};
+
+export const updateViajeState = async (idViaje, estado) => {
+  try {
+    const response = await api.patch(`/viajes/${idViaje}/estado`, { estado });
+    return response.data;
+  } catch (error) {
+    const serverMessage = error.response?.data?.message || error.message;
+    console.error('Error detallado:', {
+      idViaje,
+      estadoEnviado: estado,
+      error: serverMessage,
+      estadosPermitidos: error.response?.data?.estadosPermitidos
+    });
+    throw new Error(serverMessage);
   }
 };

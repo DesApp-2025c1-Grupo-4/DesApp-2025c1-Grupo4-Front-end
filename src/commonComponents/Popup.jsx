@@ -112,6 +112,7 @@ const Popup= ({ buttonName, page, open, onClose, children, selectedItem, onSucce
     if (page.includes('chofer')) return 'chofer';
     if (page.includes('vehiculo')) return 'vehiculo';
     if (page.includes('empresa')) return 'empresa';
+    if (page.includes('seguimiento')) return 'seguimiento';
     return 'default';
   }, [page]);
 
@@ -561,7 +562,7 @@ const handleSubmit = async () => {
       case 'viaje': return <ViajeForm {...formProps} />;
       case 'chofer': return <ChoferForm {...formProps} />;
       case 'vehiculo': return <VehiculoForm {...formProps} />;
-      case 'seguimiento': return <SeguimientoForm formData={formData} />;
+      case 'seguimiento': return <SeguimientoForm {...formProps} />;;
       case 'empresa':
       default: return <EmpresaForm {...formProps} />;
     }

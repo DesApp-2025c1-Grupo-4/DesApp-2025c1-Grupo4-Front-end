@@ -217,20 +217,21 @@ const customMuiTheme = createTheme({
         
         {
           props: { variant: 'searchButton' },
-            style: {
-              borderRadius: '8px',
-              border: `1px solid ${grey[300]}`,
-              backgroundColor: 'background.paper',
-              padding: '4px',
-              width: '40px',    
-              height: '40px',   
-              '& svg': {
-                fontSize: '1.3rem', 
-              },
-              '&:hover': { 
-                backgroundColor: grey[100] 
-              }
+          style: {
+            backgroundColor: '#062B60',
+            color: 'white',
+            width: 40,
+            height: 40,
+            '&:hover': {
+              backgroundColor: '#F38F2B',
+              transform: 'scale(1.1)',
+              boxShadow: '0px 2px 10px rgba(0, 0, 0, 0.2)'
+            },
+            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+            '& svg': {
+              fontSize: '1.2rem'
             }
+          }
         },
         {
           props: { variant: 'listInfoButton' },

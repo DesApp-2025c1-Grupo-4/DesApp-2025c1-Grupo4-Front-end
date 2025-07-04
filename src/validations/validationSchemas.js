@@ -57,8 +57,6 @@ const validationSchemas = {
       .nullable()
       .transform(parseCustomDate)
       .min(Yup.ref('fechaInicio'), 'Fecha fin no puede ser anterior a fecha inicio'),
-
-    tipoViaje: Yup.string().required('Tipo de viaje es requerido'),
   }),
 
 
