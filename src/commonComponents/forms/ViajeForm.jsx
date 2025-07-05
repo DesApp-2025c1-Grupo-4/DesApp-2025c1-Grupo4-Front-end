@@ -145,13 +145,37 @@ const ViajeForm = ({ formData = {}, handleChange, handleBlur, errors, isEditing 
   });
   const [vehicleDetail, setVehicleDetail] = useState({ open: false, item: null });
 
-  useEffect(() => {
+  /*useEffect(() => {
     if (formData.depositoOrigen?.localizacion?.pais && formData.depositoDestino?.localizacion?.pais) {
       const isNacional = formData.depositoOrigen.localizacion.pais === 'Argentina' && 
                          formData.depositoDestino.localizacion.pais === 'Argentina';
       handleChange({ target: { name: 'tipoViaje', value: isNacional ? 'Nacional' : 'Internacional' } });
     }
-  }, [formData.depositoOrigen, formData.depositoDestino]);
+  }, [formData.depositoOrigen, formData.depositoDestino]);*/
+
+  useEffect(() => {
+  const updateTipoViaje = () => {
+    const paisOrigen = formData.depositoOrigen?.localizacion?.pais;
+    const paisDestino = formData.depositoDestino?.localizacion?.pais;
+
+    if (paisOrigen && paisDestino) {
+      const isNacional = paisOrigen === paisDestino;
+      handleChange({ 
+        target: { 
+          name: 'tipoViaje', 
+          value: isNacional ? 'Nacional' : 'Internacional' 
+        } 
+      });
+    } else {
+      // Resetear si falta algún depósito
+      handleChange({ target: { name: 'tipoViaje', value: '' } });
+    }
+  };
+
+  updateTipoViaje();
+}, [formData.depositoOrigen, formData.depositoDestino]);
+
+  
 
   useDebouncedFetch('/api/empresas', 'nombre', inputValues.empresa, 
     (data) => setData(prev => ({...prev, empresas: data})), 
