@@ -317,6 +317,32 @@ const ViajeForm = ({ formData = {}, handleChange, handleBlur, errors, isEditing 
 
           {renderSearchField('depositoDestino', 'Depósito de Destino', <LocationOn />, 
             normalizedFormData.depositoDestino?.localizacion?.direccion, 'depositosDestino', errors.depositoDestino)}
+            <SelectionModal 
+              open={modals.depositosDestino} 
+              onClose={() => toggleModal('depositosDestino')}
+              title="Seleccionar Depósito de Destino" 
+              items={data.depositosDestino}
+              onSelect={(deposito) => {
+                handleChange({ target: { name: "depositoDestino", value: deposito } });
+                // Validación cruzada 
+                if (normalizedFormData.depositoOrigen?._id === deposito._id) {
+                  handleChange({ target: { name: "depositoOrigen", value: null } });
+                }
+              }}
+              searchValue={inputValues.depositoDestino}
+              onSearchChange={(val) => handleInputChange('depositoDestino', val)}
+              loading={loading.depositosDestino}
+              getText={(item) => item.localizacion?.direccion}
+              getSecondaryText={(item) => `${item.localizacion?.ciudad}, ${item.localizacion?.pais}`}
+              emptyText="No hay depósitos disponibles"
+              icon={LocationOn}
+              detailFields={[
+                { label: 'Dirección', value: 'localizacion.direccion' },
+                { label: 'Ciudad', value: 'localizacion.ciudad' },
+                { label: 'Provincia', value: 'localizacion.provincia_estado' },
+                { label: 'País', value: 'localizacion.pais' }
+              ]}
+            />
 
           <FormControl fullWidth className="fieldContainer">
             <InputLabel required className="requiredLabel">Tipo de Viaje</InputLabel>

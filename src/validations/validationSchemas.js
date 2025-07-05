@@ -47,7 +47,7 @@ const validationSchemas = {
     .matches(/^[0-9]{10,15}$/, 'Teléfono inválido. Debe tener 10-15 dígitos (ej: 1123456789)')
 }),
 
-
+/*
   viaje: Yup.object().shape({
     fechaInicio: Yup.date()
       .transform(parseCustomDate)
@@ -57,7 +57,32 @@ const validationSchemas = {
       .nullable()
       .transform(parseCustomDate)
       .min(Yup.ref('fechaInicio'), 'Fecha fin no puede ser anterior a fecha inicio'),
-  }),
+  }),*/
+
+  //nuevo
+  viaje: Yup.object().shape({
+  fechaInicio: Yup
+    .date()
+    .required('La fecha de inicio es requerida')
+    .typeError('Debe ser una fecha válida')
+    .min(new Date(), 'No puede seleccionar fechas pasadas'),
+
+  fechaFin: Yup
+    .date()
+    .required('La fecha de fin es requerida')
+    .typeError('Debe ser una fecha válida')
+    .min(
+      Yup.ref('fechaInicio'),
+      'La fecha de fin no puede ser anterior a la de inicio'
+    )
+    .when(
+      'fechaInicio',
+      (fechaInicio, schema) => fechaInicio 
+        ? schema.min(fechaInicio, 'La fecha de fin no puede ser anterior a la de inicio') 
+        : schema
+    ),
+
+}),
 
 
 chofer: Yup.object().shape({
