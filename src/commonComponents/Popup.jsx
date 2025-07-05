@@ -139,15 +139,15 @@ const Popup= ({ buttonName, page, open, onClose, children, selectedItem, onSucce
           newFormData.telefonoContacto = selectedItem?.personal_contacto?.telefono || ''; 
         }
         else if (formType === 'viaje') {
-          newFormData.idViaje = selectedItem?._id || '';
-          newFormData.depositoOrigen = selectedItem?.depositoOrigen?._id || selectedItem?.depositoOrigen || null;
-          newFormData.depositoDestino = selectedItem?.depositoDestino?._id || selectedItem?.depositoDestino || null;
+          newFormData._id = selectedItem._id || '';
+          newFormData.depositoOrigen = selectedItem.depositoOrigen || null;
+          newFormData.depositoDestino = selectedItem.depositoDestino || null;
           newFormData.fechaInicio = selectedItem?.fechaInicio || '';
           newFormData.fechaFin = selectedItem?.fechaFin || '';
-          newFormData.empresaTransportista = selectedItem?.empresaTransportista?._id || selectedItem?.empresaTransportista || null;
-          newFormData.choferAsignado = selectedItem?.choferAsignado?._id || selectedItem?.choferAsignado || null;
-          newFormData.vehiculoAsignado = selectedItem?.vehiculoAsignado?._id || selectedItem?.vehiculoAsignado || null;
-          newFormData.tipoViaje = selectedItem?.tipoViaje || '';
+          newFormData.empresaTransportista = selectedItem.empresaTransportista || null;
+          newFormData.choferAsignado = selectedItem.choferAsignado || null;
+          newFormData.vehiculoAsignado = selectedItem.vehiculoAsignado || null;
+          newFormData.tipoViaje = selectedItem.tipoViaje || '';
         } 
         else if (formType === 'chofer') {
           newFormData._id = selectedItem?._id || '';
@@ -278,6 +278,20 @@ const handleMapClick = async (e) => {
       address: {}
     });
   }
+};
+
+const formatDateForBackend = (dateString) => {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return '';
+  
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  
+  return `${day}/${month}/${year} ${hours}:${minutes}`;
 };
 
 const handleSubmit = async () => {
@@ -417,10 +431,10 @@ const handleSubmit = async () => {
             };
 } else if (formType === 'viaje') {
         dataToSend = {
-          deposito_origen: formData.depositoOrigen._id || formData.depositoOrigen,
-          deposito_destino: formData.depositoDestino._id || formData.depositoDestino,
-          inicio_viaje: convertToBackendFormat(formData.fechaInicio),
-          fin_viaje: convertToBackendFormat(formData.fechaFin),
+        deposito_origen: formData.depositoOrigen?._id || formData.depositoOrigen,
+        deposito_destino: formData.depositoDestino?._id || formData.depositoDestino,
+            inicio_viaje: formatDateForBackend(formData.fechaInicio),
+  fin_viaje: formatDateForBackend(formData.fechaFin),
           empresa_asignada:
             formData.empresaTransportista && typeof formData.empresaTransportista === 'object'
               ? formData.empresaTransportista._id

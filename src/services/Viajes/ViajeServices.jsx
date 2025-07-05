@@ -47,18 +47,25 @@ export const getViajesConIncidentes = async () => {
   }
 };
 
-export const updateViajeState = async (idViaje, estado) => {
+export const updateViajeState = async (idViaje, { estado, fecha }) => {
   try {
-    const response = await api.patch(`/viajes/${idViaje}/estado`, { estado });
+    const response = await api.patch(`/viajes/${idViaje}/estado`, { 
+      estado,
+      fecha 
+    });
     return response.data;
   } catch (error) {
     const serverMessage = error.response?.data?.message || error.message;
+    const estadosPermitidos = error.response?.data?.estadosPermitidos;
+    
     console.error('Error detallado:', {
       idViaje,
       estadoEnviado: estado,
       error: serverMessage,
-      estadosPermitidos: error.response?.data?.estadosPermitidos
+      estadosPermitidos
     });
+    
     throw new Error(serverMessage);
   }
 };
+

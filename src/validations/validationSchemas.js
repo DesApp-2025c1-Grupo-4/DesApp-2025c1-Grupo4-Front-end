@@ -48,16 +48,44 @@ const validationSchemas = {
 }),
 
 
-  viaje: Yup.object().shape({
-    fechaInicio: Yup.date()
-      .transform(parseCustomDate)
-      .required('Fecha de inicio es requerida'),
-
-    fechaFin: Yup.date()
-      .nullable()
-      .transform(parseCustomDate)
-      .min(Yup.ref('fechaInicio'), 'Fecha fin no puede ser anterior a fecha inicio'),
-  }),
+viaje: Yup.object().shape({
+  depositoOrigen: Yup.object().required('Depósito origen es requerido'),
+  depositoDestino: Yup.object().required('Depósito destino es requerido'),
+  empresaTransportista: Yup.object().required('Empresa transportista es requerida'),
+  choferAsignado: Yup.object().required('Chofer es requerido'),
+  vehiculoAsignado: Yup.object().required('Vehículo es requerido'),
+  tipoViaje: Yup.string().required('Tipo de viaje es requerido'),
+  
+  fechaInicio: Yup.string()
+    .required('Fecha de inicio es requerida')
+    .test('is-valid-date', 'Fecha inválida', value => {
+      if (!value) return false;
+      const date = new Date(value);
+      return !isNaN(date.getTime());
+    })
+    .test('is-future', 'Fecha de inicio no puede ser en el pasado', value => {
+      if (!value) return false;
+      return new Date(value) >= new Date();
+    }),
+    
+  fechaFin: Yup.string()
+    .required('Fecha de fin es requerida')
+    .test('is-valid-date', 'Fecha inválida', value => {
+      if (!value) return false;
+      const date = new Date(value);
+      return !isNaN(date.getTime());
+    })
+    .test('is-after-start', 'Fecha fin debe ser posterior a fecha inicio', function(value) {
+      const { fechaInicio } = this.parent;
+      if (!fechaInicio || !value) return true;
+      return new Date(value) > new Date(fechaInicio);
+    })
+    .test('min-duration', 'El viaje debe durar al menos 30 minutos', function(value) {
+      const { fechaInicio } = this.parent;
+      if (!fechaInicio || !value) return true;
+      return (new Date(value) - new Date(fechaInicio)) >= 30 * 60 * 1000;
+    })
+}),
 
 
 chofer: Yup.object().shape({

@@ -28,8 +28,6 @@ const ListadoDeViajes = () => {
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [isLoadingAction, setIsLoadingAction] = useState(false);
-  const [seguimientoOpen, setSeguimientoOpen] = useState(false);
-  const [viajeSeguimiento, setViajeSeguimiento] = useState(null);
 
   const formatDate = (dateString) => {
     if (!dateString || dateString === 'Sin fecha') return 'Sin fecha';
@@ -77,7 +75,7 @@ const ListadoDeViajes = () => {
           fechaFin: formatDate(item.fin_viaje),
           tipo_viaje: item.tipo_viaje || 
                     (item.deposito_origen?.localizacion?.pais === 'Argentina' && 
-                      item.deposito_destino?.localizacion?.pais === 'Argentina' ? 'Nacional' : 'Internacional'),
+                     item.deposito_destino?.localizacion?.pais === 'Argentina' ? 'Nacional' : 'Internacional'),
           origen: item.deposito_origen?.localizacion?.direccion || 'Sin origen',
           destino: item.deposito_destino?.localizacion?.direccion || 'Sin destino',
           estado: item.estado || 'planificado'
@@ -154,33 +152,42 @@ const ListadoDeViajes = () => {
   };
 
   const handleOpenPopup = async (type, viaje = null) => {
-    setPopupType(type);
-    if (type === 'modificar-viaje' && viaje) {
-      try {
-        const response = await axios.get(`/api/viajes/${viaje._id}`, {
-          params: { 
-            populate: 'deposito_origen,deposito_destino,empresa_asignada,chofer_asignado,vehiculo_asignado',
-            activo: true
-          }
-        });
-        
-        setSelectedViaje({
-          _id: response.data._id,
-          depositoOrigen: response.data.deposito_origen,
-          depositoDestino: response.data.deposito_destino,
-          fechaInicio: response.data.inicio_viaje,
-          fechaFin: response.data.fin_viaje,
-          empresaTransportista: response.data.empresa_asignada,
-          choferAsignado: response.data.chofer_asignado,
-          vehiculoAsignado: response.data.vehiculo_asignado,
-          tipoViaje: response.data.tipo_viaje
-        });
-      } catch (error) {
-        console.error('Error loading viaje data:', error);
+  setPopupType(type);
+  if (type === 'modificar-viaje' && viaje) {
+    try {
+      setIsLoadingAction(true);
+      const response = await axios.get(`/api/viajes/${viaje._id}`, {
+        params: { 
+          populate: 'deposito_origen,deposito_destino,empresa_asignada,chofer_asignado,vehiculo_asignado',
+          activo: true
+        }
+      });
+      
+      const viajeData = response.data;
+      
+      setSelectedViaje({
+        _id: viajeData._id,
+        depositoOrigen: viajeData.deposito_origen || null,
+        depositoDestino: viajeData.deposito_destino || null,
+        fechaInicio: viajeData.inicio_viaje || null,
+        fechaFin: viajeData.fin_viaje || null,
+        empresaTransportista: viajeData.empresa_asignada || null,
+        choferAsignado: viajeData.chofer_asignado || null,
+        vehiculoAsignado: viajeData.vehiculo_asignado || null,
+        tipoViaje: viajeData.tipo_viaje || 
+                  (viajeData.deposito_origen?.localizacion?.pais === 'Argentina' && 
+                  viajeData.deposito_destino?.localizacion?.pais === 'Argentina' ? 'Nacional' : 'Internacional')
+      });
+    } catch (error) {
+      console.error('Error loading viaje data:', error);
+      setSnackbarMessage('Error al cargar datos del viaje');
+      setSnackbarOpen(true);
+    } finally {
+        setIsLoadingAction(false);
       }
     } else if (type === 'nuevo-viaje') {
       setSelectedViaje({
-        idViaje: '',
+        _id: '',
         depositoOrigen: null,
         depositoDestino: null,
         fechaInicio: '',
@@ -196,103 +203,75 @@ const ListadoDeViajes = () => {
     
     setPopupOpen(true);
   };
-const handleOpenSeguimiento = (viaje) => {
-  setViajeSeguimiento({
-    ...viaje,
-    seguimiento: []
-  });
-  setSeguimientoOpen(true);
-};
 
-const handleUpdateSeguimiento = async (data) => {
-  try {
-    setIsLoadingAction(true);
-    const ultimoEstado = data.seguimiento[data.seguimiento.length - 1];
-    await axios.patch(`/api/viajes/${data._id}/estado`, {
-      estado: ultimoEstado.estado,
-      seguimiento: data.seguimiento,
-      fechaActualizacion: ultimoEstado.fechaHora
-    });
-    const response = await axios.get('/api/viajes', {
-      params: {
-        populate: 'empresa_asignada,chofer_asignado,vehiculo_asignado,deposito_origen,deposito_destino',
-        activo: true
-      }
-    });
-    const datosTransformados = response.data.map(item => ({
-      ...item,
-      guid_viaje: item.guid_vieje || item._id,
-      numeroViaje: item.guid_vieje?.toString() || item._id?.toString() || 'N/A',
-      empresaTransportista: item.empresa_asignada?.nombre_empresa || 'Sin empresa',
-      nombreChofer: `${item.chofer_asignado?.nombre || ''} ${item.chofer_asignado?.apellido || ''}`.trim() || 'Sin chofer',
-      patenteVehiculo: item.vehiculo_asignado?.patente || 'Sin patente',
-      fechaInicio: formatDate(item.inicio_viaje),
-      fechaFin: formatDate(item.fin_viaje),
-      tipo_viaje: item.tipo_viaje || 
-                 (item.deposito_origen?.localizacion?.pais === 'Argentina' && 
-                  item.deposito_destino?.localizacion?.pais === 'Argentina' ? 'Nacional' : 'Internacional'),
-      origen: item.deposito_origen?.localizacion?.direccion || 'Sin origen',
-      destino: item.deposito_destino?.localizacion?.direccion || 'Sin destino',
-      estado: item.estado || 'planificado'
-    }));
-
-    setViajes(datosTransformados);
-    setViajesFiltrados(datosTransformados);
-    setSnackbarMessage('Estado del viaje actualizado correctamente');
-    setSnackbarOpen(true);
-    setSeguimientoOpen(false); 
-  } catch (error) {
-    console.error('Error al actualizar el seguimiento:', error);
-    setSnackbarMessage('Error al actualizar el estado del viaje');
-    setSnackbarOpen(true);
-  } finally {
-    setIsLoadingAction(false);
-  }
-};
-
-const handleDeleteViaje = async (id) => {
-  try {
-    setIsLoadingAction(true);
-    await axios.patch(`/api/viajes/${id}`, {
-      estado: 'cancelado',
-    });
-    setViajes(prev => prev.filter(v => v._id !== id));
-    setViajesFiltrados(prev => prev.filter(v => v._id !== id));
-    setSnackbarMessage('Viaje eliminado correctamente');
-    setSnackbarOpen(true);
-    setPopupOpen(false);
-  } catch (error) {
-    console.error('Error al eliminar viaje:', error);
-    setSnackbarMessage('Error al eliminar el viaje');
-    setSnackbarOpen(true);
-  } finally {
-    setIsLoadingAction(false);
-  }
-};
+  const handleDeleteViaje = async (id) => {
+    try {
+      setIsLoadingAction(true);
+      await axios.patch(`/api/viajes/${id}/estado`, {
+        estado: 'cancelado',
+        fecha: new Date().toLocaleString('es-AR', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false
+        }).replace(',', '')
+      });
+      
+      setViajes(prev => prev.map(v => 
+        v._id === id ? { ...v, estado: 'cancelado' } : v
+      ));
+      setViajesFiltrados(prev => prev.map(v => 
+        v._id === id ? { ...v, estado: 'cancelado' } : v
+      ));
+      
+      setSnackbarMessage('Viaje cancelado correctamente');
+      setSnackbarOpen(true);
+      setPopupOpen(false);
+    } catch (error) {
+      console.error('Error al cancelar viaje:', error);
+      setSnackbarMessage(error.response?.data?.message || 'Error al cancelar el viaje');
+      setSnackbarOpen(true);
+    } finally {
+      setIsLoadingAction(false);
+    }
+  };
 
   const handleUpdateViaje = async (viajeActualizado) => {
     try {
       setIsLoadingAction(true);
-      const convertToBackendFormat = (dateTimeString) => {
-        if (!dateTimeString) return '';
-        const date = new Date(dateTimeString);
-        if (isNaN(date.getTime())) return '';
-        const day = String(date.getDate()).padStart(2, '0');
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const year = date.getFullYear();
-        const hours = String(date.getHours()).padStart(2, '0');
-        const minutes = String(date.getMinutes()).padStart(2, '0');
-        return `${day}/${month}/${year} ${hours}:${minutes}`;
+      
+      // Validación de campos requeridos
+      const camposRequeridos = {
+        depositoOrigen: 'Depósito origen',
+        depositoDestino: 'Depósito destino',
+        empresaTransportista: 'Empresa transportista',
+        choferAsignado: 'Chofer asignado',
+        vehiculoAsignado: 'Vehículo asignado',
+        fechaInicio: 'Fecha de inicio',
+        fechaFin: 'Fecha de fin'
       };
 
+      for (const [campo, nombre] of Object.entries(camposRequeridos)) {
+        if (!viajeActualizado[campo]) {
+          throw new Error(`El campo ${nombre} es requerido`);
+        }
+        if ((campo === 'depositoOrigen' || campo === 'depositoDestino' || 
+             campo === 'empresaTransportista' || campo === 'choferAsignado' || 
+             campo === 'vehiculoAsignado') && !viajeActualizado[campo]._id) {
+          throw new Error(`Debe seleccionar un ${nombre} válido`);
+        }
+      }
+
       const payload = {
-        deposito_origen: viajeActualizado.depositoOrigen?._id || viajeActualizado.depositoOrigen,
-        deposito_destino: viajeActualizado.depositoDestino?._id || viajeActualizado.depositoDestino,
-        inicio_viaje: convertToBackendFormat(viajeActualizado.fechaInicio),
-        fin_viaje: convertToBackendFormat(viajeActualizado.fechaFin),
-        empresa_asignada: viajeActualizado.empresaTransportista?._id || viajeActualizado.empresaTransportista,
-        chofer_asignado: viajeActualizado.choferAsignado?._id || viajeActualizado.choferAsignado,
-        vehiculo_asignado: viajeActualizado.vehiculoAsignado?._id || viajeActualizado.vehiculoAsignado,
+        deposito_origen: viajeActualizado.depositoOrigen._id || viajeActualizado.depositoOrigen,
+        deposito_destino: viajeActualizado.depositoDestino._id || viajeActualizado.depositoDestino,
+        inicio_viaje: viajeActualizado.fechaInicio, // Ya viene en formato DD/MM/YYYY HH:mm
+        fin_viaje: viajeActualizado.fechaFin,       // Ya viene en formato DD/MM/YYYY HH:mm
+        empresa_asignada: viajeActualizado.empresaTransportista._id || viajeActualizado.empresaTransportista,
+        chofer_asignado: viajeActualizado.choferAsignado._id || viajeActualizado.choferAsignado,
+        vehiculo_asignado: viajeActualizado.vehiculoAsignado._id || viajeActualizado.vehiculoAsignado,
         tipo_viaje: viajeActualizado.tipoViaje,
         estado: 'planificado'
       };
@@ -330,61 +309,59 @@ const handleDeleteViaje = async (id) => {
       setPopupOpen(false);
     } catch (error) {
       console.error('Error al actualizar viaje:', error);
-      setSnackbarMessage('Error al actualizar el viaje');
+      setSnackbarMessage(error.message || 'Error al actualizar el viaje');
       setSnackbarOpen(true);
     } finally {
       setIsLoadingAction(false);
     }
   };
 
-  const handleCreateViaje = async (nuevoViaje) => {
-    try {
-      setIsLoadingAction(true);
+const handleCreateViaje = async (nuevoViaje) => {
+  try {
+    setIsLoadingAction(true);
+    
+    // Validación de campos requeridos
+    const camposRequeridos = {
+      depositoOrigen: 'Depósito origen',
+      depositoDestino: 'Depósito destino',
+      empresaTransportista: 'Empresa transportista',
+      choferAsignado: 'Chofer asignado',
+      vehiculoAsignado: 'Vehículo asignado',
+      fechaInicio: 'Fecha de inicio',
+      fechaFin: 'Fecha de fin'
+    };
+
+    // Convertir fechas al formato esperado por el backend
+    const formatDateForBackend = (dateString) => {
+      if (!dateString) return '';
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return '';
       
-      const camposRequeridos = {
-        depositoOrigen: 'Depósito origen',
-        depositoDestino: 'Depósito destino',
-        empresaTransportista: 'Empresa transportista',
-        choferAsignado: 'Chofer asignado',
-        vehiculoAsignado: 'Vehículo asignado'
-      };
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = date.getFullYear();
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      
+      return `${day}/${month}/${year} ${hours}:${minutes}`;
+    };
 
-      for (const [campo, nombre] of Object.entries(camposRequeridos)) {
-        if (!nuevoViaje[campo]?._id) {
-          throw new Error(`Debe seleccionar un ${nombre} válido`);
-        }
-      }
+    const payload = {
+      deposito_origen: nuevoViaje.depositoOrigen._id,
+      deposito_destino: nuevoViaje.depositoDestino._id,
+      inicio_viaje: formatDateForBackend(nuevoViaje.fechaInicio),
+      fin_viaje: formatDateForBackend(nuevoViaje.fechaFin),
+      empresa_asignada: nuevoViaje.empresaTransportista._id,
+      chofer_asignado: nuevoViaje.choferAsignado._id,
+      vehiculo_asignado: nuevoViaje.vehiculoAsignado._id,
+      tipo_viaje: nuevoViaje.tipoViaje || 
+                 (nuevoViaje.depositoOrigen?.localizacion?.pais === 'Argentina' && 
+                  nuevoViaje.depositoDestino?.localizacion?.pais === 'Argentina' ? 'Nacional' : 'Internacional'),
+      estado: 'planificado',
+      activo: true
+    };
 
-      const convertToBackendFormat = (dateTimeString) => {
-        if (!dateTimeString) return '';
-        const date = new Date(dateTimeString);
-        if (isNaN(date.getTime())) return '';
-        
-        const day = String(date.getDate()).padStart(2, '0');
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const year = date.getFullYear();
-        const hours = String(date.getHours()).padStart(2, '0');
-        const minutes = String(date.getMinutes()).padStart(2, '0');
-        
-        return `${day}/${month}/${year} ${hours}:${minutes}`;
-      };
-
-      const payload = {
-        deposito_origen: nuevoViaje.depositoOrigen._id,
-        deposito_destino: nuevoViaje.depositoDestino._id,
-        inicio_viaje: convertToBackendFormat(nuevoViaje.fechaInicio),
-        fin_viaje: convertToBackendFormat(nuevoViaje.fechaFin),
-        empresa_asignada: nuevoViaje.empresaTransportista._id,
-        chofer_asignado: nuevoViaje.choferAsignado._id,
-        vehiculo_asignado: nuevoViaje.vehiculoAsignado._id,
-        tipo_viaje: nuevoViaje.tipoViaje || 
-                   (nuevoViaje.depositoOrigen?.localizacion?.pais === 'Argentina' && 
-                    nuevoViaje.depositoDestino?.localizacion?.pais === 'Argentina' ? 'Nacional' : 'Internacional'),
-        estado: 'planificado',
-        activo: true
-      };
-
-      await axios.post('/api/viajes', payload);
+    await axios.post('/api/viajes', payload);
       
       const response = await axios.get('/api/viajes', {
         params: { 
@@ -404,7 +381,7 @@ const handleDeleteViaje = async (id) => {
         fechaFin: formatDate(item.fin_viaje),
         tipo_viaje: item.tipo_viaje || 
                   (item.deposito_origen?.localizacion?.pais === 'Argentina' && 
-                    item.deposito_destino?.localizacion?.pais === 'Argentina' ? 'Nacional' : 'Internacional'),
+                   item.deposito_destino?.localizacion?.pais === 'Argentina' ? 'Nacional' : 'Internacional'),
         origen: item.deposito_origen?.localizacion?.direccion || 'Sin origen',
         destino: item.deposito_destino?.localizacion?.direccion || 'Sin destino',
         estado: item.estado || 'planificado'
@@ -418,7 +395,7 @@ const handleDeleteViaje = async (id) => {
       setPopupOpen(false);
     } catch (error) {
       console.error('Error:', error.response?.data || error.message);
-      setSnackbarMessage(error.response?.data?.mensaje || error.message);
+      setSnackbarMessage(error.message || error.response?.data?.mensaje || 'Error al crear el viaje');
       setSnackbarOpen(true);
     } finally {
       setIsLoadingAction(false);
@@ -475,7 +452,7 @@ const handleDeleteViaje = async (id) => {
           size="small" 
           color="error"
           variant="tableButtons"
-          disabled={isLoadingAction}
+          disabled={isLoadingAction || row.estado === 'cancelado'}
         >
           <CloseOutlinedIcon fontSize="small" variant="tableButtons" />
         </IconButton>
