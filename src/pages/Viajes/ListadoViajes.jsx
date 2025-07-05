@@ -130,6 +130,55 @@ const ListadoDeViajes = () => {
         }
       }
       
+          // Filtrado por criterio de búsqueda 
+      if (filtros.busqueda && filtros.busqueda.trim() !== '') {
+        const busqueda = filtros.busqueda.toLowerCase().trim();
+        
+        switch (filtros.criterio) {
+          case 'Empresa transportista':
+            return viaje.empresaTransportista?.toLowerCase().includes(busqueda) ?? false;
+          
+          case 'Chofer':
+            return viaje.nombreChofer?.toLowerCase().includes(busqueda) ?? false;
+          
+          case 'Vehículo':
+            return viaje.patenteVehiculo?.toLowerCase().includes(busqueda) ?? false;
+          
+          case 'Origen':
+            return viaje.origen?.toLowerCase().includes(busqueda) ?? false;
+          
+          case 'Destino':
+            return viaje.destino?.toLowerCase().includes(busqueda) ?? false;
+
+          case 'Tipo de viaje':
+              if (!viaje.tipo_viaje) return false;
+              
+              const tipoViaje = viaje.tipo_viaje.toLowerCase().trim();
+              const busquedaTipo = busqueda.toLowerCase().trim();
+              
+              // Verificación exacta para evitar falsos positivos
+              if (busquedaTipo === 'nacional') {
+                return tipoViaje === 'nacional';
+              }
+              if (busquedaTipo === 'internacional') {
+                return tipoViaje === 'internacional';
+              }
+              
+              // Búsqueda por abreviaciones
+              if (busquedaTipo === 'nac') {
+                return tipoViaje === 'nacional';
+              }
+              if (busquedaTipo === 'int') {
+                return tipoViaje === 'internacional';
+              }
+              
+              // Búsqueda parcial solo si no es una palabra completa
+              return tipoViaje.includes(busquedaTipo);
+          
+          default:
+            return true;
+        }
+      }
       return true;
     });
     
