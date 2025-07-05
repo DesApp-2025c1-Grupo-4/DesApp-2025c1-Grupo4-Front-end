@@ -155,7 +155,7 @@ const ListadoDeViajes = () => {
 
   const handleOpenPopup = async (type, viaje = null) => {
     setPopupType(type);
-    if (type === 'modificar-viaje' && viaje) {
+    if (type === 'modificar-viaje' && viaje?._id) {
       try {
         const response = await axios.get(`/api/viajes/${viaje._id}`, {
           params: { 
@@ -163,6 +163,10 @@ const ListadoDeViajes = () => {
             activo: true
           }
         });
+
+        if (!response.data) {  //Verifica si hay datos
+        throw new Error("No se recibieron datos del viaje");
+        }
         
         setSelectedViaje({
           _id: response.data._id,
@@ -177,6 +181,8 @@ const ListadoDeViajes = () => {
         });
       } catch (error) {
         console.error('Error loading viaje data:', error);
+        setSnackbarMessage('Error al cargar los datos del viaje');
+        setSnackbarOpen(true);
       }
     } else if (type === 'nuevo-viaje') {
       setSelectedViaje({
@@ -273,6 +279,22 @@ const handleDeleteViaje = async (id) => {
   const handleUpdateViaje = async (viajeActualizado) => {
     try {
       setIsLoadingAction(true);
+
+      // Validar campos requeridos
+      const camposRequeridos = {
+        depositoOrigen: 'Depósito origen',
+        depositoDestino: 'Depósito destino',
+        empresaTransportista: 'Empresa transportista',
+        choferAsignado: 'Chofer asignado',
+        vehiculoAsignado: 'Vehículo asignado'
+      };
+
+      for (const [campo, nombre] of Object.entries(camposRequeridos)) {
+        if (!viajeActualizado[campo]?._id) {
+          throw new Error(`Debe seleccionar un ${nombre} válido`);
+        }
+      }
+
       const convertToBackendFormat = (dateTimeString) => {
         if (!dateTimeString) return '';
         const date = new Date(dateTimeString);
@@ -284,7 +306,6 @@ const handleDeleteViaje = async (id) => {
         const minutes = String(date.getMinutes()).padStart(2, '0');
         return `${day}/${month}/${year} ${hours}:${minutes}`;
       };
-
       const payload = {
         deposito_origen: viajeActualizado.depositoOrigen?._id || viajeActualizado.depositoOrigen,
         deposito_destino: viajeActualizado.depositoDestino?._id || viajeActualizado.depositoDestino,

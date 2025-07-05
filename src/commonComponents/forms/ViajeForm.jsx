@@ -132,6 +132,35 @@ const ViajeForm = ({ formData = {}, handleChange, handleBlur, errors, isEditing 
     fin_viaje: formData.fechaFin
   };
 
+  // Función para formatear fechas del backend al formato del input datetime-local
+  const formatDateTimeForInput = (backendDate) => {
+  if (!backendDate || typeof backendDate !== 'string') return '';
+  
+  try {
+    // Elimina espacios en blanco al inicio/final
+    const trimmedDate = backendDate.trim();
+    
+    // Verifica el formato básico (debe contener al menos dd/MM/yyyy)
+    if (!/\d{2}\/\d{2}\/\d{4}/.test(trimmedDate)) return '';
+
+    const [datePart, timePart = '00:00'] = trimmedDate.split(' ');
+    const [day, month, year] = datePart.split('/');
+    const [hours, minutes] = timePart.split(':');
+
+    // Validación adicional
+    const validDay = day?.padStart?.(2, '0') || '01';
+    const validMonth = month?.padStart?.(2, '0') || '01';
+    const validYear = year || '2000';
+    const validHours = hours?.padStart?.(2, '0') || '00';
+    const validMinutes = minutes?.padStart?.(2, '0') || '00';
+
+    return `${validYear}-${validMonth}-${validDay}T${validHours}:${validMinutes}`;
+  } catch (error) {
+    console.error('Error formateando fecha:', error, 'Fecha recibida:', backendDate);
+    return '';
+  }
+};
+
   const [allChoferes, setAllChoferes] = useState([]);
 
   const [data, setData] = useState({
@@ -147,6 +176,7 @@ const ViajeForm = ({ formData = {}, handleChange, handleBlur, errors, isEditing 
     empresas: false, choferes: false, vehiculos: false, depositosOrigen: false, depositosDestino: false
   });
   const [vehicleDetail, setVehicleDetail] = useState({ open: false, item: null });
+
 
   useEffect(() => {
     if (formData.depositoOrigen?.localizacion?.pais && formData.depositoDestino?.localizacion?.pais) {
@@ -171,7 +201,7 @@ const ViajeForm = ({ formData = {}, handleChange, handleBlur, errors, isEditing 
   fetchAllChoferes();
 }, []);
 
-//
+  //
 
   useDebouncedFetch('/api/empresas', 'nombre', inputValues.empresa, 
     (data) => setData(prev => ({...prev, empresas: data})), 
@@ -241,7 +271,7 @@ const ViajeForm = ({ formData = {}, handleChange, handleBlur, errors, isEditing 
     (isLoading) => setLoading(prev => ({...prev, depositosDestino: isLoading}))
   );
 
-  useEffect(() => {
+  /*useEffect(() => {
     if (!isEditing) return;
     
     const fetchInitialData = async () => {
@@ -265,7 +295,70 @@ const ViajeForm = ({ formData = {}, handleChange, handleBlur, errors, isEditing 
       }
     };
     fetchInitialData();
+  }, [isEditing]);*/
+
+  // Edición
+
+useEffect(() => {
+    if (!isEditing) return;
+    
+    const fetchInitialData = async () => {
+      try {
+        const fetchAndUpdate = async (endpoint, field) => {
+          if (formData[field] && typeof formData[field] === 'string') {
+            const res = await axios.get(`/api/${endpoint}/${formData[field]}`, { params: { activo: true } });
+            handleChange({ target: { name: field, value: res.data } });
+            
+            // Actualizar también los valores de búsqueda
+            if (field === 'empresaTransportista') {
+              handleInputChange('empresa', res.data.nombre_empresa);
+            } else if (field === 'choferAsignado') {
+              handleInputChange('chofer', `${res.data.nombre} ${res.data.apellido}`);
+            } else if (field === 'vehiculoAsignado') {
+              handleInputChange('vehiculo', res.data.patente);
+            } else if (field === 'depositoOrigen') {
+              handleInputChange('depositoOrigen', res.data.localizacion?.direccion);
+            } else if (field === 'depositoDestino') {
+              handleInputChange('depositoDestino', res.data.localizacion?.direccion);
+            }
+          }
+        };
+
+        await Promise.all([
+          fetchAndUpdate('depositos', 'depositoOrigen'),
+          fetchAndUpdate('depositos', 'depositoDestino'),
+          fetchAndUpdate('empresas', 'empresaTransportista'),
+          fetchAndUpdate('choferes', 'choferAsignado'),
+          fetchAndUpdate('vehiculos', 'vehiculoAsignado')
+        ]);
+
+        // Formatear fechas para los inputs
+        if (formData.fechaInicio) {
+          handleChange({ 
+            target: { 
+              name: 'fechaInicio', 
+              value: formatDateTimeForInput(formData.fechaInicio) 
+            } 
+          });
+        }
+        
+        if (formData.fechaFin) {
+          handleChange({ 
+            target: { 
+              name: 'fechaFin', 
+              value: formatDateTimeForInput(formData.fechaFin) 
+            } 
+          });
+        }
+
+      } catch (error) {
+        console.error("Error loading initial data:", error);
+      }
+    };
+    
+    fetchInitialData();
   }, [isEditing]);
+
 
   const handleInputChange = (key, value) => setInputValues(prev => ({ ...prev, [key]: value }));
   const toggleModal = (key) => setModals(prev => ({ ...prev, [key]: !prev[key] }));
