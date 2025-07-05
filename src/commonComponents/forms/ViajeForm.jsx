@@ -25,8 +25,7 @@ const useDebouncedFetch = (url, paramName, value, setData, setLoading, extraPara
         setLoading(false);
       }
     };
-
-    const timer = setTimeout(() => value.length > 2 || value.length === 0 ? fetchData() : null, 500);
+    const timer = setTimeout(() => value.length > 0 || value.length === 0 ? fetchData() : null, 500);
     return () => clearTimeout(timer);
   }, [value, JSON.stringify(extraParams)]);
 };
@@ -121,15 +120,14 @@ const SelectionModal = ({ open, onClose, title, items, onSelect, searchValue, on
 
 const ViajeForm = ({ formData = {}, handleChange, handleBlur, errors, isEditing = false }) => {
   const normalizedFormData = {
-    ...formData,
-    deposito_origen: formData.depositoOrigen?._id || formData.depositoOrigen,
-    deposito_destino: formData.depositoDestino?._id || formData.depositoDestino,
-    empresa_transportista: formData.empresaTransportista?._id || formData.empresaTransportista,
-    chofer_asignado: formData.choferAsignado?._id || formData.choferAsignado,
-    vehiculo_asignado: formData.vehiculoAsignado?._id || formData.vehiculoAsignado,
-    tipo_viaje: formData.tipoViaje,
-    inicio_viaje: formData.fechaInicio,
-    fin_viaje: formData.fechaFin
+    depositoOrigen: formData.depositoOrigen || null,
+    depositoDestino: formData.depositoDestino || null,
+    empresaTransportista: formData.empresaTransportista || null,
+    choferAsignado: formData.choferAsignado || null,
+    vehiculoAsignado: formData.vehiculoAsignado || null,
+    tipoViaje: formData.tipoViaje || '',
+    fechaInicio: formData.fechaInicio || '',
+    fechaFin: formData.fechaFin || ''
   };
 
   // Función para formatear fechas del backend al formato del input datetime-local
@@ -163,25 +161,53 @@ const ViajeForm = ({ formData = {}, handleChange, handleBlur, errors, isEditing 
 
   const [allChoferes, setAllChoferes] = useState([]);
 
+  // Estados separados para depósitos origen y destino
+  const [origenData, setOrigenData] = useState({
+    depositos: [],
+    loading: false,
+    searchValue: '',
+    modalOpen: false
+  });
+
+  const [destinoData, setDestinoData] = useState({
+    depositos: [],
+    loading: false,
+    searchValue: '',
+    modalOpen: false
+  });
+
+  // Estados para otros componentes
   const [data, setData] = useState({
-    empresas: [], choferes: [], vehiculos: [], depositosOrigen: [], depositosDestino: []
+    empresas: [], 
+    choferes: [], 
+    vehiculos: []
   });
+
   const [inputValues, setInputValues] = useState({
-    empresa: '', chofer: '', vehiculo: '', depositoOrigen: '', depositoDestino: ''
+    empresa: '', 
+    chofer: '', 
+    vehiculo: ''
   });
+
   const [loading, setLoading] = useState({
-    empresas: false, choferes: false, vehiculos: false, depositosOrigen: false, depositosDestino: false
+    empresas: false, 
+    choferes: false, 
+    vehiculos: false
   });
+
   const [modals, setModals] = useState({
-    empresas: false, choferes: false, vehiculos: false, depositosOrigen: false, depositosDestino: false
+    empresas: false, 
+    choferes: false, 
+    vehiculos: false
   });
+
   const [vehicleDetail, setVehicleDetail] = useState({ open: false, item: null });
 
-
+  // Efecto para determinar tipo de viaje
   useEffect(() => {
     if (formData.depositoOrigen?.localizacion?.pais && formData.depositoDestino?.localizacion?.pais) {
       const isNacional = formData.depositoOrigen.localizacion.pais === 'Argentina' && 
-                         formData.depositoDestino.localizacion.pais === 'Argentina';
+                       formData.depositoDestino.localizacion.pais === 'Argentina';
       handleChange({ target: { name: 'tipoViaje', value: isNacional ? 'Nacional' : 'Internacional' } });
     }
   }, [formData.depositoOrigen, formData.depositoDestino]);
@@ -203,6 +229,61 @@ const ViajeForm = ({ formData = {}, handleChange, handleBlur, errors, isEditing 
 
   //
 
+  // Funciones para manejar depósitos
+  const fetchDepositos = async (type) => {
+    const stateUpdater = type === 'origen' ? setOrigenData : setDestinoData;
+    const searchValue = type === 'origen' ? origenData.searchValue : destinoData.searchValue;
+    
+    stateUpdater(prev => ({ ...prev, loading: true }));
+    
+    try {
+      const response = await axios.get('/api/depositos', { 
+        params: { 
+          direccion: searchValue,
+          activo: true 
+        }
+      });
+      
+      stateUpdater(prev => ({ 
+        ...prev, 
+        depositos: response.data,
+        loading: false 
+      }));
+    } catch (error) {
+      console.error(`Error al cargar depósitos ${type}:`, error);
+      stateUpdater(prev => ({ ...prev, loading: false }));
+    }
+  };
+
+  const handleOpenOrigenModal = () => {
+    setOrigenData(prev => ({ ...prev, modalOpen: true }));
+    if (origenData.depositos.length === 0) {
+      fetchDepositos('origen');
+    }
+  };
+
+  const handleOpenDestinoModal = () => {
+    setDestinoData(prev => ({ ...prev, modalOpen: true }));
+    if (destinoData.depositos.length === 0) {
+      fetchDepositos('destino');
+    }
+  };
+
+  const handleOrigenSearchChange = (value) => {
+    setOrigenData(prev => ({ ...prev, searchValue: value }));
+    if (value.length > 2 || value.length === 0) {
+      fetchDepositos('origen');
+    }
+  };
+
+  const handleDestinoSearchChange = (value) => {
+    setDestinoData(prev => ({ ...prev, searchValue: value }));
+    if (value.length > 2 || value.length === 0) {
+      fetchDepositos('destino');
+    }
+  };
+
+  // Funciones para otros componentes
   useDebouncedFetch('/api/empresas', 'nombre', inputValues.empresa, 
     (data) => setData(prev => ({...prev, empresas: data})), 
     (isLoading) => setLoading(prev => ({...prev, empresas: isLoading}))
@@ -210,6 +291,13 @@ const ViajeForm = ({ formData = {}, handleChange, handleBlur, errors, isEditing 
 
   /*useDebouncedFetch('/api/choferes', 'nombre', inputValues.chofer, 
     (data) => setData(prev => ({...prev, choferes: data})), 
+  useDebouncedFetch('/api/choferes', 'nombre', inputValues.chofer, 
+    (data) => {
+      const filtered = formData.empresaTransportista?._id 
+        ? data.filter(c => c.empresa?._id === formData.empresaTransportista._id)
+        : data;
+      setData(prev => ({...prev, choferes: filtered}));
+    }, 
     (isLoading) => setLoading(prev => ({...prev, choferes: isLoading})),
     { empresa: formData.empresaTransportista?._id }
   );*/
@@ -272,13 +360,16 @@ const ViajeForm = ({ formData = {}, handleChange, handleBlur, errors, isEditing 
   );
 
   /*useEffect(() => {
+  useEffect(() => {
     if (!isEditing) return;
     
     const fetchInitialData = async () => {
       try {
         const fetchAndUpdate = async (endpoint, field) => {
           if (normalizedFormData[field] && typeof normalizedFormData[field] === 'string') {
-            const res = await axios.get(`/api/${endpoint}/${normalizedFormData[field]}`, { params: { activo: true } });
+            const res = await axios.get(`/api/${endpoint}/${normalizedFormData[field]}`, { 
+              params: { activo: true } 
+            });
             handleChange({ target: { name: field, value: res.data } });
           }
         };
@@ -290,10 +381,19 @@ const ViajeForm = ({ formData = {}, handleChange, handleBlur, errors, isEditing 
           fetchAndUpdate('depositos', 'depositoOrigen'),
           fetchAndUpdate('depositos', 'depositoDestino')
         ]);
+        
+        setInputValues(prev => ({
+          ...prev,
+          empresa: normalizedFormData.empresaTransportista?.nombre_empresa || '',
+          chofer: normalizedFormData.choferAsignado ? 
+            `${normalizedFormData.choferAsignado.nombre} ${normalizedFormData.choferAsignado.apellido}` : '',
+          vehiculo: normalizedFormData.vehiculoAsignado?.patente || ''
+        }));
       } catch (error) {
         console.error("Error loading initial data:", error);
       }
     };
+    
     fetchInitialData();
   }, [isEditing]);*/
 
@@ -371,18 +471,42 @@ useEffect(() => {
     return true;
   };
 
-  const handleDateChange = (e) => { handleChange(e); setTimeout(validateDates, 100); };
+const handleDateChange = (e) => {
+  const { name, value } = e.target;
+  handleChange({ 
+    target: { 
+      name, 
+      value: value || ''
+    } 
+  });
+  
+  if (name === 'fechaInicio' && formData.fechaFin) {
+    validateDates(value, formData.fechaFin);
+  } else if (name === 'fechaFin' && formData.fechaInicio) {
+    validateDates(formData.fechaInicio, value);
+  }
+};
 
-  const handleChoferChange = (chofer) => {
-    handleChange({ target: { name: "choferAsignado", value: chofer } });
-    if (chofer?.vehiculo_defecto) {
-      handleChange({ target: { name: "vehiculoAsignado", value: chofer.vehiculo_defecto } });
-      handleInputChange('vehiculo', chofer.vehiculo_defecto.patente);
-    } else {
-      handleChange({ target: { name: "vehiculoAsignado", value: null } });
-      handleInputChange('vehiculo', '');
-    }
-  };
+const handleChoferChange = (chofer) => {
+  handleChange({ target: { name: "choferAsignado", value: chofer } });
+  
+  if (chofer?.vehiculo_defecto) {
+    const vehiculoNormalizado = {
+      ...chofer.vehiculo_defecto,
+      tipoVehiculo: chofer.vehiculo_defecto.tipo_vehiculo || chofer.vehiculo_defecto.tipo,
+      año: chofer.vehiculo_defecto.anio || chofer.vehiculo_defecto.año,
+      volumen: chofer.vehiculo_defecto.volumen || chofer.vehiculo_defecto.capacidad_carga?.volumen,
+      peso: chofer.vehiculo_defecto.peso || chofer.vehiculo_defecto.capacidad_carga?.peso,
+      empresaNombre: chofer.vehiculo_defecto.empresa?.nombre_empresa || chofer.vehiculo_defecto.empresaNombre
+    };
+    
+    handleChange({ target: { name: "vehiculoAsignado", value: vehiculoNormalizado } });
+    handleInputChange('vehiculo', chofer.vehiculo_defecto.patente);
+  } else {
+    handleChange({ target: { name: "vehiculoAsignado", value: null } });
+    handleInputChange('vehiculo', '');
+  }
+};
 
   const handleEmpresaSelect = (empresa) => {
     if (!empresa?._id) return console.error('Empresa seleccionada sin ID:', empresa);
@@ -390,29 +514,61 @@ useEffect(() => {
     handleInputChange('empresa', empresa.nombre_empresa);
     handleChange({ target: { name: "choferAsignado", value: null } });
     handleChange({ target: { name: "vehiculoAsignado", value: null } });
-    handleInputChange('chofer', ''); handleInputChange('vehiculo', '');
+    handleInputChange('chofer', ''); 
+    handleInputChange('vehiculo', '');
   };
 
   const handleVehiculoChange = (vehiculo) => handleChange({ target: { name: "vehiculoAsignado", value: vehiculo } });
 
-  const formatForDateTimeLocal = (dateString) => {
-    if (!dateString) return '';
-    try {
-      if (typeof dateString === 'string' && dateString.includes('/')) {
-        const [datePart, timePart] = dateString.split(' ');
-        const [day, month, year] = datePart.split('/');
-        const [hours, minutes] = timePart?.split(':') || ['00', '00'];
-        return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}`;
-      }
-      const date = new Date(dateString);
-      if (isNaN(date.getTime())) return '';
-      const offset = date.getTimezoneOffset() * 60000;
-      return new Date(date.getTime() - offset).toISOString().slice(0, 16);
-    } catch (error) {
-      console.error('Error formatting date:', error);
-      return '';
+const formatForDateTimeLocal = (dateString) => {
+  if (!dateString || dateString === '') return '';
+  
+  // Si ya está en formato ISO (de un datetime-local input)
+  if (typeof dateString === 'string' && dateString.includes('T')) {
+    return dateString;
+  }
+
+  try {
+    // Si viene del backend en formato DD/MM/YYYY HH:mm
+    if (typeof dateString === 'string' && dateString.includes('/')) {
+      const [datePart, timePart] = dateString.split(' ');
+      const [day, month, year] = datePart.split('/');
+      const [hours, minutes] = timePart?.split(':') || ['00', '00'];
+      return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}`;
     }
-  };
+
+    // Si es un objeto Date o timestamp
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return '';
+    
+    const offset = date.getTimezoneOffset() * 60000;
+    return new Date(date.getTime() - offset).toISOString().slice(0, 16);
+  } catch (error) {
+    console.error('Error formatting date:', error);
+    return '';
+  }
+};
+
+  const renderDepositoField = (type, label, value, error, onOpenModal) => (
+    <Box className="fieldContainer">
+      <InputLabel required className="requiredLabel">{label}</InputLabel>
+      <Box sx={{ display: 'flex', gap: 1 }}>
+        <TextField 
+          fullWidth 
+          size="small" 
+          value={value || ''}
+          InputProps={{
+            readOnly: true,
+            startAdornment: value && <LocationOn sx={{ mr: 1, color: 'primary.main' }} />
+          }} 
+        />
+        <IconButton onClick={onOpenModal} variant="searchButton">
+          <Search />
+        </IconButton>
+      </Box>
+      {error && <ErrorText>{error}</ErrorText>}
+    </Box>
+  );
 
   const renderSearchField = (field, label, icon, value, modalKey, error) => (
     <Box className="fieldContainer">
@@ -436,28 +592,52 @@ useEffect(() => {
         <Grid item xs={12} md={6}>
           <Typography variant="subtitle1" className="formSectionTitle">Información del Viaje</Typography>
 
-          <LabeledTextField name="fechaInicio" label="Fecha y Hora de Inicio" type="datetime-local"
-            value={formatForDateTimeLocal(normalizedFormData.fechaInicio)} onChange={handleDateChange}
-            onBlur={handleBlur} error={errors.fechaInicio} InputLabelProps={{ shrink: true }} />
+<LabeledTextField 
+  name="fechaInicio" 
+  label="Fecha y Hora de Inicio" 
+  type="datetime-local"
+  value={formatForDateTimeLocal(normalizedFormData.fechaInicio)}
+  onChange={handleDateChange}
+  onBlur={handleBlur}
+  error={errors.fechaInicio}
+  InputLabelProps={{ shrink: true }}
+/>
 
-          <LabeledTextField name="fechaFin" label="Fecha y Hora de Fin" type="datetime-local"
-            value={formatForDateTimeLocal(normalizedFormData.fechaFin)} onChange={handleDateChange}
-            onBlur={handleBlur} error={errors.fechaFin} InputLabelProps={{ shrink: true }} />
+<LabeledTextField 
+  name="fechaFin" 
+  label="Fecha y Hora de Fin" 
+  type="datetime-local"
+  value={formatForDateTimeLocal(normalizedFormData.fechaFin)}
+  onChange={handleDateChange}
+  onBlur={handleBlur}
+  error={errors.fechaFin}
+  InputLabelProps={{ shrink: true }}
+/>
 
-          {renderSearchField('depositoOrigen', 'Depósito de Origen', <LocationOn />, 
-            normalizedFormData.depositoOrigen?.localizacion?.direccion, 'depositosOrigen', errors.depositoOrigen)}
+          {renderDepositoField(
+            'origen',
+            'Depósito de Origen',
+            normalizedFormData.depositoOrigen?.localizacion?.direccion,
+            errors.depositoOrigen,
+            handleOpenOrigenModal
+          )}
 
-          <SelectionModal open={modals.depositosOrigen} onClose={() => toggleModal('depositosOrigen')}
-            title="Seleccionar Depósito de Origen" items={data.depositosOrigen}
+          <SelectionModal 
+            open={origenData.modalOpen} 
+            onClose={() => setOrigenData(prev => ({ ...prev, modalOpen: false }))}
+            title="Seleccionar Depósito de Origen" 
+            items={origenData.depositos}
             onSelect={(deposito) => {
               handleChange({ target: { name: "depositoOrigen", value: deposito } });
-              if (normalizedFormData.depositoDestino?._id === deposito._id) {
-                handleChange({ target: { name: "depositoDestino", value: null } });
-              }
-            }} searchValue={inputValues.depositoOrigen} onSearchChange={(val) => handleInputChange('depositoOrigen', val)}
-            loading={loading.depositosOrigen} getText={(item) => item.localizacion?.direccion}
+              setOrigenData(prev => ({ ...prev, modalOpen: false }));
+            }}
+            searchValue={origenData.searchValue} 
+            onSearchChange={handleOrigenSearchChange}
+            loading={origenData.loading} 
+            getText={(item) => item.localizacion?.direccion}
             getSecondaryText={(item) => `${item.localizacion?.ciudad}, ${item.localizacion?.pais}`}
-            emptyText="No hay depósitos disponibles" icon={LocationOn}
+            emptyText="No hay depósitos disponibles" 
+            icon={LocationOn}
             detailFields={[
               { label: 'Dirección', value: 'localizacion.direccion' },
               { label: 'Ciudad', value: 'localizacion.ciudad' },
@@ -467,36 +647,44 @@ useEffect(() => {
               { label: 'Horarios', render: (item) => 
                 `${item.horarios?.desde} - ${item.horarios?.hasta} (${item.horarios?.dias?.join(', ')})` 
               }
-            ]} />
+            ]} 
+          />
 
-          {renderSearchField('depositoDestino', 'Depósito de Destino', <LocationOn />, 
-            normalizedFormData.depositoDestino?.localizacion?.direccion, 'depositosDestino', errors.depositoDestino)}
-            <SelectionModal 
-              open={modals.depositosDestino} 
-              onClose={() => toggleModal('depositosDestino')}
-              title="Seleccionar Depósito de Destino" 
-              items={data.depositosDestino}
-              onSelect={(deposito) => {
-                handleChange({ target: { name: "depositoDestino", value: deposito } });
-                // Validación cruzada 
-                if (normalizedFormData.depositoOrigen?._id === deposito._id) {
-                  handleChange({ target: { name: "depositoOrigen", value: null } });
-                }
-              }}
-              searchValue={inputValues.depositoDestino}
-              onSearchChange={(val) => handleInputChange('depositoDestino', val)}
-              loading={loading.depositosDestino}
-              getText={(item) => item.localizacion?.direccion}
-              getSecondaryText={(item) => `${item.localizacion?.ciudad}, ${item.localizacion?.pais}`}
-              emptyText="No hay depósitos disponibles"
-              icon={LocationOn}
-              detailFields={[
-                { label: 'Dirección', value: 'localizacion.direccion' },
-                { label: 'Ciudad', value: 'localizacion.ciudad' },
-                { label: 'Provincia', value: 'localizacion.provincia_estado' },
-                { label: 'País', value: 'localizacion.pais' }
-              ]}
-            />
+          {renderDepositoField(
+            'destino',
+            'Depósito de Destino',
+            normalizedFormData.depositoDestino?.localizacion?.direccion,
+            errors.depositoDestino,
+            handleOpenDestinoModal
+          )}
+
+          <SelectionModal 
+            open={destinoData.modalOpen} 
+            onClose={() => setDestinoData(prev => ({ ...prev, modalOpen: false }))}
+            title="Seleccionar Depósito de Destino" 
+            items={destinoData.depositos}
+            onSelect={(deposito) => {
+              handleChange({ target: { name: "depositoDestino", value: deposito } });
+              setDestinoData(prev => ({ ...prev, modalOpen: false }));
+            }}
+            searchValue={destinoData.searchValue} 
+            onSearchChange={handleDestinoSearchChange}
+            loading={destinoData.loading} 
+            getText={(item) => item.localizacion?.direccion}
+            getSecondaryText={(item) => `${item.localizacion?.ciudad}, ${item.localizacion?.pais}`}
+            emptyText="No hay depósitos disponibles" 
+            icon={LocationOn}
+            detailFields={[
+              { label: 'Dirección', value: 'localizacion.direccion' },
+              { label: 'Ciudad', value: 'localizacion.ciudad' },
+              { label: 'Provincia', value: 'localizacion.provincia_estado' },
+              { label: 'País', value: 'localizacion.pais' },
+              { label: 'Tipo', value: 'tipo' },
+              { label: 'Horarios', render: (item) => 
+                `${item.horarios?.desde} - ${item.horarios?.hasta} (${item.horarios?.dias?.join(', ')})` 
+              }
+            ]} 
+          />
 
             <Box className="fieldContainer">
               <InputLabel required className="requiredLabel">Tipo de Viaje</InputLabel>
@@ -607,41 +795,9 @@ useEffect(() => {
                 </IconButton>
               )}
             </Box>
-            {errors.vehiculoAsignado && <ErrorText>{errors.vehiculoAsignado}</ErrorText>}
           </Box>
-
-          <SelectionModal open={modals.vehiculos} onClose={() => toggleModal('vehiculos')}
-            title="Seleccionar Vehículo" items={data.vehiculos} onSelect={handleVehiculoChange}
-            searchValue={inputValues.vehiculo} onSearchChange={(val) => handleInputChange('vehiculo', val)}
-            loading={loading.vehiculos} getText={(item) => `${item.patente} - ${item.marca} ${item.modelo}`}
-            getSecondaryText={(item) => item.empresa ? `Empresa: ${item.empresa.nombre_empresa}` : 'Sin empresa'}
-            getThirdText={(item) => `Capacidad: ${item.capacidad_carga?.volumen}m³ / ${item.capacidad_carga?.peso}kg`}
-            emptyText="No hay vehículos disponibles" icon={DirectionsCar} detailFields={[
-              { label: 'Patente', value: 'patente' },
-              { label: 'Marca', value: 'marca' },
-              { label: 'Modelo', value: 'modelo' },
-              { label: 'Año', value: 'anio' },
-              { label: 'Tipo', value: 'tipo_vehiculo' },
-              { label: 'Empresa', value: 'empresa.nombre_empresa' },
-              { label: 'Capacidad', render: (item) => 
-                `${item.capacidad_carga?.volumen}m³ / ${item.capacidad_carga?.peso}kg`
-              }
-            ]} />
         </Grid>
       </Grid>
-
-      <DetailModal open={vehicleDetail.open} onClose={() => setVehicleDetail({...vehicleDetail, open: false})}
-        title="Detalle de Vehículo" item={vehicleDetail.item} fields={[
-          { label: 'Patente', value: 'patente' },
-          { label: 'Marca', value: 'marca' },
-          { label: 'Modelo', value: 'modelo' },
-          { label: 'Año', value: 'anio' },
-          { label: 'Tipo', value: 'tipo_vehiculo' },
-          { label: 'Empresa', value: 'empresa.nombre_empresa' },
-          { label: 'Capacidad', render: (item) => 
-            `${item.capacidad_carga?.volumen}m³ / ${item.capacidad_carga?.peso}kg`
-          }
-        ]} />
     </Box>
   );
 };
