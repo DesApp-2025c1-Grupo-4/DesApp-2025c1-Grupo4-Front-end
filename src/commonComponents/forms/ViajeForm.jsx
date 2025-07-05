@@ -159,7 +159,7 @@ const ViajeForm = ({ formData = {}, handleChange, handleBlur, errors, isEditing 
   }
 };
 
-  const [allChoferes, setAllChoferes] = useState([]);
+
 
   // Estados separados para depósitos origen y destino
   const [origenData, setOrigenData] = useState({
@@ -202,6 +202,7 @@ const ViajeForm = ({ formData = {}, handleChange, handleBlur, errors, isEditing 
   });
 
   const [vehicleDetail, setVehicleDetail] = useState({ open: false, item: null });
+  const [allChoferes, setAllChoferes] = useState([]);
 
   // Efecto para determinar tipo de viaje
   useEffect(() => {
@@ -795,9 +796,41 @@ const formatForDateTimeLocal = (dateString) => {
                 </IconButton>
               )}
             </Box>
+            {errors.vehiculoAsignado && <ErrorText>{errors.vehiculoAsignado}</ErrorText>}
           </Box>
+
+          <SelectionModal open={modals.vehiculos} onClose={() => toggleModal('vehiculos')}
+            title="Seleccionar Vehículo" items={data.vehiculos} onSelect={handleVehiculoChange}
+            searchValue={inputValues.vehiculo} onSearchChange={(val) => handleInputChange('vehiculo', val)}
+            loading={loading.vehiculos} getText={(item) => `${item.patente} - ${item.marca} ${item.modelo}`}
+            getSecondaryText={(item) => item.empresa ? `Empresa: ${item.empresa.nombre_empresa}` : 'Sin empresa'}
+            getThirdText={(item) => `Capacidad: ${item.capacidad_carga?.volumen}m³ / ${item.capacidad_carga?.peso}kg`}
+            emptyText="No hay vehículos disponibles" icon={DirectionsCar} detailFields={[
+              { label: 'Patente', value: 'patente' },
+              { label: 'Marca', value: 'marca' },
+              { label: 'Modelo', value: 'modelo' },
+              { label: 'Año', value: 'anio' },
+              { label: 'Tipo', value: 'tipo_vehiculo' },
+              { label: 'Empresa', value: 'empresa.nombre_empresa' },
+              { label: 'Capacidad', render: (item) => 
+                `${item.capacidad_carga?.volumen}m³ / ${item.capacidad_carga?.peso}kg`
+              }
+            ]} />
         </Grid>
       </Grid>
+
+      <DetailModal open={vehicleDetail.open} onClose={() => setVehicleDetail({...vehicleDetail, open: false})}
+        title="Detalle de Vehículo" item={vehicleDetail.item} fields={[
+          { label: 'Patente', value: 'patente' },
+          { label: 'Marca', value: 'marca' },
+          { label: 'Modelo', value: 'modelo' },
+          { label: 'Año', value: 'anio' },
+          { label: 'Tipo', value: 'tipo_vehiculo' },
+          { label: 'Empresa', value: 'empresa.nombre_empresa' },
+          { label: 'Capacidad', render: (item) => 
+            `${item.capacidad_carga?.volumen}m³ / ${item.capacidad_carga?.peso}kg`
+          }
+        ]} />
     </Box>
   );
 };

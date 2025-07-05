@@ -96,6 +96,8 @@ const ListadoDeViajes = () => {
 
   useEffect(() => {
     const filtered = viajes.filter(viaje => {
+      // Excluir viajes cancelados
+      if (viaje.estado === 'cancelado') return false;
       if (filtros.fechaDesde) {
         const fechaInicioStr = viaje.inicio_viaje;
         if (!fechaInicioStr || fechaInicioStr === 'Sin fecha') return false;
@@ -233,7 +235,6 @@ const ListadoDeViajes = () => {
       setSnackbarOpen(true);
     } finally {
         setIsLoadingAction(false);
->>>>>>> extras
       }
     } else if (type === 'nuevo-viaje') {
       setSelectedViaje({

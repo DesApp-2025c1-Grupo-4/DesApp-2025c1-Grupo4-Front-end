@@ -84,7 +84,6 @@ viaje: Yup.object().shape({
       if (!fechaInicio || !value) return true;
       return (new Date(value) - new Date(fechaInicio)) >= 30 * 60 * 1000;
     })
->>>>>>> extras
 }),
 
 
