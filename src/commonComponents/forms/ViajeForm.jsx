@@ -175,19 +175,33 @@ const ViajeForm = ({ formData = {}, handleChange, handleBlur, errors, isEditing 
   updateTipoViaje();
 }, [formData.depositoOrigen, formData.depositoDestino]);
 
-  
-
   useDebouncedFetch('/api/empresas', 'nombre', inputValues.empresa, 
     (data) => setData(prev => ({...prev, empresas: data})), 
     (isLoading) => setLoading(prev => ({...prev, empresas: isLoading}))
   );
 
-  useDebouncedFetch('/api/choferes', 'nombre', inputValues.chofer, 
+  /*useDebouncedFetch('/api/choferes', 'nombre', inputValues.chofer, 
     (data) => setData(prev => ({...prev, choferes: data})), 
     (isLoading) => setLoading(prev => ({...prev, choferes: isLoading})),
     { empresa: formData.empresaTransportista?._id }
-  );
+  );*/
 
+  useDebouncedFetch('/api/choferes', 'nombre', inputValues.chofer, 
+  (data) => {
+    // Filtra adicionalmente por empresa en frontend por si acaso
+    const filtered = formData.empresaTransportista?._id 
+      ? data.filter(c => c.empresa?._id === formData.empresaTransportista._id)
+      : data;
+    setData(prev => ({...prev, choferes: filtered}))
+  }, 
+  (isLoading) => setLoading(prev => ({...prev, choferes: isLoading})),
+  { 
+    empresa: formData.empresaTransportista?._id, // Filtro backend
+    activo: true 
+  }
+);
+
+  
   useDebouncedFetch('/api/vehiculos', 'patente', inputValues.vehiculo, 
     (data) => setData(prev => ({...prev, vehiculos: data})), 
     (isLoading) => setLoading(prev => ({...prev, vehiculos: isLoading})),
@@ -368,16 +382,15 @@ const ViajeForm = ({ formData = {}, handleChange, handleBlur, errors, isEditing 
               ]}
             />
 
-          <FormControl fullWidth className="fieldContainer">
-            <InputLabel required className="requiredLabel">Tipo de Viaje</InputLabel>
-            <Select value={normalizedFormData.tipoViaje || ''} onChange={handleChange} name="tipoViaje"
-              error={!!errors.tipoViaje} disabled={true} IconComponent={() => null}>
-              <MenuItem value="" disabled>Seleccione un tipo</MenuItem>
-              <MenuItem value="Nacional">Nacional</MenuItem>
-              <MenuItem value="Internacional">Internacional</MenuItem>
-            </Select>
-            {errors.tipoViaje && <ErrorText>{errors.tipoViaje}</ErrorText>}
-          </FormControl>
+            <Box className="fieldContainer">
+              <InputLabel required className="requiredLabel">Tipo de Viaje</InputLabel>
+              <TextField
+                fullWidth
+                size="small"
+                value={normalizedFormData.tipoViaje || ''}
+                InputProps={{ readOnly: true }}
+              />
+            </Box>
         </Grid>
 
         <Grid item xs={12} md={6}>
@@ -419,27 +432,40 @@ const ViajeForm = ({ formData = {}, handleChange, handleBlur, errors, isEditing 
             {errors.choferAsignado && <ErrorText>{errors.choferAsignado}</ErrorText>}
           </Box>
 
-          <SelectionModal open={modals.choferes} onClose={() => toggleModal('choferes')}
-            title="Seleccionar Chofer" items={data.choferes} onSelect={handleChoferChange}
-            searchValue={inputValues.chofer} onSearchChange={(val) => handleInputChange('chofer', val)}
-            loading={loading.choferes} getText={(item) => `${item.nombre} ${item.apellido}`}
-            getSecondaryText={(item) => `CUIL: ${item.cuil}`}
-            getThirdText={(item) => item.vehiculo_defecto ? `Vehículo: ${item.vehiculo_defecto.patente}` : 'Sin vehículo asignado'}
-            emptyText="No hay choferes disponibles" icon={Person} detailFields={[
-              { label: 'Nombre', value: 'nombre' },
-              { label: 'Apellido', value: 'apellido' },
-              { label: 'CUIL', value: 'cuil' },
-              { label: 'Empresa', value: 'empresa.nombre_empresa' },
-              { label: 'Vehículo Asignado', render: (item) => 
-                item.vehiculo_defecto ? `${item.vehiculo_defecto.patente} - ${item.vehiculo_defecto.marca} ${item.vehiculo_defecto.modelo}` : 'Ninguno'
-              },
-              { label: 'Licencia', render: (item) => 
-                item.licenciaNumero ? `${item.licenciaNumero} (${item.licenciaTipo?.join(', ') || 'Sin tipo'})` : 'Sin licencia registrada'
-              },
-              { label: 'Fecha Expiración Licencia', render: (item) => 
-                item.licenciaExpiracion ? new Date(item.licenciaExpiracion).toLocaleDateString() : 'No especificada'
-              }
-            ]} />
+<SelectionModal 
+  open={modals.choferes}
+  onClose={() => toggleModal('choferes')}
+  title="Seleccionar Chofer"
+  items={data.choferes}
+  onSelect={handleChoferChange}
+  searchValue={inputValues.chofer}
+  onSearchChange={(val) => handleInputChange('chofer', val)}
+  loading={loading.choferes}
+  getText={(item) => `${item.nombre} ${item.apellido}`}
+  getSecondaryText={(item) => `CUIL: ${item.cuil}`}
+  getThirdText={(item) => item.vehiculo_defecto ? `Vehículo: ${item.vehiculo_defecto.patente}` : 'Sin vehículo asignado'}
+  emptyText={
+    !formData.empresaTransportista 
+      ? "Seleccione una empresa transportista primero"
+      : "No hay choferes disponibles para esta empresa"
+  }
+  icon={Person}
+  detailFields={[
+    { label: 'Nombre', value: 'nombre' },
+    { label: 'Apellido', value: 'apellido' },
+    { label: 'CUIL', value: 'cuil' },
+    { label: 'Empresa', value: 'empresa.nombre_empresa' },
+    { label: 'Vehículo Asignado', render: (item) => 
+      item.vehiculo_defecto ? `${item.vehiculo_defecto.patente} - ${item.vehiculo_defecto.marca} ${item.vehiculo_defecto.modelo}` : 'Ninguno'
+    },
+    { label: 'Licencia', render: (item) => 
+      item.licenciaNumero ? `${item.licenciaNumero} (${item.licenciaTipo?.join(', ') || 'Sin tipo'})` : 'Sin licencia registrada'
+    },
+    { label: 'Fecha Expiración Licencia', render: (item) => 
+      item.licenciaExpiracion ? new Date(item.licenciaExpiracion).toLocaleDateString() : 'No especificada'
+    }
+  ]}
+/>
 
           <Box className="fieldContainer">
             <InputLabel required className="requiredLabel">Vehículo Asignado</InputLabel>
