@@ -259,7 +259,7 @@ const handleUpdateSeguimiento = async (data) => {
 const handleDeleteViaje = async (id) => {
   try {
     setIsLoadingAction(true);
-    await axios.patch(`/api/viajes/${id}`, {
+    await axios.patch(`/api/viajes/${id}/estado`, {
       estado: 'cancelado',
     });
     setViajes(prev => prev.filter(v => v._id !== id));
