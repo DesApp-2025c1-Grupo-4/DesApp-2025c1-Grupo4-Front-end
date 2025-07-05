@@ -132,6 +132,8 @@ const ViajeForm = ({ formData = {}, handleChange, handleBlur, errors, isEditing 
     fin_viaje: formData.fechaFin
   };
 
+  const [allChoferes, setAllChoferes] = useState([]);
+
   const [data, setData] = useState({
     empresas: [], choferes: [], vehiculos: [], depositosOrigen: [], depositosDestino: []
   });
@@ -153,6 +155,23 @@ const ViajeForm = ({ formData = {}, handleChange, handleBlur, errors, isEditing 
       handleChange({ target: { name: 'tipoViaje', value: isNacional ? 'Nacional' : 'Internacional' } });
     }
   }, [formData.depositoOrigen, formData.depositoDestino]);
+
+  //validacion choferes
+
+  useEffect(() => {
+  const fetchAllChoferes = async () => {
+    try {
+      const response = await axios.get('/api/choferes', { params: { activo: true } });
+      setAllChoferes(response.data);
+    } catch (error) {
+      console.error('Error al cargar choferes:', error);
+    }
+  };
+  
+  fetchAllChoferes();
+}, []);
+
+//
 
   useDebouncedFetch('/api/empresas', 'nombre', inputValues.empresa, 
     (data) => setData(prev => ({...prev, empresas: data})), 
@@ -180,11 +199,37 @@ const ViajeForm = ({ formData = {}, handleChange, handleBlur, errors, isEditing 
   }
   );
 
-  useDebouncedFetch('/api/vehiculos', 'patente', inputValues.vehiculo, 
+  /*useDebouncedFetch('/api/vehiculos', 'patente', inputValues.vehiculo, 
     (data) => setData(prev => ({...prev, vehiculos: data})), 
     (isLoading) => setLoading(prev => ({...prev, vehiculos: isLoading})),
     { empresa: formData.empresaTransportista?._id }
-  );
+  );*/
+
+  useDebouncedFetch('/api/vehiculos', 'patente', inputValues.vehiculo, 
+  (data) => {
+    // Filtramos en frontend:
+    const filtered = data.filter(vehiculo => {
+      // 1. Que pertenezca a la empresa del chofer seleccionado
+      const mismaEmpresa = formData.choferAsignado?.empresa?._id 
+        ? vehiculo.empresa?._id === formData.choferAsignado.empresa._id
+        : true;
+      
+      // 2. Que no sea vehículo por defecto de ningún chofer
+      const noEstaAsignado = !allChoferes.some(chofer => 
+        chofer.vehiculo_defecto?._id === vehiculo._id
+      );
+      
+      return mismaEmpresa && noEstaAsignado;
+    });
+    
+    setData(prev => ({...prev, vehiculos: filtered}));
+  }, 
+  (isLoading) => setLoading(prev => ({...prev, vehiculos: isLoading})),
+  { 
+    empresa: formData.empresaTransportista?._id, // Filtro backend básico
+    activo: true 
+  }
+);
 
   useDebouncedFetch('/api/depositos', 'direccion', inputValues.depositoOrigen, 
     (data) => setData(prev => ({...prev, depositosOrigen: data})), 
@@ -453,12 +498,18 @@ const ViajeForm = ({ formData = {}, handleChange, handleBlur, errors, isEditing 
                   readOnly: true,
                   startAdornment: normalizedFormData.vehiculoAsignado && <DirectionsCar sx={{ mr: 1, color: 'primary.main' }} />
                 }} />
-              {!normalizedFormData.choferAsignado?.vehiculo_defecto ? (
-                <IconButton onClick={() => toggleModal('vehiculos')} variant="searchButton">
-                  <Search />
-                </IconButton>
-              ) : (
-                <IconButton onClick={() => setVehicleDetail({ open: true, item: normalizedFormData.vehiculoAsignado })} variant="searchButton">
+              <IconButton 
+                onClick={() => toggleModal('vehiculos')} 
+                variant="searchButton"
+                disabled={!formData.empresaTransportista}
+              >
+                <Search />
+              </IconButton>
+              {normalizedFormData.vehiculoAsignado && (
+                <IconButton 
+                  onClick={() => setVehicleDetail({ open: true, item: normalizedFormData.vehiculoAsignado })} 
+                  variant="searchButton"
+                >
                   <Info />
                 </IconButton>
               )}
