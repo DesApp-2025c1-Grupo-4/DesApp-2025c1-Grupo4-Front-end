@@ -14,7 +14,6 @@ Este proyecto forma parte del curso **Desarrollo de Aplicaciones** de la Univers
 - [Emotion](https://emotion.sh/docs/introduction)
 - [Leaflet](https://leafletjs.com/)
 - [React Leaflet](https://react-leaflet.js.org/)
-- [Google Maps API](https://developers.google.com/maps/documentation)
 - [date-fns](https://date-fns.org/)
 - [Yup](https://github.com/jquense/yup)
 - [ESLint](https://eslint.org/)
