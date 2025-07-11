@@ -3,7 +3,7 @@ import * as Yup from 'yup';
 const parseCustomDate = (value, originalValue) => {
   if (value instanceof Date && !isNaN(value)) return value;
 
-  if (typeof originalValue !== 'string') return new Date(''); // inválido
+  if (typeof originalValue !== 'string') return new Date('');
 
   const [datePart, timePart] = originalValue.split(' ');
   if (!datePart || !timePart) return new Date('');
@@ -34,7 +34,7 @@ const validationSchemas = {
       const [toH, toM] = value.split(':').map(Number);
       return (toH > fromH) || (toH === fromH && toM > fromM);
     }
-  )
+  ),
 }),
   direccion: Yup.string().required('La dirección es requerida (ej: Av. Corrientes 123)'),
   provincia: Yup.string().required('La provincia es requerida (ej: Buenos Aires)'),
@@ -47,29 +47,96 @@ const validationSchemas = {
     .matches(/^[0-9]{10,15}$/, 'Teléfono inválido. Debe tener 10-15 dígitos (ej: 1123456789)')
 }),
 
+viaje: Yup.object().shape({
+  depositoOrigen: Yup.object().required('Depósito origen es requerido'),
+  depositoDestino: Yup.object().required('Depósito destino es requerido'),
+  empresaTransportista: Yup.object().required('Empresa transportista es requerida'),
+  choferAsignado: Yup.object().required('Chofer es requerido'),
+  vehiculoAsignado: Yup.object().required('Vehículo es requerido'),
+  tipoViaje: Yup.string().required('Tipo de viaje es requerido'),
+  
+  fechaInicio: Yup.string()
+    .required('Fecha de inicio es requerida')
+    .test('is-valid-date', 'Fecha inválida', value => {
+      if (!value) return false;
+      const date = new Date(value);
+      return !isNaN(date.getTime());
+    })
+    .test('is-future', 'Fecha de inicio no puede ser en el pasado', value => {
+      if (!value) return false;
+      return new Date(value) >= new Date();
+    }),
+    
+  fechaFin: Yup.string()
+    .required('Fecha de fin es requerida')
+    .test('is-valid-date', 'Fecha inválida', value => {
+      if (!value) return false;
+      const date = new Date(value);
+      return !isNaN(date.getTime());
+    })
+    .test('is-after-start', 'Fecha fin debe ser posterior a fecha inicio', function(value) {
+      const { fechaInicio } = this.parent;
+      if (!fechaInicio || !value) return true;
+      return new Date(value) > new Date(fechaInicio);
+    })
+    .test('min-duration', 'El viaje debe durar al menos 30 minutos', function(value) {
+      const { fechaInicio } = this.parent;
+      if (!fechaInicio || !value) return true;
+      return (new Date(value) - new Date(fechaInicio)) >= 30 * 60 * 1000;
+    })
+}),
 
-  viaje: Yup.object().shape({
-    fechaInicio: Yup.date()
-      .transform(parseCustomDate)
-      .required('Fecha de inicio es requerida'),
 
-    fechaFin: Yup.date()
-      .nullable()
-      .transform(parseCustomDate)
-      .min(Yup.ref('fechaInicio'), 'Fecha fin no puede ser anterior a fecha inicio'),
-
-    tipoViaje: Yup.string().required('Tipo de viaje es requerido'),
-  }),
-
-
-  chofer: Yup.object().shape({
-  nombre: Yup.string().required('Requerido'),
-  apellido: Yup.string().required('Requerido'),
-  cuil: Yup.string().required('Requerido'),
-  fechaNacimiento: Yup.date().required('Requerido'),
-  licenciaNumero: Yup.string().required('Requerido'),
-  licenciaTipo: Yup.array().min(1, 'Seleccione al menos un tipo'),
-  licenciaExpiracion: Yup.date().required('Requerido')
+chofer: Yup.object().shape({
+  nombre: Yup.string()
+    .required('Requerido')
+    .matches(/^[A-Za-zÁ-Úá-ú\s]+$/, 'Solo letras permitidas'),
+  apellido: Yup.string()
+    .required('Requerido')
+    .matches(/^[A-Za-zÁ-Úá-ú\s]+$/, 'Solo letras permitidas'),
+  cuil: Yup.string()
+    .required('Requerido')
+    .matches(/^[0-9]{11}$/, 'Debe tener 11 dígitos')
+    .test('valid-cuil', 'CUIL inválido', value => {
+      if (!value) return true;
+      return value.length === 11;
+    }),
+  fechaNacimiento: Yup.date()
+    .required('Requerido')
+    .max(new Date(), 'Fecha no puede ser futura')
+    .test('age', 'Debe tener al menos 18 años', value => {
+      if (!value) return true;
+      const today = new Date();
+      const birthDate = new Date(value);
+      let age = today.getFullYear() - birthDate.getFullYear();
+      const monthDiff = today.getMonth() - birthDate.getMonth();
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+      }
+      return age >= 18;
+    }),
+  empresa: Yup.object().shape({
+    _id: Yup.string().required('Empresa es requerida')
+  }).required('Empresa es requerida'),
+  licenciaNumero: Yup.string()
+    .required('Requerido')
+    .matches(/^[A-Za-z0-9]+$/, 'Solo letras y números permitidos'),
+  licenciaTipo: Yup.array()
+    .min(1, 'Seleccione al menos un tipo')
+    .max(3, 'Máximo 3 tipos permitidos'),
+  licenciaExpiracion: Yup.date()
+    .required('Requerido')
+    .min(new Date(), 'La licencia debe ser válida (fecha futura)')
+    .test(
+      'min-age',
+      'La licencia debe tener al menos 6 meses de validez',
+      value => {
+        if (!value) return true;
+        const sixMonthsLater = new Date();
+        sixMonthsLater.setMonth(sixMonthsLater.getMonth() + 6);
+        return value >= sixMonthsLater;
+      }
+    ),
 }),
 
   vehiculo: Yup.object().shape({
