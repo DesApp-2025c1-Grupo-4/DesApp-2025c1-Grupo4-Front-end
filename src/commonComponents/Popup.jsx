@@ -295,8 +295,31 @@ const formatDateForBackend = (dateString) => {
 };
 
 const handleSubmit = async () => {
-    if (formType === 'seguimiento') {
-      handleClose();
+    if (page.includes('confirmar-eliminar')) {
+      setIsSubmitting(true);
+      try {
+        if (onDelete) {
+          const result = await onDelete(selectedItem._id); 
+          
+          if (result?.success) {
+            if (onSuccess) onSuccess();
+            handleClose();
+            window.location.reload();
+          } else {
+            setErrors({
+              _general: result?.error || 'Error al eliminar el elemento',
+              _details: result?.details 
+            });
+          }
+        }
+      } catch (error) {
+        setErrors({
+          _general: error.message || 'Error al procesar la eliminación',
+          _details: error.response?.data
+        });
+      } finally {
+        setIsSubmitting(false);
+      }
       return;
     }
 
