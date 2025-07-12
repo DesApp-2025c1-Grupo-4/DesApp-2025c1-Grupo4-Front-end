@@ -56,6 +56,7 @@ const DetailModal = ({ open, onClose, title, item, fields }) => !item ? null : (
   </Dialog>
 );
 
+
 const SelectionModal = ({ open, onClose, title, items, onSelect, searchValue, onSearchChange, loading, 
   getText, getSecondaryText, getThirdText, emptyText, icon: Icon, detailFields, showSearch = true }) => {
   const [detailModalOpen, setDetailModalOpen] = useState(false);
@@ -129,6 +130,37 @@ const ViajeForm = ({ formData = {}, handleChange, handleBlur, errors, isEditing 
     fechaFin: formData.fechaFin || ''
   };
 
+  // Función para formatear fechas del backend al formato del input datetime-local
+  const formatDateTimeForInput = (backendDate) => {
+  if (!backendDate || typeof backendDate !== 'string') return '';
+  
+  try {
+    // Elimina espacios en blanco al inicio/final
+    const trimmedDate = backendDate.trim();
+    
+    // Verifica el formato básico (debe contener al menos dd/MM/yyyy)
+    if (!/\d{2}\/\d{2}\/\d{4}/.test(trimmedDate)) return '';
+
+    const [datePart, timePart = '00:00'] = trimmedDate.split(' ');
+    const [day, month, year] = datePart.split('/');
+    const [hours, minutes] = timePart.split(':');
+
+    // Validación adicional
+    const validDay = day?.padStart?.(2, '0') || '01';
+    const validMonth = month?.padStart?.(2, '0') || '01';
+    const validYear = year || '2000';
+    const validHours = hours?.padStart?.(2, '0') || '00';
+    const validMinutes = minutes?.padStart?.(2, '0') || '00';
+
+    return `${validYear}-${validMonth}-${validDay}T${validHours}:${validMinutes}`;
+  } catch (error) {
+    console.error('Error formateando fecha:', error, 'Fecha recibida:', backendDate);
+    return '';
+  }
+};
+
+
+
   // Estados separados para depósitos origen y destino
   const [origenData, setOrigenData] = useState({
     depositos: [],
@@ -170,6 +202,7 @@ const ViajeForm = ({ formData = {}, handleChange, handleBlur, errors, isEditing 
   });
 
   const [vehicleDetail, setVehicleDetail] = useState({ open: false, item: null });
+  const [allChoferes, setAllChoferes] = useState([]);
 
   // Efecto para determinar tipo de viaje
   useEffect(() => {
@@ -179,6 +212,23 @@ const ViajeForm = ({ formData = {}, handleChange, handleBlur, errors, isEditing 
       handleChange({ target: { name: 'tipoViaje', value: isNacional ? 'Nacional' : 'Internacional' } });
     }
   }, [formData.depositoOrigen, formData.depositoDestino]);
+
+  //validacion choferes
+
+  useEffect(() => {
+  const fetchAllChoferes = async () => {
+    try {
+      const response = await axios.get('/api/choferes', { params: { activo: true } });
+      setAllChoferes(response.data);
+    } catch (error) {
+      console.error('Error al cargar choferes:', error);
+    }
+  };
+  
+  fetchAllChoferes();
+}, []);
+
+  //
 
   // Funciones para manejar depósitos
   const fetchDepositos = async (type) => {
@@ -240,6 +290,8 @@ const ViajeForm = ({ formData = {}, handleChange, handleBlur, errors, isEditing 
     (isLoading) => setLoading(prev => ({...prev, empresas: isLoading}))
   );
 
+  /*useDebouncedFetch('/api/choferes', 'nombre', inputValues.chofer, 
+    (data) => setData(prev => ({...prev, choferes: data})), 
   useDebouncedFetch('/api/choferes', 'nombre', inputValues.chofer, 
     (data) => {
       const filtered = formData.empresaTransportista?._id 
@@ -249,14 +301,66 @@ const ViajeForm = ({ formData = {}, handleChange, handleBlur, errors, isEditing 
     }, 
     (isLoading) => setLoading(prev => ({...prev, choferes: isLoading})),
     { empresa: formData.empresaTransportista?._id }
+  );*/
+
+  useDebouncedFetch('/api/choferes', 'nombre', inputValues.chofer, 
+  (data) => {
+    // Filtra adicionalmente por empresa en frontend por si acaso
+    const filtered = formData.empresaTransportista?._id 
+      ? data.filter(c => c.empresa?._id === formData.empresaTransportista._id)
+      : data;
+    setData(prev => ({...prev, choferes: filtered}))
+  }, 
+  (isLoading) => setLoading(prev => ({...prev, choferes: isLoading})),
+  { 
+    empresa: formData.empresaTransportista?._id, // Filtro backend
+    activo: true 
+  }
   );
 
-  useDebouncedFetch('/api/vehiculos', 'patente', inputValues.vehiculo, 
+  /*useDebouncedFetch('/api/vehiculos', 'patente', inputValues.vehiculo, 
     (data) => setData(prev => ({...prev, vehiculos: data})), 
     (isLoading) => setLoading(prev => ({...prev, vehiculos: isLoading})),
     { empresa: formData.empresaTransportista?._id }
+  );*/
+
+  useDebouncedFetch('/api/vehiculos', 'patente', inputValues.vehiculo, 
+  (data) => {
+    // Filtramos en frontend:
+    const filtered = data.filter(vehiculo => {
+      // 1. Que pertenezca a la empresa del chofer seleccionado
+      const mismaEmpresa = formData.choferAsignado?.empresa?._id 
+        ? vehiculo.empresa?._id === formData.choferAsignado.empresa._id
+        : true;
+      
+      // 2. Que no sea vehículo por defecto de ningún chofer
+      const noEstaAsignado = !allChoferes.some(chofer => 
+        chofer.vehiculo_defecto?._id === vehiculo._id
+      );
+      
+      return mismaEmpresa && noEstaAsignado;
+    });
+    
+    setData(prev => ({...prev, vehiculos: filtered}));
+  }, 
+  (isLoading) => setLoading(prev => ({...prev, vehiculos: isLoading})),
+  { 
+    empresa: formData.empresaTransportista?._id, // Filtro backend básico
+    activo: true 
+  }
+);
+
+  useDebouncedFetch('/api/depositos', 'direccion', inputValues.depositoOrigen, 
+    (data) => setData(prev => ({...prev, depositosOrigen: data})), 
+    (isLoading) => setLoading(prev => ({...prev, depositosOrigen: isLoading}))
   );
 
+  useDebouncedFetch('/api/depositos', 'direccion', inputValues.depositoDestino, 
+    (data) => setData(prev => ({...prev, depositosDestino: data})), 
+    (isLoading) => setLoading(prev => ({...prev, depositosDestino: isLoading}))
+  );
+
+  /*useEffect(() => {
   useEffect(() => {
     if (!isEditing) return;
     
@@ -292,7 +396,70 @@ const ViajeForm = ({ formData = {}, handleChange, handleBlur, errors, isEditing 
     };
     
     fetchInitialData();
+  }, [isEditing]);*/
+
+  // Edición
+
+useEffect(() => {
+    if (!isEditing) return;
+    
+    const fetchInitialData = async () => {
+      try {
+        const fetchAndUpdate = async (endpoint, field) => {
+          if (formData[field] && typeof formData[field] === 'string') {
+            const res = await axios.get(`/api/${endpoint}/${formData[field]}`, { params: { activo: true } });
+            handleChange({ target: { name: field, value: res.data } });
+            
+            // Actualizar también los valores de búsqueda
+            if (field === 'empresaTransportista') {
+              handleInputChange('empresa', res.data.nombre_empresa);
+            } else if (field === 'choferAsignado') {
+              handleInputChange('chofer', `${res.data.nombre} ${res.data.apellido}`);
+            } else if (field === 'vehiculoAsignado') {
+              handleInputChange('vehiculo', res.data.patente);
+            } else if (field === 'depositoOrigen') {
+              handleInputChange('depositoOrigen', res.data.localizacion?.direccion);
+            } else if (field === 'depositoDestino') {
+              handleInputChange('depositoDestino', res.data.localizacion?.direccion);
+            }
+          }
+        };
+
+        await Promise.all([
+          fetchAndUpdate('depositos', 'depositoOrigen'),
+          fetchAndUpdate('depositos', 'depositoDestino'),
+          fetchAndUpdate('empresas', 'empresaTransportista'),
+          fetchAndUpdate('choferes', 'choferAsignado'),
+          fetchAndUpdate('vehiculos', 'vehiculoAsignado')
+        ]);
+
+        // Formatear fechas para los inputs
+        if (formData.fechaInicio) {
+          handleChange({ 
+            target: { 
+              name: 'fechaInicio', 
+              value: formatDateTimeForInput(formData.fechaInicio) 
+            } 
+          });
+        }
+        
+        if (formData.fechaFin) {
+          handleChange({ 
+            target: { 
+              name: 'fechaFin', 
+              value: formatDateTimeForInput(formData.fechaFin) 
+            } 
+          });
+        }
+
+      } catch (error) {
+        console.error("Error loading initial data:", error);
+      }
+    };
+    
+    fetchInitialData();
   }, [isEditing]);
+
 
   const handleInputChange = (key, value) => setInputValues(prev => ({ ...prev, [key]: value }));
   const toggleModal = (key) => setModals(prev => ({ ...prev, [key]: !prev[key] }));
@@ -520,16 +687,15 @@ const formatForDateTimeLocal = (dateString) => {
             ]} 
           />
 
-          <FormControl fullWidth className="fieldContainer">
-            <InputLabel required className="requiredLabel">Tipo de Viaje</InputLabel>
-            <Select value={normalizedFormData.tipoViaje || ''} onChange={handleChange} name="tipoViaje"
-              error={!!errors.tipoViaje} disabled={true} IconComponent={() => null}>
-              <MenuItem value="" disabled>Seleccione un tipo</MenuItem>
-              <MenuItem value="Nacional">Nacional</MenuItem>
-              <MenuItem value="Internacional">Internacional</MenuItem>
-            </Select>
-            {errors.tipoViaje && <ErrorText>{errors.tipoViaje}</ErrorText>}
-          </FormControl>
+            <Box className="fieldContainer">
+              <InputLabel required className="requiredLabel">Tipo de Viaje</InputLabel>
+              <TextField
+                fullWidth
+                size="small"
+                value={normalizedFormData.tipoViaje || ''}
+                InputProps={{ readOnly: true }}
+              />
+            </Box>
         </Grid>
 
         <Grid item xs={12} md={6}>
@@ -571,27 +737,40 @@ const formatForDateTimeLocal = (dateString) => {
             {errors.choferAsignado && <ErrorText>{errors.choferAsignado}</ErrorText>}
           </Box>
 
-          <SelectionModal open={modals.choferes} onClose={() => toggleModal('choferes')}
-            title="Seleccionar Chofer" items={data.choferes} onSelect={handleChoferChange}
-            searchValue={inputValues.chofer} onSearchChange={(val) => handleInputChange('chofer', val)}
-            loading={loading.choferes} getText={(item) => `${item.nombre} ${item.apellido}`}
-            getSecondaryText={(item) => `CUIL: ${item.cuil}`}
-            getThirdText={(item) => item.vehiculo_defecto ? `Vehículo: ${item.vehiculo_defecto.patente}` : 'Sin vehículo asignado'}
-            emptyText="No hay choferes disponibles" icon={Person} detailFields={[
-              { label: 'Nombre', value: 'nombre' },
-              { label: 'Apellido', value: 'apellido' },
-              { label: 'CUIL', value: 'cuil' },
-              { label: 'Empresa', value: 'empresa.nombre_empresa' },
-              { label: 'Vehículo Asignado', render: (item) => 
-                item.vehiculo_defecto ? `${item.vehiculo_defecto.patente} - ${item.vehiculo_defecto.marca} ${item.vehiculo_defecto.modelo}` : 'Ninguno'
-              },
-              { label: 'Licencia', render: (item) => 
-                item.licenciaNumero ? `${item.licenciaNumero} (${item.licenciaTipo?.join(', ') || 'Sin tipo'})` : 'Sin licencia registrada'
-              },
-              { label: 'Fecha Expiración Licencia', render: (item) => 
-                item.licenciaExpiracion ? new Date(item.licenciaExpiracion).toLocaleDateString() : 'No especificada'
-              }
-            ]} />
+<SelectionModal 
+  open={modals.choferes}
+  onClose={() => toggleModal('choferes')}
+  title="Seleccionar Chofer"
+  items={data.choferes}
+  onSelect={handleChoferChange}
+  searchValue={inputValues.chofer}
+  onSearchChange={(val) => handleInputChange('chofer', val)}
+  loading={loading.choferes}
+  getText={(item) => `${item.nombre} ${item.apellido}`}
+  getSecondaryText={(item) => `CUIL: ${item.cuil}`}
+  getThirdText={(item) => item.vehiculo_defecto ? `Vehículo: ${item.vehiculo_defecto.patente}` : 'Sin vehículo asignado'}
+  emptyText={
+    !formData.empresaTransportista 
+      ? "Seleccione una empresa transportista primero"
+      : "No hay choferes disponibles para esta empresa"
+  }
+  icon={Person}
+  detailFields={[
+    { label: 'Nombre', value: 'nombre' },
+    { label: 'Apellido', value: 'apellido' },
+    { label: 'CUIL', value: 'cuil' },
+    { label: 'Empresa', value: 'empresa.nombre_empresa' },
+    { label: 'Vehículo Asignado', render: (item) => 
+      item.vehiculo_defecto ? `${item.vehiculo_defecto.patente} - ${item.vehiculo_defecto.marca} ${item.vehiculo_defecto.modelo}` : 'Ninguno'
+    },
+    { label: 'Licencia', render: (item) => 
+      item.licenciaNumero ? `${item.licenciaNumero} (${item.licenciaTipo?.join(', ') || 'Sin tipo'})` : 'Sin licencia registrada'
+    },
+    { label: 'Fecha Expiración Licencia', render: (item) => 
+      item.licenciaExpiracion ? new Date(item.licenciaExpiracion).toLocaleDateString() : 'No especificada'
+    }
+  ]}
+/>
 
           <Box className="fieldContainer">
             <InputLabel required className="requiredLabel">Vehículo Asignado</InputLabel>
@@ -601,10 +780,57 @@ const formatForDateTimeLocal = (dateString) => {
                   readOnly: true,
                   startAdornment: normalizedFormData.vehiculoAsignado && <DirectionsCar sx={{ mr: 1, color: 'primary.main' }} />
                 }} />
+              <IconButton 
+                onClick={() => toggleModal('vehiculos')} 
+                variant="searchButton"
+                disabled={!formData.empresaTransportista}
+              >
+                <Search />
+              </IconButton>
+              {normalizedFormData.vehiculoAsignado && (
+                <IconButton 
+                  onClick={() => setVehicleDetail({ open: true, item: normalizedFormData.vehiculoAsignado })} 
+                  variant="searchButton"
+                >
+                  <Info />
+                </IconButton>
+              )}
             </Box>
+            {errors.vehiculoAsignado && <ErrorText>{errors.vehiculoAsignado}</ErrorText>}
           </Box>
+
+          <SelectionModal open={modals.vehiculos} onClose={() => toggleModal('vehiculos')}
+            title="Seleccionar Vehículo" items={data.vehiculos} onSelect={handleVehiculoChange}
+            searchValue={inputValues.vehiculo} onSearchChange={(val) => handleInputChange('vehiculo', val)}
+            loading={loading.vehiculos} getText={(item) => `${item.patente} - ${item.marca} ${item.modelo}`}
+            getSecondaryText={(item) => item.empresa ? `Empresa: ${item.empresa.nombre_empresa}` : 'Sin empresa'}
+            getThirdText={(item) => `Capacidad: ${item.capacidad_carga?.volumen}m³ / ${item.capacidad_carga?.peso}kg`}
+            emptyText="No hay vehículos disponibles" icon={DirectionsCar} detailFields={[
+              { label: 'Patente', value: 'patente' },
+              { label: 'Marca', value: 'marca' },
+              { label: 'Modelo', value: 'modelo' },
+              { label: 'Año', value: 'anio' },
+              { label: 'Tipo', value: 'tipo_vehiculo' },
+              { label: 'Empresa', value: 'empresa.nombre_empresa' },
+              { label: 'Capacidad', render: (item) => 
+                `${item.capacidad_carga?.volumen}m³ / ${item.capacidad_carga?.peso}kg`
+              }
+            ]} />
         </Grid>
       </Grid>
+
+      <DetailModal open={vehicleDetail.open} onClose={() => setVehicleDetail({...vehicleDetail, open: false})}
+        title="Detalle de Vehículo" item={vehicleDetail.item} fields={[
+          { label: 'Patente', value: 'patente' },
+          { label: 'Marca', value: 'marca' },
+          { label: 'Modelo', value: 'modelo' },
+          { label: 'Año', value: 'anio' },
+          { label: 'Tipo', value: 'tipo_vehiculo' },
+          { label: 'Empresa', value: 'empresa.nombre_empresa' },
+          { label: 'Capacidad', render: (item) => 
+            `${item.capacidad_carga?.volumen}m³ / ${item.capacidad_carga?.peso}kg`
+          }
+        ]} />
     </Box>
   );
 };

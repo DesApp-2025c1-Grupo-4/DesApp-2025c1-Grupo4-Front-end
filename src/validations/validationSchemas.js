@@ -47,7 +47,6 @@ const validationSchemas = {
     .matches(/^[0-9]{10,15}$/, 'Teléfono inválido. Debe tener 10-15 dígitos (ej: 1123456789)')
 }),
 
-
 viaje: Yup.object().shape({
   depositoOrigen: Yup.object().required('Depósito origen es requerido'),
   depositoDestino: Yup.object().required('Depósito destino es requerido'),
