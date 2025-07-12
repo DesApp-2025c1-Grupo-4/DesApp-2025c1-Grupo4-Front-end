@@ -38,10 +38,13 @@ const VehiculoForm = ({ formData, handleChange, handleBlur, errors, isEditing = 
       const res = await axios.get('/api/empresas', {
         params: {
           nombre_empresa: searchTerm,
-          activo: true
+          activo: true 
         }
       });
-      setEmpresas(Array.isArray(res.data) ? res.data : []);
+      const activeEmpresas = Array.isArray(res.data) 
+        ? res.data.filter(empresa => empresa.activo === true) 
+        : [];
+      setEmpresas(activeEmpresas);
     } catch (error) {
       console.error('Error fetching empresas:', error);
       setEmpresas([]);

@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import axios from 'axios';
 
-const useDebouncedFetch = (url, paramName, value, setData, setLoading) => {
+const useDebouncedFetch = (url, paramName, value, setData, setLoading, extraParams = {}) => {
   useEffect(() => {
     const controller = new AbortController();
     const signal = controller.signal;
@@ -9,30 +9,22 @@ const useDebouncedFetch = (url, paramName, value, setData, setLoading) => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const res = await axios.get(url, { 
-          params: {},
-          signal 
-        });
-        const activos = Array.isArray(res.data) ? res.data.filter(e => e.activo !== false) : [];
-        setData(activos);
-      } catch (error) {
-        if (!axios.isCancel(error)) {
-          console.error(`Error fetching ${url}:`, error);
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
+        const params = {
+          ...(value && paramName && { [paramName]: value }),
+          activo: true,
+          ...extraParams
+        };
 
-    const fetchWithSearch = async () => {
-      setLoading(true);
-      try {
         const res = await axios.get(url, { 
-          params: { [paramName]: value },
+          params,
           signal 
         });
-        const activos = Array.isArray(res.data) ? res.data.filter(e => e.activo !== false) : [];
-        setData(activos);
+        
+        const filteredData = Array.isArray(res.data) 
+          ? res.data.filter(item => item.activo !== false) 
+          : res.data;
+          
+        setData(filteredData);
       } catch (error) {
         if (!axios.isCancel(error)) {
           console.error(`Error fetching ${url}:`, error);
@@ -45,8 +37,6 @@ const useDebouncedFetch = (url, paramName, value, setData, setLoading) => {
     const timer = setTimeout(() => {
       if (!value || value.length === 0 || value.length > 2) {
         fetchData();
-      } else {
-        fetchWithSearch();
       }
     }, 500);
 
@@ -54,7 +44,7 @@ const useDebouncedFetch = (url, paramName, value, setData, setLoading) => {
       controller.abort();
       clearTimeout(timer);
     };
-  }, [url, paramName, value, setData, setLoading]);
+  }, [url, paramName, value, setData, setLoading, JSON.stringify(extraParams)]);
 };
 
 export default useDebouncedFetch;

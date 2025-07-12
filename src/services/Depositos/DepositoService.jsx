@@ -51,9 +51,19 @@ export async function updateDeposito(id, depositoData) {
 
 export async function deleteDeposito(id) {
   try {
-    const response = await api.patch(`/depositos/${id}/delete`, { activo: false });
-    return response.data;
+    // Intento 1: Usando la ruta estándar
+    try {
+      const response = await api.patch(`/depositos/${id}/delete`);
+      return response.data;
+    } catch (firstError) {
+      console.warn('Primer intento fallido, probando alternativa...');
+      
+      // Intento 2: Alternativa más simple
+      const response = await api.patch(`/depositos/${id}`, { activo: false });
+      return response.data;
+    }
   } catch (error) {
+    console.error('Todos los intentos fallaron:', error);
     throw error;
   }
 }

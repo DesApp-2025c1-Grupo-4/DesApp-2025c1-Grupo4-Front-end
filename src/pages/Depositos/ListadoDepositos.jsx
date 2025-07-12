@@ -143,22 +143,31 @@ const ListadoDepositos = () => {
     }
   };
 
-  const handleDeleteDeposito = async (depositoId) => {
-    try {
-      await deleteDeposito(depositoId);
-      setDepositos(prev => prev.filter(d => d._id !== depositoId));
-      setDepositosFiltrados(prev => prev.filter(d => d._id !== depositoId));
-      return { 
-        success: true,
-        message: 'Depósito desactivado correctamente'
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: error.response?.data?.message || 'Error al desactivar el depósito'
-      };
-    }
-  };
+const handleDeleteDeposito = async (depositoId) => {
+  try {
+    setLoading(true);
+    
+    // 1. Intento de eliminación en el backend
+    await deleteDeposito(depositoId);
+    
+    // 2. Eliminación optimista en el frontend
+    setDepositos(prev => prev.filter(d => d._id !== depositoId));
+    setDepositosFiltrados(prev => prev.filter(d => d._id !== depositoId));
+    
+    return true;
+  } catch (error) {
+    console.error('Error al eliminar:', error);
+    
+    // Mostrar error específico al usuario
+    setError(error.message.includes('404') 
+      ? 'El servidor no tiene configurada la eliminación de depósitos'
+      : error.message);
+    
+    return false;
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleUpdateDeposito = async (updatedData) => {
     try {
@@ -258,14 +267,13 @@ const ListadoDepositos = () => {
         onClose={() => setPopupOpen(false)}
         page={popupType}
         selectedItem={selectedDeposito}
-        onDelete={handleDeleteDeposito}
-        onSuccess={(result) => {
-          if (result.success) {
-            setPopupOpen(false); 
-          } else if (result.error) {
-            alert(`Atención: ${result.error}`);
+        onDelete={async (id) => {
+          const success = await handleDeleteDeposito(id);
+          if (success) {
+            setPopupOpen(false);
           }
         }}
+        onSuccess={() => setPopupOpen(false)}
       />
       <Box mb={4}>
         <Filtro

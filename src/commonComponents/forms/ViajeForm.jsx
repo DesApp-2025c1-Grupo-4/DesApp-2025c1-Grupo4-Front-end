@@ -286,8 +286,12 @@ const ViajeForm = ({ formData = {}, handleChange, handleBlur, errors, isEditing 
 
   // Funciones para otros componentes
   useDebouncedFetch('/api/empresas', 'nombre', inputValues.empresa, 
-    (data) => setData(prev => ({...prev, empresas: data})), 
-    (isLoading) => setLoading(prev => ({...prev, empresas: isLoading}))
+    (data) => {
+      const empresasActivas = data.filter(empresa => empresa.activo !== false);
+      setData(prev => ({...prev, empresas: empresasActivas}));
+    }, 
+    (isLoading) => setLoading(prev => ({...prev, empresas: isLoading})),
+    { activo: true } 
   );
 
   /*useDebouncedFetch('/api/choferes', 'nombre', inputValues.chofer, 
@@ -494,11 +498,11 @@ const handleChoferChange = (chofer) => {
   if (chofer?.vehiculo_defecto) {
     const vehiculoNormalizado = {
       ...chofer.vehiculo_defecto,
-      tipoVehiculo: chofer.vehiculo_defecto.tipo_vehiculo || chofer.vehiculo_defecto.tipo,
-      año: chofer.vehiculo_defecto.anio || chofer.vehiculo_defecto.año,
-      volumen: chofer.vehiculo_defecto.volumen || chofer.vehiculo_defecto.capacidad_carga?.volumen,
-      peso: chofer.vehiculo_defecto.peso || chofer.vehiculo_defecto.capacidad_carga?.peso,
-      empresaNombre: chofer.vehiculo_defecto.empresa?.nombre_empresa || chofer.vehiculo_defecto.empresaNombre
+      tipoVehiculo: chofer.vehiculo_defecto.tipo_vehiculo, 
+      año: chofer.vehiculo_defecto.anio, 
+      volumen: chofer.vehiculo_defecto.capacidad_carga?.volumen,
+      peso: chofer.vehiculo_defecto.capacidad_carga?.peso,
+      empresaNombre: chofer.vehiculo_defecto.empresa?.nombre_empresa
     };
     
     handleChange({ target: { name: "vehiculoAsignado", value: vehiculoNormalizado } });
@@ -737,40 +741,40 @@ const formatForDateTimeLocal = (dateString) => {
             {errors.choferAsignado && <ErrorText>{errors.choferAsignado}</ErrorText>}
           </Box>
 
-<SelectionModal 
-  open={modals.choferes}
-  onClose={() => toggleModal('choferes')}
-  title="Seleccionar Chofer"
-  items={data.choferes}
-  onSelect={handleChoferChange}
-  searchValue={inputValues.chofer}
-  onSearchChange={(val) => handleInputChange('chofer', val)}
-  loading={loading.choferes}
-  getText={(item) => `${item.nombre} ${item.apellido}`}
-  getSecondaryText={(item) => `CUIL: ${item.cuil}`}
-  getThirdText={(item) => item.vehiculo_defecto ? `Vehículo: ${item.vehiculo_defecto.patente}` : 'Sin vehículo asignado'}
-  emptyText={
-    !formData.empresaTransportista 
-      ? "Seleccione una empresa transportista primero"
-      : "No hay choferes disponibles para esta empresa"
-  }
-  icon={Person}
-  detailFields={[
-    { label: 'Nombre', value: 'nombre' },
-    { label: 'Apellido', value: 'apellido' },
-    { label: 'CUIL', value: 'cuil' },
-    { label: 'Empresa', value: 'empresa.nombre_empresa' },
-    { label: 'Vehículo Asignado', render: (item) => 
-      item.vehiculo_defecto ? `${item.vehiculo_defecto.patente} - ${item.vehiculo_defecto.marca} ${item.vehiculo_defecto.modelo}` : 'Ninguno'
-    },
-    { label: 'Licencia', render: (item) => 
-      item.licenciaNumero ? `${item.licenciaNumero} (${item.licenciaTipo?.join(', ') || 'Sin tipo'})` : 'Sin licencia registrada'
-    },
-    { label: 'Fecha Expiración Licencia', render: (item) => 
-      item.licenciaExpiracion ? new Date(item.licenciaExpiracion).toLocaleDateString() : 'No especificada'
-    }
-  ]}
-/>
+        <SelectionModal 
+          open={modals.choferes}
+          onClose={() => toggleModal('choferes')}
+          title="Seleccionar Chofer"
+          items={data.choferes}
+          onSelect={handleChoferChange}
+          searchValue={inputValues.chofer}
+          onSearchChange={(val) => handleInputChange('chofer', val)}
+          loading={loading.choferes}
+          getText={(item) => `${item.nombre} ${item.apellido}`}
+          getSecondaryText={(item) => `CUIL: ${item.cuil}`}
+          getThirdText={(item) => item.vehiculo_defecto ? `Vehículo: ${item.vehiculo_defecto.patente}` : 'Sin vehículo asignado'}
+          emptyText={
+            !formData.empresaTransportista 
+              ? "Seleccione una empresa transportista primero"
+              : "No hay choferes disponibles para esta empresa"
+          }
+          icon={Person}
+          detailFields={[
+            { label: 'Nombre', value: 'nombre' },
+            { label: 'Apellido', value: 'apellido' },
+            { label: 'CUIL', value: 'cuil' },
+            { label: 'Empresa', value: 'empresa.nombre_empresa' },
+            { label: 'Vehículo Asignado', render: (item) => 
+              item.vehiculo_defecto ? `${item.vehiculo_defecto.patente} - ${item.vehiculo_defecto.marca} ${item.vehiculo_defecto.modelo}` : 'Ninguno'
+            },
+            { label: 'Licencia', render: (item) => 
+              item.licenciaNumero ? `${item.licenciaNumero} (${item.licenciaTipo?.join(', ') || 'Sin tipo'})` : 'Sin licencia registrada'
+            },
+            { label: 'Fecha Expiración Licencia', render: (item) => 
+              item.licenciaExpiracion ? new Date(item.licenciaExpiracion).toLocaleDateString() : 'No especificada'
+            }
+          ]}
+        />
 
           <Box className="fieldContainer">
             <InputLabel required className="requiredLabel">Vehículo Asignado</InputLabel>
@@ -804,8 +808,12 @@ const formatForDateTimeLocal = (dateString) => {
             searchValue={inputValues.vehiculo} onSearchChange={(val) => handleInputChange('vehiculo', val)}
             loading={loading.vehiculos} getText={(item) => `${item.patente} - ${item.marca} ${item.modelo}`}
             getSecondaryText={(item) => item.empresa ? `Empresa: ${item.empresa.nombre_empresa}` : 'Sin empresa'}
-            getThirdText={(item) => `Capacidad: ${item.capacidad_carga?.volumen}m³ / ${item.capacidad_carga?.peso}kg`}
-            emptyText="No hay vehículos disponibles" icon={DirectionsCar} detailFields={[
+            getThirdText={(item) => 
+              item.capacidad_carga 
+                ? `Capacidad: ${item.capacidad_carga.volumen}m³ / ${item.capacidad_carga.peso}kg`
+                : 'Capacidad no especificada'
+            }
+            detailFields={[
               { label: 'Patente', value: 'patente' },
               { label: 'Marca', value: 'marca' },
               { label: 'Modelo', value: 'modelo' },
@@ -813,9 +821,12 @@ const formatForDateTimeLocal = (dateString) => {
               { label: 'Tipo', value: 'tipo_vehiculo' },
               { label: 'Empresa', value: 'empresa.nombre_empresa' },
               { label: 'Capacidad', render: (item) => 
-                `${item.capacidad_carga?.volumen}m³ / ${item.capacidad_carga?.peso}kg`
+                item.capacidad_carga 
+                  ? `${item.capacidad_carga.volumen}m³ / ${item.capacidad_carga.peso}kg`
+                  : 'No especificado'
               }
-            ]} />
+            ]}
+          />
         </Grid>
       </Grid>
 
@@ -824,11 +835,13 @@ const formatForDateTimeLocal = (dateString) => {
           { label: 'Patente', value: 'patente' },
           { label: 'Marca', value: 'marca' },
           { label: 'Modelo', value: 'modelo' },
-          { label: 'Año', value: 'anio' },
-          { label: 'Tipo', value: 'tipo_vehiculo' },
+          { label: 'Año', value: 'anio' },  // Cambiado de 'año' a 'anio'
+          { label: 'Tipo', value: 'tipo_vehiculo' },  // Cambiado de 'tipo' a 'tipo_vehiculo'
           { label: 'Empresa', value: 'empresa.nombre_empresa' },
           { label: 'Capacidad', render: (item) => 
-            `${item.capacidad_carga?.volumen}m³ / ${item.capacidad_carga?.peso}kg`
+            item.capacidad_carga 
+              ? `${item.capacidad_carga.volumen}m³ / ${item.capacidad_carga.peso}kg`
+              : 'No especificado'
           }
         ]} />
     </Box>

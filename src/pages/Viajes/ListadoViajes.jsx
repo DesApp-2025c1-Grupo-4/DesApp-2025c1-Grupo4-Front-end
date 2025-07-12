@@ -59,7 +59,7 @@ const ListadoDeViajes = () => {
         const response = await axios.get('/api/viajes', {
           params: {
             populate: 'empresa_asignada,chofer_asignado,vehiculo_asignado,deposito_origen,deposito_destino',
-            activo: true
+            activo: true 
           }
         });
 
