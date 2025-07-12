@@ -110,6 +110,15 @@ const SeguimientoForm = ({ formData, handleChange, handleSubmit, errors, onFinal
       setLoading(true);
       setErrorMessage('');
       
+      // Verificar si el último estado es igual al que se quiere asignar
+      if (historialEstados.length > 0) {
+        const ultimoEstado = historialEstados[0].estado; // El historial está ordenado descendente
+        if (ultimoEstado === estadoActual) {
+          setErrorMessage(`No puede asignar el estado "${estadoActual}" porque ya es el estado actual`);
+          return;
+        }
+      }
+      
       await updateViajeState(formData.idViaje, { 
         estado: estadoActual,
         fecha: format(fechaEstado, 'dd/MM/yyyy HH:mm') 
@@ -336,7 +345,7 @@ const SeguimientoForm = ({ formData, handleChange, handleSubmit, errors, onFinal
                   <TableHead>
                     <TableRow>
                       <TableCell>Estado</TableCell>
-                      <TableCell>N° Viaje</TableCell>
+                      <TableCell>ID Estado</TableCell>
                       <TableCell align="right">Fecha</TableCell>
                     </TableRow>
                   </TableHead>

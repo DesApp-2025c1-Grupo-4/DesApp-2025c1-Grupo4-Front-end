@@ -142,12 +142,16 @@ const ListadoReportes = () => {
         });
 
       case 1: // Vehículos en tránsito
-        return data.viajes.filter(viaje => 
-          viaje.estado === 'en transito' &&
-          (!filtros.vehiculoId || normalizeId(viaje.vehiculo_asignado) === filtros.vehiculoId) &&
-          (!filtros.busqueda || 
-            (viaje.vehiculo_asignado?.patente || '').toLowerCase().includes(filtros.busqueda.toLowerCase()))
-        );
+        return data.viajes.filter(viaje => {
+          const ultimoEstado = viaje.historial_estados?.[viaje.historial_estados.length - 1]?.estado;
+          return ultimoEstado === 'en transito' &&
+            (!filtros.vehiculoId || normalizeId(viaje.vehiculo_asignado) === filtros.vehiculoId) &&
+            (!filtros.busqueda || 
+              (viaje.vehiculo_asignado?.patente || '').toLowerCase().includes(filtros.busqueda.toLowerCase()))
+        }).map(viaje => ({
+          ...viaje,
+          fechaEnTransito: getFechaEnTransito(viaje.historial_estados) // Añadimos este campo
+        }));
 
       case 2: // Historial por empresa
         return data.viajes.filter(viaje => 
@@ -262,12 +266,14 @@ const ListadoReportes = () => {
     return [
       // Tab 0: Viajes programados
       [baseColumns.idViaje,baseColumns.fechaInicio, baseColumns.vehiculo, baseColumns.chofer, baseColumns.empresa, baseColumns.origen, baseColumns.destino, baseColumns.estado],
-      // Tab 1: Vehículos en tránsito
-      [baseColumns.vehiculo, baseColumns.chofer, baseColumns.empresa, baseColumns.origen, baseColumns.destino, baseColumns.fechaInicio, 
-        { id: "tiempo_transcurrido", label: "Tiempo", width: 80, render: (_, row) => {
-          const inicio = parseFecha(row.inicio_viaje);
-          return inicio ? `${Math.floor((new Date() - inicio) / (1000 * 60 * 60))}h` : "N/A";
-        }}
+      [baseColumns.vehiculo, baseColumns.chofer, baseColumns.empresa, baseColumns.origen, baseColumns.destino,
+        {id: "fechaEnTransito",label: "Fecha en tránsito",align: 'center',width: 120,render: (fecha) => formatFecha(fecha) || "N/A"},
+        { id: "tiempo_transcurrido", label: "Tiempo", width: 80, 
+          render: (_, row) => {
+            const fechaTransito = parseFecha(row.fechaEnTransito);
+            return fechaTransito ? `${Math.floor((new Date() - fechaTransito) / (1000 * 60 * 60))}h` : "N/A";
+          }
+        }
       ],
       // Tab 2: Historial por empresa
       [baseColumns.fechaInicio,baseColumns.empresa, baseColumns.vehiculo, baseColumns.chofer, baseColumns.origen, baseColumns.destino, baseColumns.estado],
