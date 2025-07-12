@@ -3,7 +3,7 @@ import { grey } from "@mui/material/colors";
 
 const Tabla2 = ({ columns, data, sortDirection, sortBy, onSort }) => (
   <Paper sx={{ width: '100%', overflow: 'hidden' }}>
-    <TableContainer sx={{ maxHeight: 600 }}>
+    <TableContainer sx={{ maxHeight: 700 }}>
       <Table>
         <TableHead>
           <TableRow>

@@ -102,10 +102,15 @@ chofer: Yup.object().shape({
       return value.length === 11;
     }),
   fechaNacimiento: Yup.date()
+    .typeError('Fecha de nacimiento inválida')
     .required('Requerido')
     .max(new Date(), 'Fecha no puede ser futura')
+    .test('valid-date', 'Fecha inválida', value => {
+      if (!value) return false;
+      return !isNaN(new Date(value).getTime());
+    })
     .test('age', 'Debe tener al menos 18 años', value => {
-      if (!value) return true;
+      if (!value) return false;
       const today = new Date();
       const birthDate = new Date(value);
       let age = today.getFullYear() - birthDate.getFullYear();
@@ -114,10 +119,14 @@ chofer: Yup.object().shape({
         age--;
       }
       return age >= 18;
+    })
+    .transform((value, originalValue) => {
+      // Transforma valores vacíos a undefined
+      if (originalValue === '') return undefined;
+      // Asegura que el valor sea una fecha válida
+      const date = new Date(originalValue);
+      return isNaN(date.getTime()) ? undefined : date;
     }),
-  empresa: Yup.object().shape({
-    _id: Yup.string().required('Empresa es requerida')
-  }).required('Empresa es requerida'),
   licenciaNumero: Yup.string()
     .required('Requerido')
     .matches(/^[A-Za-z0-9]+$/, 'Solo letras y números permitidos'),
@@ -125,21 +134,27 @@ chofer: Yup.object().shape({
     .min(1, 'Seleccione al menos un tipo')
     .max(3, 'Máximo 3 tipos permitidos'),
   licenciaExpiracion: Yup.date()
+    .typeError('Fecha de expiración inválida')
     .required('Requerido')
     .min(new Date(), 'La licencia debe ser válida (fecha futura)')
     .test(
       'min-age',
       'La licencia debe tener al menos 6 meses de validez',
       value => {
-        if (!value) return true;
+        if (!value) return false;
         const sixMonthsLater = new Date();
         sixMonthsLater.setMonth(sixMonthsLater.getMonth() + 6);
-        return value >= sixMonthsLater;
+        return new Date(value) >= sixMonthsLater;
       }
-    ),
+    )
+    .transform((value, originalValue) => {
+      if (originalValue === '') return undefined;
+      const date = new Date(originalValue);
+      return isNaN(date.getTime()) ? undefined : date;
+    }),
 }),
 
-  vehiculo: Yup.object().shape({
+vehiculo: Yup.object().shape({
   patente: Yup.string()
     .required('La patente es requerida')
     .matches(/^[A-Z]{2,3}\d{3}[A-Z]{0,2}$/, 'Patente inválida. Formato: AA123BB o ABC123 (ej: AB123CD)'),
@@ -147,33 +162,50 @@ chofer: Yup.object().shape({
   marca: Yup.string().required('La marca es requerida (ej: Ford, Mercedes-Benz)'),
   modelo: Yup.string().required('El modelo es requerido (ej: F-150, Sprinter)'),
   año: Yup.number()
+    .typeError('El año debe ser un número (ej: 2020)')
     .required('El año es requerido (ej: 2020)')
+    .integer('El año debe ser un número entero')
     .min(1990, 'Año mínimo: 1990')
-    .max(new Date().getFullYear(), 'Año no puede ser futuro'),
-  volumen: Yup.number().required('El volumen es requerido en m³ (ej: 50)').min(0),
-  peso: Yup.number().required('El peso es requerido en kg (ej: 3000)').min(0),
+    .max(new Date().getFullYear(), 'Año no puede ser futuro')
+    .transform((value, originalValue) => 
+      originalValue === '' ? undefined : Number(value)
+    ),
+  volumen: Yup.number()
+    .typeError('El volumen debe ser un número (ej: 50)')
+    .required('El volumen es requerido en m³ (ej: 50)')
+    .min(0, 'El volumen no puede ser negativo')
+    .transform((value, originalValue) => 
+      originalValue === '' ? undefined : Number(value)
+    ),
+  peso: Yup.number()
+    .typeError('El peso debe ser un número (ej: 3000)')
+    .required('El peso es requerido en kg (ej: 3000)')
+    .min(0, 'El peso no puede ser negativo')
+    .transform((value, originalValue) => 
+      originalValue === '' ? undefined : Number(value)
+    ),
 }),
 
-  empresa: Yup.object().shape({
-    nombre_empresa: Yup.string().required('La razón social es requerida (ej: Transportes del Sur S.A.)'),
-    cuit: Yup.string()
-      .required('El CUIT es requerido')
-      .matches(/^\d{10,11}$/, 'Formato inválido. Debe ser XXXXXXXXXXX (ej: 30123456789)'),
-    datos_contacto: Yup.object().shape({
-      mail: Yup.string()
-        .email('Ingrese un email válido')
-        .required('El email es requerido'),
-      telefono: Yup.string()
-        .required('El teléfono es requerido')
-        .matches(/^[0-9]{10,15}$/, 'Teléfono inválido. Debe tener 10-15 dígitos (ej: 1123456789)')
-    }),
-    domicilio_fiscal: Yup.object().shape({
-      direccion: Yup.string().required('La direccion es requerida (ej: Av. Libertador)'),
-      ciudad: Yup.string().required('La ciudad es requerida (ej: Buenos Aires)'),
-      provincia_estado: Yup.string().required('La Provincia/Estado es requerida (ej: Buenos Aires)'),
-      pais: Yup.string().required('El país es requerido (ej: Argentina)')
-    })
-  }),
+empresa: Yup.object().shape({
+  nombre_empresa: Yup.string().required('La razón social es requerida (ej: Transportes del Sur S.A.)'),
+  cuit: Yup.string()
+    .required('El CUIT es requerido')
+    .matches(/^\d{10,11}$/, 'Formato inválido. Debe ser XXXXXXXXXXX (ej: 30123456789)'),
+  datos_contacto: Yup.object().shape({
+    mail: Yup.string()
+      .email('Ingrese un email válido')
+      .required('El email es requerido'),
+    telefono: Yup.string()
+      .required('El teléfono es requerido')
+      .matches(/^[0-9]{10,15}$/, 'Teléfono inválido. Debe tener 10-15 dígitos (ej: 1123456789)')
+  }).required('Los datos de contacto son requeridos'),
+  domicilio_fiscal: Yup.object().shape({
+    direccion: Yup.string().required('La dirección es requerida (ej: Av. Libertador)'),
+    ciudad: Yup.string().required('La ciudad es requerida (ej: Buenos Aires)'),
+    provincia_estado: Yup.string().required('La Provincia/Estado es requerida (ej: Buenos Aires)'),
+    pais: Yup.string().required('El país es requerido (ej: Argentina)')
+  }).required('El domicilio fiscal es requerido')
+}),
 
   default: Yup.object().shape({
     razonSocial: Yup.string().required('La razón social es requerida (ej: Transportes del Sur S.A.)'),

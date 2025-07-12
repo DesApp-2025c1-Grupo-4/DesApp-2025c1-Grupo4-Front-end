@@ -18,6 +18,7 @@ import set from 'lodash.set';
 import { format } from 'date-fns';
 import { LocationOn } from '@mui/icons-material';
 import { MapContainer, TileLayer, Marker, Popup as LeafletPopup } from 'react-leaflet';
+import BackendErrors from './formsComponents/BackEndErrors';
 
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-geosearch/dist/geosearch.css';
@@ -295,214 +296,234 @@ const formatDateForBackend = (dateString) => {
 };
 
 const handleSubmit = async () => {
-    if (formType === 'seguimiento') {
-      handleClose();
-      return;
-    }
+  if (formType === 'seguimiento') {
+    handleClose();
+    return;
+  }
 
-    if (page.includes('confirmar-eliminar')) {
-      setIsSubmitting(true);
-      try {
-        if (onDelete) {
-          const result = await onDelete(selectedItem._id); 
-          
-          if (result?.success) {
-            if (onSuccess) onSuccess();
-            handleClose();
-            window.location.reload();
-          } else {
-            setErrors({
-              _general: result?.error || 'Error al eliminar el elemento',
-              _details: result?.details 
-            });
-          }
-        }
-      } catch (error) {
-        setErrors({
-          _general: error.message || 'Error al procesar la eliminación',
-          _details: error.response?.data
-        });
-      } finally {
-        setIsSubmitting(false);
-      }
-      return;
-    }
-
-    const allTouched = Object.keys(formData).reduce((acc, key) => ({ ...acc, [key]: true }), {});
-    setTouched(allTouched);
-
+  if (page.includes('confirmar-eliminar')) {
+    setIsSubmitting(true);
     try {
-      let formDataToValidate = { ...formData };
-
-      if (formType === 'viaje') {
-        ['depositoOrigen', 'depositoDestino', 'empresaTransportista', 'choferAsignado', 'vehiculoAsignado'].forEach(field => {
-          const val = formDataToValidate[field];
-          if (val && typeof val === 'string') {
-            formDataToValidate[field] = { _id: val };
-          } else if (!val) {
-            formDataToValidate[field] = null;
-          }
-        });
+      if (onDelete) {
+        const result = await onDelete(selectedItem._id); 
+        
+        if (result?.success) {
+          if (onSuccess) onSuccess();
+          handleClose();
+          window.location.reload();
+        } else {
+          setErrors({
+            _general: result?.error || 'Error al eliminar el elemento',
+            _details: result?.details 
+          });
+        }
       }
+    } catch (error) {
+      setErrors({
+        _general: error.message || 'Error al procesar la eliminación',
+        _details: error.response?.data
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+    return;
+  }
 
-      await validationSchemas[formType].validate(formDataToValidate, { abortEarly: false });
-      setErrors({});
-      setIsSubmitting(true);
+  // Marcar todos los campos como tocados para mostrar errores
+  const allTouched = Object.keys(initialData[formType]).reduce((acc, key) => ({ ...acc, [key]: true }), {});
+  setTouched(allTouched);
 
-      const endpointMap = {
-        deposito: '/api/depositos',
-        viaje: '/api/viajes',
-        chofer: '/api/choferes',
-        vehiculo: '/api/vehiculos',
-        empresa: '/api/empresas'
+  try {
+    // Preparar datos para validación
+    let formDataToValidate = { ...formData };
+
+    // Transformar campos especiales para viaje
+    if (formType === 'viaje') {
+      ['depositoOrigen', 'depositoDestino', 'empresaTransportista', 'choferAsignado', 'vehiculoAsignado'].forEach(field => {
+        const val = formDataToValidate[field];
+        if (val && typeof val === 'string') {
+          formDataToValidate[field] = { _id: val };
+        } else if (!val) {
+          formDataToValidate[field] = null;
+        }
+      });
+    }
+
+    // Validar con Yup
+    await validationSchemas[formType].validate(formDataToValidate, { abortEarly: false });
+    setErrors({});
+    setIsSubmitting(true);
+
+    // Preparar datos para enviar al backend
+    const endpointMap = {
+      deposito: '/api/depositos',
+      viaje: '/api/viajes',
+      chofer: '/api/choferes',
+      vehiculo: '/api/vehiculos',
+      empresa: '/api/empresas'
+    };
+
+    const endpoint = endpointMap[formType];
+    const method = selectedItem ? 'PUT' : 'POST';
+    const url = selectedItem && formData._id ? `${endpoint}/${formData._id}` : endpoint;
+
+    let dataToSend = { ...formData };
+
+    // Transformar datos específicos para cada tipo de formulario
+    if (formType === 'deposito') {
+      let coordenadasParsed = null;
+      if (formData.coordenadas) {
+        const [lat, long] = formData.coordenadas.split(',').map(coord => parseFloat(coord.trim()));
+        if (!isNaN(lat) && !isNaN(long)) {
+          coordenadasParsed = {
+            type: "Point",
+            coordinates: [long, lat]
+          };
+        }
+      }
+      dataToSend = {
+        localizacion: {
+          direccion: formData.direccion,
+          provincia_estado: formData.provincia, 
+          ciudad: formData.ciudad,
+          pais: formData.pais
+        },
+        tipo: formData.tipo,
+        activo: true, 
+        personal_contacto: {
+          nombre: formData.nombreContacto,
+          apellido: formData.apellidoContacto,
+          telefono: formData.telefonoContacto
+        },
+        horarios: {
+          dias: formData.horarios?.dias || [],
+          desde: formData.horarios?.desde || '',
+          hasta: formData.horarios?.hasta || ''
+        },
+        coordenadas: coordenadasParsed
       };
-
-      const endpoint = endpointMap[formType];
-      const method = selectedItem ? 'PUT' : 'POST';
-      const url = selectedItem && formData._id ? `${endpoint}/${formData._id}` : endpoint;
-
-      let dataToSend = { ...formData };
-
-      if (formType === 'deposito') {
-        let coordenadasParsed = null;
-        if (formData.coordenadas) {
-          const [lat, long] = formData.coordenadas.split(',').map(coord => parseFloat(coord.trim()));
-          if (!isNaN(lat) && !isNaN(long)) {
-            coordenadasParsed = {
-              type: "Point",
-              coordinates: [long, lat]
-            };
+    } else if (formType === 'vehiculo') {
+      dataToSend = {
+        patente: formData.patente,
+        tipo_vehiculo: formData.tipoVehiculo,
+        marca: formData.marca,
+        modelo: formData.modelo,
+        anio: Number(formData.año),
+        capacidad_carga: { 
+          volumen: Number(formData.volumen), 
+          peso: Number(formData.peso)         
+        },
+        empresa: formData.empresa, 
+        activo: true
+      };
+    } else if (formType === 'chofer') {
+      dataToSend = {
+        nombre: formData.nombre,
+        apellido: formData.apellido,
+        cuil: formData.cuil,
+        fecha_nacimiento: formData.fechaNacimiento,
+        empresa: typeof formData.empresa === 'object' ? formData.empresa._id : formData.empresa,
+        vehiculo_defecto: formData.vehiculoAsignado ? 
+          (typeof formData.vehiculoAsignado === 'object' ? formData.vehiculoAsignado._id : formData.vehiculoAsignado) : 
+          null,
+        activo: true,
+        licencia: {
+          numero: formData.licenciaNumero || "",
+          tipos: formData.licenciaTipo || [],
+          fecha_expiracion: formData.licenciaExpiracion 
+            ? format(new Date(formData.licenciaExpiracion), 'dd/MM/yyyy')
+            : null,
+          documento: formData.licenciaDocumento || {
+            data: {},
+            contentType: "application/pdf",
+            fileName: "licencia.pdf",
+            size: 0
           }
         }
-        dataToSend = {
-          localizacion: {
-            direccion: formData.direccion,
-            provincia_estado: formData.provincia, 
-            ciudad: formData.ciudad,
-            pais: formData.pais
-          },
-          tipo: formData.tipo,
-          activo: true, 
-          personal_contacto: {
-            nombre: formData.nombreContacto,
-            apellido: formData.apellidoContacto,
-            telefono: formData.telefonoContacto
-          },
-          horarios: {
-            dias: formData.horarios?.dias || [],
-            desde: formData.horarios?.desde || '',
-            hasta: formData.horarios?.hasta || ''
-          },
-          coordenadas: coordenadasParsed
-        };
-      } else if (formType === 'vehiculo') {
-        dataToSend = {
-          patente: formData.patente,
-          tipo_vehiculo: formData.tipoVehiculo,
-          marca: formData.marca,
-          modelo: formData.modelo,
-          anio: Number(formData.año),
-          capacidad_carga: { 
-            volumen: Number(formData.volumen), 
-            peso: Number(formData.peso)         
-          },
-          empresa: formData.empresa, 
-          activo: true
-        };
-      }else if (formType === 'chofer') {
-            dataToSend = {
-              nombre: formData.nombre,
-              apellido: formData.apellido,
-              cuil: formData.cuil,
-              fecha_nacimiento: formData.fechaNacimiento,
-              empresa: typeof formData.empresa === 'object' ? formData.empresa._id : formData.empresa,
-              vehiculo_defecto: formData.vehiculoAsignado ? 
-                (typeof formData.vehiculoAsignado === 'object' ? formData.vehiculoAsignado._id : formData.vehiculoAsignado) : 
-                null,
-              activo: true,
-              licencia: {
-                numero: formData.licenciaNumero || "",
-                tipos: formData.licenciaTipo || [],
-                fecha_expiracion: formData.licenciaExpiracion 
-                  ? format(new Date(formData.licenciaExpiracion), 'dd/MM/yyyy')
-                  : null,
-                documento: formData.licenciaDocumento || {
-                  data: {},
-                  contentType: "application/pdf",
-                  fileName: "licencia.pdf",
-                  size: 0
-                }
-              }
-            };
-} else if (formType === 'viaje') {
-        dataToSend = {
+      };
+    } else if (formType === 'viaje') {
+      dataToSend = {
         deposito_origen: formData.depositoOrigen?._id || formData.depositoOrigen,
         deposito_destino: formData.depositoDestino?._id || formData.depositoDestino,
-            inicio_viaje: formatDateForBackend(formData.fechaInicio),
-  fin_viaje: formatDateForBackend(formData.fechaFin),
-          empresa_asignada:
-            formData.empresaTransportista && typeof formData.empresaTransportista === 'object'
-              ? formData.empresaTransportista._id
-              : formData.empresaTransportista || null,
-          chofer_asignado: formData.choferAsignado._id || formData.choferAsignado,
-          vehiculo_asignado: formData.vehiculoAsignado._id || formData.vehiculoAsignado,
-          estado: 'planificado'
-        };
-      } else if (formType === 'empresa') {
-        dataToSend = {
-          nombre_empresa: formData.nombre_empresa,
-          cuit: formData.cuit,
-          domicilio_fiscal: {
-            direccion: formData.domicilio_fiscal.direccion,
-            ciudad: formData.domicilio_fiscal.ciudad,
-            provincia_estado: formData.domicilio_fiscal.provincia_estado,
-            pais: formData.domicilio_fiscal.pais,
-          },
-          datos_contacto: {
-            telefono: String(formData.datos_contacto.telefono),
-            mail: formData.datos_contacto.mail
-          },
-          activo: true
-        };
-      }
+        inicio_viaje: formatDateForBackend(formData.fechaInicio),
+        fin_viaje: formatDateForBackend(formData.fechaFin),
+        empresa_asignada:
+          formData.empresaTransportista && typeof formData.empresaTransportista === 'object'
+            ? formData.empresaTransportista._id
+            : formData.empresaTransportista || null,
+        chofer_asignado: formData.choferAsignado._id || formData.choferAsignado,
+        vehiculo_asignado: formData.vehiculoAsignado._id || formData.vehiculoAsignado,
+        estado: 'planificado'
+      };
+    } else if (formType === 'empresa') {
+      dataToSend = {
+        nombre_empresa: formData.nombre_empresa,
+        cuit: formData.cuit,
+        domicilio_fiscal: {
+          direccion: formData.domicilio_fiscal.direccion,
+          ciudad: formData.domicilio_fiscal.ciudad,
+          provincia_estado: formData.domicilio_fiscal.provincia_estado,
+          pais: formData.domicilio_fiscal.pais,
+        },
+        datos_contacto: {
+          telefono: String(formData.datos_contacto.telefono),
+          mail: formData.datos_contacto.mail
+        },
+        activo: true
+      };
+    }
 
-      const response = await axios({
-        method,
-        url: selectedItem ? `${endpoint}/${selectedItem._id}` : endpoint,
-        data: dataToSend
-      });
+    // Enviar datos al backend
+    const response = await axios({
+      method,
+      url: selectedItem ? `${endpoint}/${selectedItem._id}` : endpoint,
+      data: dataToSend
+    });
 
-      if (onSuccess) onSuccess(response.data);
-      handleClose();
-      window.location.reload();
+    if (onSuccess) onSuccess(response.data);
+    handleClose();
+    window.location.reload();
 
-    } catch (error) {
+ } catch (error) {
   setIsSubmitting(false);
   
-  if (error.response) {
-    const backendError = error.response.data;
-    let formattedErrors = {};
-    
-    if (backendError.details) {
-      Object.entries(backendError.details).forEach(([field, err]) => {
-        formattedErrors[field] = err.message || err;
-      });
-    } else if (backendError.error) {
-      formattedErrors._general = backendError.error;
-      if (backendError.message) {
-        formattedErrors._details = backendError.message;
-      }
-    } else {
-      formattedErrors._general = backendError.message || 'Error al procesar la solicitud';
-    }
-    
-    setErrors(formattedErrors);
-  } else {
-    setErrors({ 
-      _general: error.message || 'Error de conexión con el servidor' 
+  if (error.name === 'ValidationError') {
+    // Manejar errores de validación del frontend
+    const validationErrors = {};
+    error.inner.forEach(err => {
+      validationErrors[err.path] = err.message;
     });
+    setErrors(validationErrors);
+    return;
   }
-}}
+  
+  // Manejar cualquier tipo de error del backend
+  let backendError = {};
+  
+  if (error.response) {
+    // Error con respuesta del servidor
+    backendError = error.response.data || {};
+    
+    // Si es un error de validación de backend, normalizar la estructura
+    if (error.response.status === 400 || error.response.status === 422) {
+      if (backendError.details) {
+        backendError._details = backendError.details;
+      }
+      if (backendError.errors) {
+        backendError._details = backendError.errors;
+      }
+    }
+  } else if (error.request) {
+    // Error de conexión sin respuesta
+    backendError._general = 'Error de conexión con el servidor';
+  } else {
+    // Otros errores
+    backendError._general = error.message || 'Error desconocido';
+  }
+  
+  setErrors(backendError);
+  }
+};
 
   const renderForm = () => {
     if (page.includes('confirmar-eliminar')) {
@@ -657,6 +678,12 @@ const handleSubmit = async () => {
               ? 'Confirmar eliminación'
               : ROUTE_CONFIG[`/${page}`]?.newButton || buttonName}
           </DialogTitle>
+          <Box sx={{ mx: isMobile ? 0 : 3, px: isMobile ? 1 : 2 }}>
+            <BackendErrors 
+              errors={errors} 
+              onClose={() => setErrors({})}
+            />
+          </Box>
 
           <Box sx={{
             backgroundColor: page.includes('confirmar-eliminar')

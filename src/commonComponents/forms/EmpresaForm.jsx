@@ -36,38 +36,49 @@ const EmpresaForm = ({ formData = {}, handleChange, handleBlur, errors = {}, isE
   };
 
   const renderField = (label, name, nested = false, type = 'text', placeholder = '') => {
-    const [field, subfield] = name.split('.');
-    const actualValue = nested ? (safeFormData[field]?.[subfield] || '') : safeFormData[name];
-    const actualError = nested ? (errors[field]?.[subfield]) : errors[name];
+  const [field, subfield] = name.split('.');
+  const actualValue = nested ? (safeFormData[field]?.[subfield] || '') : safeFormData[name];
+  
+  // Manejo mejorado de errores anidados
+  let actualError;
+  if (nested) {
+    if (errors[field] && typeof errors[field] === 'object') {
+      actualError = errors[field][subfield];
+    } else if (errors[name]) {
+      actualError = errors[name];
+    }
+  } else {
+    actualError = errors[name];
+  }
 
-    return (
-      <Box sx={{ mb: 2 }}>
-        <InputLabel required sx={{ color: grey[700], fontWeight: 'bold', mb: 0.5 }}>
-          {label}
-        </InputLabel>
-        <TextField
-          fullWidth
-          size="small"
-          name={name}
-          value={actualValue}
-          onChange={nested ? (e) => handleNestedChange(field, subfield, e.target.value) : handleChange}
-          onBlur={handleBlur}
-          error={!!actualError}
-          type={type}
-          placeholder={placeholder}
-          sx={{
-            '& .MuiOutlinedInput-root': {
-              borderRadius: 2,
-              '& fieldset': {
-                borderColor: grey[300]
-              }
+  return (
+    <Box sx={{ mb: 2 }}>
+      <InputLabel required sx={{ color: grey[700], fontWeight: 'bold', mb: 0.5 }}>
+        {label}
+      </InputLabel>
+      <TextField
+        fullWidth
+        size="small"
+        name={name}
+        value={actualValue}
+        onChange={nested ? (e) => handleNestedChange(field, subfield, e.target.value) : handleChange}
+        onBlur={handleBlur}
+        error={!!actualError}
+        type={type}
+        placeholder={placeholder}
+        sx={{
+          '& .MuiOutlinedInput-root': {
+            borderRadius: 2,
+            '& fieldset': {
+              borderColor: grey[300]
             }
-          }}
-        />
-        {actualError && <ErrorText>{actualError}</ErrorText>}
-      </Box>
-    );
-  };
+          }
+        }}
+      />
+      {actualError && <ErrorText>{actualError}</ErrorText>}
+    </Box>
+  );
+};
 
   return (
     <Box sx={{ p: 2 }}>
