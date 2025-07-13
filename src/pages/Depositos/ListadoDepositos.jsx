@@ -146,23 +146,14 @@ const ListadoDepositos = () => {
 const handleDeleteDeposito = async (depositoId) => {
   try {
     setLoading(true);
-    
-    // 1. Intento de eliminación en el backend
     await deleteDeposito(depositoId);
-    
-    // 2. Eliminación optimista en el frontend
     setDepositos(prev => prev.filter(d => d._id !== depositoId));
     setDepositosFiltrados(prev => prev.filter(d => d._id !== depositoId));
     
     return true;
   } catch (error) {
     console.error('Error al eliminar:', error);
-    
-    // Mostrar error específico al usuario
-    setError(error.message.includes('404') 
-      ? 'El servidor no tiene configurada la eliminación de depósitos'
-      : error.message);
-    
+    setError(error.response?.data?.message || error.message);
     return false;
   } finally {
     setLoading(false);
