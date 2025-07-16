@@ -7,7 +7,7 @@ import { ListadoEmpresas } from './pages/Empresas/ListadoEmpresas.jsx';
 import { ListadoChoferes } from './pages/Choferes/ListadoChoferes.jsx';
 import { ListadoDepositos } from './pages/Depositos/ListadoDepositos.jsx';
 import { ListadoVehiculos } from './pages/Vehiculos/ListadoVehiculos.jsx';
-import { ListadoReportes } from './pages/Reportes/ListadoReportes.jsx';
+import ListadoReportes from './pages/Reportes/ListadoReportes.jsx';
 
 const AppRoutes = () => {
   return (

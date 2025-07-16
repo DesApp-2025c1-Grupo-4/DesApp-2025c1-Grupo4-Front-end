@@ -1,7 +1,7 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef , useCallback} from 'react';
 import {
   Button, Dialog, DialogTitle, DialogContent,
-  DialogActions, Box, useTheme, useMediaQuery, Typography
+  DialogActions, Box, useTheme, useMediaQuery, Typography, TextField
 } from '@mui/material';
 import { ROUTE_CONFIG } from '../config/routesConfig';
 import validationSchemas from '../validations/validationSchemas';
@@ -11,10 +11,17 @@ import ChoferForm from './forms/ChoferForm';
 import VehiculoForm from './forms/VehiculoForm';
 import EmpresaForm from './forms/EmpresaForm';
 import SeguimientoForm from './forms/SeguimientoForm';
+import MapPicker from './MapPicker';
 import axios from 'axios';
 import get from 'lodash.get';
 import set from 'lodash.set';
 import { format } from 'date-fns';
+import { LocationOn } from '@mui/icons-material';
+import { MapContainer, TileLayer, Marker, Popup as LeafletPopup } from 'react-leaflet';
+import BackendErrors from './formsComponents/BackEndErrors';
+
+import 'leaflet/dist/leaflet.css';
+import 'leaflet-geosearch/dist/geosearch.css';
 
 const convertToBackendFormat = (dateTimeString) => {
   if (!dateTimeString) return '';
@@ -63,7 +70,11 @@ const initialData = {
     cuil: '',
     fechaNacimiento: '',
     empresa: '',
-    vehiculoAsignado: ''
+    vehiculoAsignado: '',
+    licenciaNumero: '',
+    licenciaTipo: [],
+    licenciaExpiracion: null,
+    licenciaDocumento: null
   },
   vehiculo: {
     patente: '',
@@ -73,7 +84,8 @@ const initialData = {
     año: '',
     volumen: '',
     peso: '',
-    empresa: ''
+    empresa: '',
+    empresaNombre: ''
   },
   empresa: {
     nombre_empresa: '',
@@ -83,27 +95,27 @@ const initialData = {
   }
 };
 
-const Popup = ({ buttonName, page, open, onClose, children, selectedItem, onSuccess, onDelete }) => {
+const Popup= ({ buttonName, page, open, onClose, children, selectedItem, onSuccess, onDelete }) => {
   const [internalOpen, setInternalOpen] = useState(false);
+  const [formData, setFormData] = useState({});
+  const [errors, setErrors] = useState({});
+  const [touched, setTouched] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const [mapModalOpen, setMapModalOpen] = useState(false);
+  const [selectedLocation, setSelectedLocation] = useState(null);
+  const [mapCenter, setMapCenter] = useState({ lat: -34.6037, lng: -58.3816 });
 
-  // Detectar tipo de formulario según page
   const formType = useMemo(() => {
     if (page.includes('deposito')) return 'deposito';
     if (page.includes('viaje')) return 'viaje';
     if (page.includes('chofer')) return 'chofer';
     if (page.includes('vehiculo')) return 'vehiculo';
     if (page.includes('empresa')) return 'empresa';
+    if (page.includes('seguimiento')) return 'seguimiento';
     return 'default';
   }, [page]);
-
-  // Estado del formulario inicializado según tipo
-  const [formData, setFormData] = useState(initialData[formType] || {});
-
-  const [errors, setErrors] = useState({});
-  const [touched, setTouched] = useState({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const isControlled = open !== undefined;
   const currentOpen = isControlled ? open : internalOpen;
@@ -128,16 +140,16 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem, onSucc
           newFormData.telefonoContacto = selectedItem?.personal_contacto?.telefono || ''; 
         }
         else if (formType === 'viaje') {
-          newFormData.idViaje = selectedItem?._id || '';
-          newFormData.depositoOrigen = selectedItem?.depositoOrigen?._id || selectedItem?.depositoOrigen || null;
-          newFormData.depositoDestino = selectedItem?.depositoDestino?._id || selectedItem?.depositoDestino || null;
+          newFormData._id = selectedItem._id || '';
+          newFormData.depositoOrigen = selectedItem.depositoOrigen || null;
+          newFormData.depositoDestino = selectedItem.depositoDestino || null;
           newFormData.fechaInicio = selectedItem?.fechaInicio || '';
           newFormData.fechaFin = selectedItem?.fechaFin || '';
-          newFormData.empresaTransportista = selectedItem?.empresaTransportista?._id || selectedItem?.empresaTransportista || null;
-          newFormData.choferAsignado = selectedItem?.choferAsignado?._id || selectedItem?.choferAsignado || null;
-          newFormData.vehiculoAsignado = selectedItem?.vehiculoAsignado?._id || selectedItem?.vehiculoAsignado || null;
-          newFormData.tipoViaje = selectedItem?.tipoViaje || '';
-        }
+          newFormData.empresaTransportista = selectedItem.empresaTransportista || null;
+          newFormData.choferAsignado = selectedItem.choferAsignado || null;
+          newFormData.vehiculoAsignado = selectedItem.vehiculoAsignado || null;
+          newFormData.tipoViaje = selectedItem.tipoViaje || '';
+        } 
         else if (formType === 'chofer') {
           newFormData._id = selectedItem?._id || '';
           newFormData.nombre = selectedItem?.nombre || '';
@@ -145,42 +157,40 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem, onSucc
           newFormData.cuil = selectedItem?.cuil || '';
           newFormData.fechaNacimiento = selectedItem?.fechaNacimiento || null;
           newFormData.empresa = selectedItem?.empresa || null;
-          newFormData.vehiculoAsignado = selectedItem?.vehiculoAsignado?._id || selectedItem?.vehiculoAsignado || null;
-          // Agregar estos datos del vehículo
-          newFormData.vehiculoAsignadoData = selectedItem?.vehiculoAsignado 
+          newFormData.vehiculoAsignado = selectedItem?.vehiculo_defecto?._id || null;
+          newFormData.vehiculoAsignadoData = selectedItem?.vehiculo_defecto 
+            ? { _id: selectedItem.vehiculo_defecto._id, patente: selectedItem.vehiculo_defecto.patente } : null;
+          newFormData.licenciaNumero = selectedItem?.licencia?.numero || '';
+          newFormData.licenciaTipo = selectedItem?.licencia?.tipos || [];
+          newFormData.licenciaExpiracion = selectedItem?.licencia?.fecha_expiracion || null;
+          newFormData.licenciaDocumento = selectedItem?.licencia?.documento 
             ? {
-                patente: selectedItem.vehiculoAsignado.patente,
-                marca: selectedItem.vehiculoAsignado.marca,
-                modelo: selectedItem.vehiculoAsignado.modelo
+                ...selectedItem.licencia.documento,
+                data: selectedItem.licencia.documento.data || { type: 'Buffer', data: [] }
               }
             : null;
-          newFormData.licenciaNumero = selectedItem?.licenciaNumero || '';
-          newFormData.licenciaTipo = selectedItem?.licenciaTipo || [];
-          newFormData.licenciaExpiracion = selectedItem?.licenciaExpiracion || null;
-        }
-        else if (formType === 'vehiculo') {
-  newFormData._id = selectedItem?._id || '';
-  newFormData.patente = selectedItem?.patente || '';
-  newFormData.tipoVehiculo = selectedItem?.tipo_vehiculo || selectedItem?.tipo || '';
-  newFormData.marca = selectedItem?.marca || '';
-  newFormData.modelo = selectedItem?.modelo || '';
-  newFormData.año = selectedItem?.año || selectedItem?.anio || '';
-  newFormData.volumen = selectedItem?.capacidad_carga?.volumen || selectedItem?.volumen || '';
-  newFormData.peso = selectedItem?.capacidad_carga?.peso || selectedItem?.peso || '';
-  
-  // Manejo mejorado del campo empresa
-  if (selectedItem?.empresa) {
-    newFormData.empresa = typeof selectedItem.empresa === 'object' 
-      ? selectedItem.empresa._id 
-      : selectedItem.empresa;
-    newFormData.empresaNombre = typeof selectedItem.empresa === 'object'
-      ? selectedItem.empresa.nombre_empresa
-      : selectedItem.empresaNombre || 'Sin empresa asignada';
-  } else {
-    newFormData.empresa = '';
-    newFormData.empresaNombre = '';
-  }
 }
+        else if (formType === 'vehiculo') {
+          newFormData._id = selectedItem?._id || '';
+          newFormData.patente = selectedItem?.patente || '';
+          newFormData.tipoVehiculo = selectedItem?.tipo_vehiculo || selectedItem?.tipo || '';
+          newFormData.marca = selectedItem?.marca || '';
+          newFormData.modelo = selectedItem?.modelo || '';
+          newFormData.año = selectedItem?.año || selectedItem?.anio || '';
+          newFormData.volumen = selectedItem?.capacidad_carga?.volumen || selectedItem?.volumen || '';
+          newFormData.peso = selectedItem?.capacidad_carga?.peso || selectedItem?.peso || '';
+          if (selectedItem?.empresa) {
+            newFormData.empresa = typeof selectedItem.empresa === 'object' 
+              ? selectedItem.empresa._id 
+              : selectedItem.empresa;
+            newFormData.empresaNombre = typeof selectedItem.empresa === 'object'
+              ? selectedItem.empresa.nombre_empresa
+              : selectedItem.empresaNombre || 'Sin empresa asignada';
+          } else {
+            newFormData.empresa = '';
+            newFormData.empresaNombre = '';
+          }
+        }
         else if (formType === 'empresa') {
           newFormData.nombre_empresa = selectedItem?.nombre_empresa || '';
           newFormData.cuit = selectedItem?.cuit || '';
@@ -197,9 +207,9 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem, onSucc
         }
       }
 
-      setFormData(newFormData);
-      setErrors({});
-      setTouched({});
+     setFormData(newFormData);
+    setTouched({}); 
+    setErrors({}); 
     }
   }, [currentOpen, selectedItem, formType]);
 
@@ -211,253 +221,309 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem, onSucc
     else setInternalOpen(false);
   };
 
-  const handleChange = (e) => {
+const handleChange = useCallback((e) => {
   const { name, value } = e.target;
-
   setFormData(prev => {
-    const newFormData = { ...prev };
-    set(newFormData, name, value);
+    const newFormData = { ...prev, [name]: value };
+    if (touched[name] || errors[name]) {
+      validationSchemas[formType].validateAt(name, newFormData)
+        .then(() => setErrors(prev => ({ ...prev, [name]: undefined })))
+        .catch(err => setErrors(prev => ({ ...prev, [name]: err.message })));
+    }
     return newFormData;
   });
-  if (errors[name] || errors[name.split('.')[0]]) {
-    setErrors(prev => {
-      const newErrors = { ...prev };
-      if (name.includes('.')) {
-        const [parent, child] = name.split('.');
-        if (newErrors[parent]?.[child]) {
-          delete newErrors[parent][child];
-          if (Object.keys(newErrors[parent]).length === 0) {
-            delete newErrors[parent];
-          }
-        }
-      } else {
-        delete newErrors[name];
+}, [touched, errors, formType]);
+
+const handleBlur = useCallback((e) => {
+  const { name } = e.target;
+  if (!touched[name]) {
+    setTouched(prev => ({ ...prev, [name]: true }));
+    validationSchemas[formType].validateAt(name, formData)
+      .then(() => setErrors(prev => ({ ...prev, [name]: undefined })))
+      .catch(err => setErrors(prev => ({ ...prev, [name]: err.message })));
+  }
+}, [touched, formData, formType]);
+
+
+const handleMapClick = async (e) => {
+  const { lat, lng } = e.latlng;
+  try {
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1&zoom=18`
+    );
+    const data = await response.json();
+    
+    const address = data.address || {};
+    const locationData = {
+      lat,
+      lng,
+      label: data.display_name || `Ubicación seleccionada (${lat.toFixed(6)}, ${lng.toFixed(6)})`,
+      address: {
+        road: address.road || address.street || '',
+        city: address.city || address.town || address.village || address.hamlet || '',
+        state: address.state || address.county || address.region || '',
+        country: address.country || '',
+        postalCode: address.postcode || '',
+        houseNumber: address.house_number || '',
       }
-      return newErrors;
+    };
+    
+    setPosition(locationData);
+    onSelect(locationData);
+  } catch (error) {
+    console.error('Error al obtener detalles de la ubicación:', error);
+    setPosition({
+      lat,
+      lng,
+      label: `Ubicación seleccionada (${lat.toFixed(6)}, ${lng.toFixed(6)})`,
+      address: {}
     });
   }
 };
 
-  const handleBlur = (e) => {
-    const { name } = e.target;
-    setTouched(prev => ({ ...prev, [name]: true }));
+const formatDateForBackend = (dateString) => {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return '';
+  
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  
+  return `${day}/${month}/${year} ${hours}:${minutes}`;
+};
 
-    validationSchemas[formType].validateAt(name, formData)
-      .then(() => setErrors(prev => ({ ...prev, [name]: '' })))
-      .catch(error => setErrors(prev => ({ ...prev, [name]: error.message })));
-  };
+const handleSubmit = async () => {
+  if (formType === 'seguimiento') {
+    handleClose();
+    return;
+  }
 
-  const handleSubmit = async () => {
-    if (page.includes('confirmar-eliminar')) {
-      setIsSubmitting(true);
-      try {
-        if (onDelete) {
-          const result = await onDelete(selectedItem._id); // Asegúrate de usar _id
-          
-          if (result?.success) {
-            if (onSuccess) onSuccess();
-            handleClose();
-            window.location.reload();
-          } else {
-            setErrors({
-              _general: result?.error || 'Error al eliminar el elemento',
-              _details: result?.details // Mostrar detalles adicionales
-            });
-          }
-        }
-      } catch (error) {
-        setErrors({
-          _general: error.message || 'Error al procesar la eliminación',
-          _details: error.response?.data // Mostrar detalles del error
-        });
-      } finally {
-        setIsSubmitting(false);
-      }
-      return;
-    }
-    const allTouched = Object.keys(formData).reduce((acc, key) => ({ ...acc, [key]: true }), {});
-    setTouched(allTouched);
-
+  if (page.includes('confirmar-eliminar')) {
+    setIsSubmitting(true);
     try {
-      let formDataToValidate = { ...formData };
-
-      if (formType === 'viaje') {
-        ['depositoOrigen', 'depositoDestino', 'empresaTransportista', 'choferAsignado', 'vehiculoAsignado'].forEach(field => {
-          const val = formDataToValidate[field];
-          if (val && typeof val === 'string') {
-            formDataToValidate[field] = { _id: val };
-          } else if (!val) {
-            formDataToValidate[field] = null;
-          }
-        });
+      if (onDelete) {
+        const result = await onDelete(selectedItem._id); 
+        
+        if (result?.success) {
+          if (onSuccess) onSuccess();
+          handleClose();
+          window.location.reload();
+        } else {
+          setErrors({
+            _general: result?.error || 'Error al eliminar el elemento',
+            _details: result?.details 
+          });
+        }
       }
+    } catch (error) {
+      setErrors({
+        _general: error.message || 'Error al procesar la eliminación',
+        _details: error.response?.data
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+    return;
+  }
 
-      await validationSchemas[formType].validate(formDataToValidate, { abortEarly: false });
-      setErrors({});
-      setIsSubmitting(true);
+  // Marcar todos los campos como tocados para mostrar errores
+  const allTouched = Object.keys(initialData[formType]).reduce((acc, key) => ({ ...acc, [key]: true }), {});
+  setTouched(allTouched);
 
-      const endpointMap = {
-        deposito: '/api/depositos',
-        viaje: '/api/viajes',
-        chofer: '/api/choferes',
-        vehiculo: '/api/vehiculos',
-        empresa: '/api/empresas'
-      };
+  try {
+    // Preparar datos para validación
+    let formDataToValidate = { ...formData };
 
-      const endpoint = endpointMap[formType];
-      const method = selectedItem ? 'PUT' : 'POST';
-      const url = selectedItem && formData._id ? `${endpoint}/${formData._id}` : endpoint;
+    // Transformar campos especiales para viaje
+    if (formType === 'viaje') {
+      ['depositoOrigen', 'depositoDestino', 'empresaTransportista', 'choferAsignado', 'vehiculoAsignado'].forEach(field => {
+        const val = formDataToValidate[field];
+        if (val && typeof val === 'string') {
+          formDataToValidate[field] = { _id: val };
+        } else if (!val) {
+          formDataToValidate[field] = null;
+        }
+      });
+    }
 
-      let dataToSend = { ...formData };
+    // Validar con Yup
+    await validationSchemas[formType].validate(formDataToValidate, { abortEarly: false });
+    setErrors({});
+    setIsSubmitting(true);
 
-      if (formType === 'deposito') {
-        // Parsear coordenadas si existen
-        let coordenadasParsed = null;
-        if (formData.coordenadas) {
-          const [lat, long] = formData.coordenadas.split(',').map(coord => parseFloat(coord.trim()));
+    // Preparar datos para enviar al backend
+    const endpointMap = {
+      deposito: '/api/depositos',
+      viaje: '/api/viajes',
+      chofer: '/api/choferes',
+      vehiculo: '/api/vehiculos',
+      empresa: '/api/empresas'
+    };
+
+    const endpoint = endpointMap[formType];
+    const method = selectedItem ? 'PUT' : 'POST';
+    const url = selectedItem && formData._id ? `${endpoint}/${formData._id}` : endpoint;
+
+    let dataToSend = { ...formData };
+
+    // Transformar datos específicos para cada tipo de formulario
+    if (formType === 'deposito') {
+      let coordenadasParsed = null;
+      if (formData.coordenadas) {
+        const [lat, long] = formData.coordenadas.split(',').map(coord => parseFloat(coord.trim()));
+        if (!isNaN(lat) && !isNaN(long)) {
           coordenadasParsed = {
             type: "Point",
-            coordinates: [long, lat] // MongoDB usa [longitud, latitud]
+            coordinates: [long, lat]
           };
         }
-
-        dataToSend = {
-          localizacion: {
-            direccion: formData.direccion,
-            provincia_estado: formData.provincia, 
-            ciudad: formData.ciudad,
-            pais: formData.pais
-          },
-          tipo: formData.tipo,
-          activo: true, 
-          personal_contacto: {
-            nombre: formData.nombreContacto,
-            apellido: formData.apellidoContacto,
-            telefono: formData.telefonoContacto
-          },
-          horarios: {
-            dias: formData.horarios?.dias || [],
-            desde: formData.horarios?.desde || '',
-            hasta: formData.horarios?.hasta || ''
-          },
-          coordenadas: coordenadasParsed
-        };
-      } else if (formType === 'vehiculo') {
-          dataToSend = {
-            patente: formData.patente,
-            tipo_vehiculo: formData.tipoVehiculo,
-            marca: formData.marca,
-            modelo: formData.modelo,
-            anio: Number(formData.año),
-            capacidad_carga: { 
-              volumen: Number(formData.volumen), 
-              peso: Number(formData.peso)         
-            },
-            empresa: formData.empresa, 
-            activo: true
-          };
-        } else if (formType === 'chofer') {
-            dataToSend = {
-              nombre: formData.nombre,
-              apellido: formData.apellido,
-              cuil: formData.cuil,
-              fecha_nacimiento: formData.fechaNacimiento,
-              empresa: typeof formData.empresa === 'object' ? formData.empresa._id : formData.empresa,
-              vehiculo_defecto: formData.vehiculoAsignado ? 
-                (typeof formData.vehiculoAsignado === 'object' ? formData.vehiculoAsignado._id : formData.vehiculoAsignado) : 
-                null,
-              activo: true,
-              licencia: {
-                numero: formData.licenciaNumero || "",
-                tipos: formData.licenciaTipo || [],
-                fecha_expiracion: formData.licenciaExpiracion 
-                  ? format(new Date(formData.licenciaExpiracion), 'dd/MM/yyyy')
-                  : null,
-                documento: formData.licenciaDocumento || {
-                  data: {},
-                  contentType: "application/pdf",
-                  fileName: "licencia.pdf",
-                  size: 0
-                }
-              }
-            };
-          }  else if (formType === 'viaje') {
-              dataToSend = {
-                deposito_origen: formData.depositoOrigen._id || formData.depositoOrigen,
-                deposito_destino: formData.depositoDestino._id || formData.depositoDestino,
-                inicio_viaje: convertToBackendFormat(formData.fechaInicio),
-                fin_viaje: convertToBackendFormat(formData.fechaFin),
-                empresa_asignada:
-                  formData.empresaTransportista && typeof formData.empresaTransportista === 'object'
-                    ? formData.empresaTransportista._id
-                    : formData.empresaTransportista || null,
-                chofer_asignado: formData.choferAsignado._id || formData.choferAsignado,
-                vehiculo_asignado: formData.vehiculoAsignado._id || formData.vehiculoAsignado,
-                estado: 'planificado'
-              };
-            } else if (formType === 'empresa') {
-                dataToSend = {
-                  nombre_empresa: formData.nombre_empresa,
-                  cuit: formData.cuit,
-                  domicilio_fiscal: {
-                    direccion: formData.domicilio_fiscal.direccion,
-                    ciudad: formData.domicilio_fiscal.ciudad,
-                    provincia_estado: formData.domicilio_fiscal.provincia_estado,
-                    pais: formData.domicilio_fiscal.pais,
-                  },
-                  datos_contacto: {
-                    telefono: String(formData.datos_contacto.telefono),
-                    mail: formData.datos_contacto.mail
-                  },
-                  activo: true
-                };
-              }
-
-      console.log('Payload enviado:', JSON.stringify(dataToSend, null, 2));
-
-      const response = await axios({
-        method,
-        url: selectedItem ? `${endpoint}/${selectedItem._id}` : endpoint,
-        data: dataToSend
-      });
-
-      console.log('Registro creado/actualizado:', response.data);
-      if (onSuccess) onSuccess(response.data);
-      handleClose();
-      window.location.reload();
-
-    } catch (error) {
-  setIsSubmitting(false);
-  
-  if (error.response) {
-    const backendError = error.response.data;
-    let formattedErrors = {};
-    
-    // Manejar error específico de horarios
-    if (backendError.message?.includes('hora de cierre')) {
-      formattedErrors = {
-        ...formattedErrors,
+      }
+      dataToSend = {
+        localizacion: {
+          direccion: formData.direccion,
+          provincia_estado: formData.provincia, 
+          ciudad: formData.ciudad,
+          pais: formData.pais
+        },
+        tipo: formData.tipo,
+        activo: true, 
+        personal_contacto: {
+          nombre: formData.nombreContacto,
+          apellido: formData.apellidoContacto,
+          telefono: formData.telefonoContacto
+        },
         horarios: {
-          hasta: backendError.message
+          dias: formData.horarios?.dias || [],
+          desde: formData.horarios?.desde || '',
+          hasta: formData.horarios?.hasta || ''
+        },
+        coordenadas: coordenadasParsed
+      };
+    } else if (formType === 'vehiculo') {
+      dataToSend = {
+        patente: formData.patente,
+        tipo_vehiculo: formData.tipoVehiculo,
+        marca: formData.marca,
+        modelo: formData.modelo,
+        anio: Number(formData.año),
+        capacidad_carga: { 
+          volumen: Number(formData.volumen), 
+          peso: Number(formData.peso)         
+        },
+        empresa: formData.empresa, 
+        activo: true
+      };
+    } else if (formType === 'chofer') {
+      dataToSend = {
+        nombre: formData.nombre,
+        apellido: formData.apellido,
+        cuil: formData.cuil,
+        fecha_nacimiento: formData.fechaNacimiento,
+        empresa: typeof formData.empresa === 'object' ? formData.empresa._id : formData.empresa,
+        vehiculo_defecto: formData.vehiculoAsignado ? 
+          (typeof formData.vehiculoAsignado === 'object' ? formData.vehiculoAsignado._id : formData.vehiculoAsignado) : 
+          null,
+        activo: true,
+        licencia: {
+          numero: formData.licenciaNumero || "",
+          tipos: formData.licenciaTipo || [],
+          fecha_expiracion: formData.licenciaExpiracion 
+            ? format(new Date(formData.licenciaExpiracion), 'dd/MM/yyyy')
+            : null,
+          documento: formData.licenciaDocumento || {
+            data: {},
+            contentType: "application/pdf",
+            fileName: "licencia.pdf",
+            size: 0
+          }
         }
       };
-    } else if (backendError.errors) {
-      // Mapear otros errores de validación
-      Object.entries(backendError.errors).forEach(([field, err]) => {
-        formattedErrors[field] = err.message;
-      });
-    } else {
-      formattedErrors._general = backendError.message || 'Error al procesar la solicitud';
+    } else if (formType === 'viaje') {
+      dataToSend = {
+        deposito_origen: formData.depositoOrigen?._id || formData.depositoOrigen,
+        deposito_destino: formData.depositoDestino?._id || formData.depositoDestino,
+        inicio_viaje: formatDateForBackend(formData.fechaInicio),
+        fin_viaje: formatDateForBackend(formData.fechaFin),
+        empresa_asignada:
+          formData.empresaTransportista && typeof formData.empresaTransportista === 'object'
+            ? formData.empresaTransportista._id
+            : formData.empresaTransportista || null,
+        chofer_asignado: formData.choferAsignado._id || formData.choferAsignado,
+        vehiculo_asignado: formData.vehiculoAsignado._id || formData.vehiculoAsignado,
+        estado: 'planificado'
+      };
+    } else if (formType === 'empresa') {
+      dataToSend = {
+        nombre_empresa: formData.nombre_empresa,
+        cuit: formData.cuit,
+        domicilio_fiscal: {
+          direccion: formData.domicilio_fiscal.direccion,
+          ciudad: formData.domicilio_fiscal.ciudad,
+          provincia_estado: formData.domicilio_fiscal.provincia_estado,
+          pais: formData.domicilio_fiscal.pais,
+        },
+        datos_contacto: {
+          telefono: String(formData.datos_contacto.telefono),
+          mail: formData.datos_contacto.mail
+        },
+        activo: true
+      };
     }
-    
-    setErrors(formattedErrors);
-    console.error('Errores del backend:', backendError);
-  } else {
-    setErrors({ _general: error.message || 'Error de conexión con el servidor' });
-    console.error('Error desconocido:', error);
+
+    // Enviar datos al backend
+    const response = await axios({
+      method,
+      url: selectedItem ? `${endpoint}/${selectedItem._id}` : endpoint,
+      data: dataToSend
+    });
+
+    if (onSuccess) onSuccess(response.data);
+    handleClose();
+    window.location.reload();
+
+ } catch (error) {
+  setIsSubmitting(false);
+  
+  if (error.name === 'ValidationError') {
+    // Manejar errores de validación del frontend
+    const validationErrors = {};
+    error.inner.forEach(err => {
+      validationErrors[err.path] = err.message;
+    });
+    setErrors(validationErrors);
+    return;
   }
-}
-  };
+  
+  // Manejar cualquier tipo de error del backend
+  let backendError = {};
+  
+  if (error.response) {
+    // Error con respuesta del servidor
+    backendError = error.response.data || {};
+    
+    // Si es un error de validación de backend, normalizar la estructura
+    if (error.response.status === 400 || error.response.status === 422) {
+      if (backendError.details) {
+        backendError._details = backendError.details;
+      }
+      if (backendError.errors) {
+        backendError._details = backendError.errors;
+      }
+    }
+  } else if (error.request) {
+    // Error de conexión sin respuesta
+    backendError._general = 'Error de conexión con el servidor';
+  } else {
+    // Otros errores
+    backendError._general = error.message || 'Error desconocido';
+  }
+  
+  setErrors(backendError);
+  }
+};
 
   const renderForm = () => {
     if (page.includes('confirmar-eliminar')) {
@@ -484,15 +550,59 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem, onSucc
       handleChange,
       handleBlur,
       errors,
-      isEditing: !!selectedItem
+      isEditing: !!selectedItem,
+      onOpenMap: () => setMapModalOpen(true),
+      selectedLocation
     };
 
     switch (formType) {
-      case 'deposito': return <DepositoForm {...formProps} />;
+      case 'deposito': return (
+        <>
+          <DepositoForm {...formProps} />
+<Dialog
+  open={mapModalOpen}
+  onClose={() => setMapModalOpen(false)}
+  fullWidth
+  maxWidth="md"
+  fullScreen={isMobile}
+  PaperProps={{
+    sx: {
+      height: '80vh',
+      overflow: 'hidden'
+    }
+  }}
+>
+  <DialogTitle>Seleccionar Ubicación en el Mapa</DialogTitle>
+  <DialogContent sx={{ height: 'calc(100% - 120px)', p: 0 }}>
+    <MapPicker 
+      onSelect={(location) => {
+        setSelectedLocation(location);
+        const newFormData = { ...formData };
+        newFormData.coordenadas = `${location.lat.toFixed(6)}, ${location.lng.toFixed(6)}`;
+        setFormData(newFormData);
+      }}
+      initialPosition={selectedLocation}
+    />
+  </DialogContent>
+  <DialogActions>
+    <Button onClick={() => setMapModalOpen(false)}>Cancelar</Button>
+    <Button 
+      onClick={() => {
+        setMapModalOpen(false);
+      }}
+      variant="contained"
+      color="primary"
+    >
+      Confirmar Ubicación
+    </Button>
+  </DialogActions>
+</Dialog>
+        </>
+      );
       case 'viaje': return <ViajeForm {...formProps} />;
       case 'chofer': return <ChoferForm {...formProps} />;
       case 'vehiculo': return <VehiculoForm {...formProps} />;
-      case 'seguimiento': return <SeguimientoForm formData={formData} />;
+      case 'seguimiento': return <SeguimientoForm {...formProps} />;;
       case 'empresa':
       default: return <EmpresaForm {...formProps} />;
     }
@@ -568,6 +678,12 @@ const Popup = ({ buttonName, page, open, onClose, children, selectedItem, onSucc
               ? 'Confirmar eliminación'
               : ROUTE_CONFIG[`/${page}`]?.newButton || buttonName}
           </DialogTitle>
+          <Box sx={{ mx: isMobile ? 0 : 3, px: isMobile ? 1 : 2 }}>
+            <BackendErrors 
+              errors={errors} 
+              onClose={() => setErrors({})}
+            />
+          </Box>
 
           <Box sx={{
             backgroundColor: page.includes('confirmar-eliminar')

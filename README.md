@@ -7,7 +7,16 @@ Este proyecto forma parte del curso **Desarrollo de Aplicaciones** de la Univers
 
 - [React](https://reactjs.org/)
 - [Vite](https://vitejs.dev/)
-- [Axios](https://axios-http.com/) *(si se usa para peticiones HTTP)* //Pendiente aplicacion con bdd
+- [Axios](https://axios-http.com/)
+- [Redux Toolkit](https://redux-toolkit.js.org/)
+- [React Router](https://reactrouter.com/)
+- [Material UI (MUI)](https://mui.com/)
+- [Emotion](https://emotion.sh/docs/introduction)
+- [Leaflet](https://leafletjs.com/)
+- [React Leaflet](https://react-leaflet.js.org/)
+- [date-fns](https://date-fns.org/)
+- [Yup](https://github.com/jquense/yup)
+- [ESLint](https://eslint.org/)
 
 
 ## 📦 Instalación

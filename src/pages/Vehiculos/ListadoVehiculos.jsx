@@ -6,8 +6,7 @@ import Paginacion from '../../commonComponents/Paginacion';
 import Popup from '../../commonComponents/Popup';
 import CreateOutlinedIcon from '@mui/icons-material/CreateOutlined';
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
-import axios from 'axios';
-
+import { getActiveVehiculos,getVehiculoById,updateVehiculo,deleteVehiculo} from '../../services/Vehiculos/VehiculoService';
 
 const ListadoVehiculos = () => {
   const [filtros, setFiltros] = useState({
@@ -32,14 +31,12 @@ const ListadoVehiculos = () => {
   useEffect(() => {
     const fetchVehiculos = async () => {
       try {
-        const response = await axios.get('/api/vehiculos');
-        // Filtrar solo vehículos activos
-        const vehiculosActivos = response.data.filter(item => item.activo !== false);
-        
+        const response = await getActiveVehiculos();
+        const vehiculosActivos = response.filter(item => item.activo !== false);
         setVehiculosOriginales([...vehiculosActivos]);
         const datosTransformados = vehiculosActivos.map(item => ({
           ...item,
-          _id: item._id, // Asegúrate de incluir esto
+          _id: item._id,
           empresa: item.empresa?.nombre_empresa || 'Sin empresa',
           capacidad: `${item.capacidad_carga?.volumen || 0}m³ - ${item.capacidad_carga?.peso || 0}kg`,
           año: item.anio,
@@ -105,143 +102,78 @@ const ListadoVehiculos = () => {
     return vehiculosFiltrados.slice(inicio, fin);
   };
 
-const handleOpenPopup = async (type, vehiculo) => {
-  try {
-    const response = await axios.get(`/api/vehiculos/${vehiculo._id}`);
-    const vehiculoCompleto = response.data;
-    
-    // Manejar correctamente el campo empresa
-    const empresaId = vehiculoCompleto.empresa?._id || vehiculoCompleto.empresa;
-    const empresaNombre = vehiculoCompleto.empresa?.nombre_empresa || 'Sin empresa asignada';
-    
-    setSelectedVehiculo({
-      ...vehiculoCompleto,
-      tipoVehiculo: vehiculoCompleto.tipo_vehiculo,
-      año: vehiculoCompleto.anio,
-      volumen: vehiculoCompleto.capacidad_carga?.volumen,
-      peso: vehiculoCompleto.capacidad_carga?.peso,
-      empresa: empresaId, // Asegurarse de pasar el ID
-      empresaNombre: empresaNombre // Y el nombre para mostrar
-    });
-    
-    setPopupType(type);
-    setPopupOpen(true);
-  } catch (error) {
-    console.error('Error al cargar datos del vehículo:', error);
-    setError('No se pudieron cargar los datos completos del vehículo');
-  }
-};
-
-const handleDeleteVehiculo = async (id) => {
-  try {
-    const { data: currentData } = await axios.get(`/api/vehiculos/${id}`);
-    const empresaId = typeof currentData.empresa === 'object' 
-      ? currentData.empresa._id 
-      : currentData.empresa;
-
-    const dataToSend = {
-      patente: currentData.patente,
-      tipo_vehiculo: currentData.tipo_vehiculo,
-      marca: currentData.marca,
-      modelo: currentData.modelo,
-      anio: currentData.anio,
-      capacidad_carga: {
-        volumen: currentData.capacidad_carga?.volumen || 0,
-        peso: currentData.capacidad_carga?.peso || 0
-      },
-      empresa: empresaId,
-      activo: false
-    };
-
-    await axios.put(`/api/vehiculos/${id}`, dataToSend);
-    setVehiculos(prev => prev.filter(v => v._id !== id));
-    setVehiculosFiltrados(prev => prev.filter(v => v._id !== id));
-    setVehiculosOriginales(prev => prev.filter(v => v._id !== id));
-    return { success: true };
-  } catch (error) {
-    console.error('Error al desactivar vehículo:', error.response?.data || error.message);
-    return { 
-      success: false, 
-      error: error.response?.data?.message || 'Error al desactivar el vehículo',
-      details: error.response?.data
-    };
-  }
-};
-
-  const columns = [
-    { 
-      id: 'patente',
-      label: 'Patente',
-      minWidth: 100,
-      align: 'left'
-    },
-    { 
-      id: 'marca', 
-      label: 'Marca', 
-      minWidth: 120,
-      align: 'left'
-    },
-    {
-      id: 'modelo',
-      label: 'Modelo',
-      minWidth: 120,
-      align: 'left'
-    },
-    {
-      id: 'año',
-      label: 'Año',
-      minWidth: 80,
-      align: 'left'
-    },
-    {
-      id: 'tipo_vehiculo',
-      label: 'Tipo',
-      minWidth: 100,
-      align: 'left'
-    },
-    {
-      id: 'capacidad',
-      label: 'Capacidad',
-      minWidth: 120,
-      align: 'left'
-    },
-    {
-      id: 'empresa',
-      label: 'Empresa',
-      minWidth: 150,
-      align: 'left'
-    },
-    {
-      id: 'modificar',
-      label: 'Modificar',
-      minWidth: 80,
-      align: 'center',
-      render: (_, row) => (
-        <IconButton 
-          onClick={() => handleOpenPopup('modificar-vehiculo', row)}
-          size="small"
-          color="primary"
-        >
-          <CreateOutlinedIcon fontSize="small"/>
-        </IconButton>
-      )
-    },
-    {
-      id: 'eliminar',
-      label: 'Eliminar',
-      minWidth: 80,
-      align: 'center',
-      render: (_, row) => (
-        <IconButton 
-          onClick={() => handleOpenPopup('confirmar-eliminar', row)}
-          size="small"
-          color="error"
-        >
-          <CloseOutlinedIcon fontSize="small"/>
-        </IconButton>
-      )
+  const handleOpenPopup = async (type, vehiculo) => {
+    try {
+      const vehiculoCompleto = await getVehiculoById(vehiculo._id);
+      const empresaId = vehiculoCompleto.empresa?._id || vehiculoCompleto.empresa;
+      const empresaNombre = vehiculoCompleto.empresa?.nombre_empresa || 'Sin empresa asignada';
+      
+      setSelectedVehiculo({
+        ...vehiculoCompleto,
+        tipoVehiculo: vehiculoCompleto.tipo_vehiculo,
+        año: vehiculoCompleto.anio,
+        volumen: vehiculoCompleto.capacidad_carga?.volumen,
+        peso: vehiculoCompleto.capacidad_carga?.peso,
+        empresa: empresaId,
+        empresaNombre: empresaNombre
+      });
+      
+      setPopupType(type);
+      setPopupOpen(true);
+    } catch (error) {
+      console.error('Error al cargar datos del vehículo:', error);
+      setError('No se pudieron cargar los datos completos del vehículo');
     }
-  ];
+  };
+
+  const handleDeleteVehiculo = async (id) => {
+    try {
+      await deleteVehiculo(id);
+      setVehiculos(prev => prev.filter(v => v._id !== id));
+      setVehiculosFiltrados(prev => prev.filter(v => v._id !== id));
+      setVehiculosOriginales(prev => prev.filter(v => v._id !== id));
+      return { success: true };
+    } catch (error) {
+      console.error('Error al desactivar vehículo:', error);
+      return { 
+        success: false, 
+        error: error.response?.data?.message || 'Error al desactivar el vehículo',
+        details: error.response?.data
+      };
+    }
+  };
+
+const columns = [
+  { id: 'patente', label: 'Patente', width: 100 },
+  { id: 'marca', label: 'Marca', width: 120 },
+  { id: 'modelo', label: 'Modelo', width: 120 },
+  { id: 'año', label: 'Año', width: 80 },
+  { id: 'tipo_vehiculo', label: 'Tipo', width: 100 },
+  { id: 'capacidad', label: 'Capacidad', width: 120 },
+  { id: 'empresa', label: 'Empresa', width: 150 },
+  {
+    id: 'modificar',
+    label: 'Modificar',
+    width: 80,
+    align: 'center',
+    render: (_, row) => (
+      <IconButton onClick={() => handleOpenPopup('modificar-vehiculo', row)} size="small" color="primary">
+        <CreateOutlinedIcon fontSize="small"/>
+      </IconButton>
+    )
+  },
+  {
+    id: 'eliminar',
+    label: 'Eliminar',
+    width: 80,
+    align: 'center',
+    render: (_, row) => (
+      <IconButton onClick={() => handleOpenPopup('confirmar-eliminar', row)} size="small" color="error">
+        <CloseOutlinedIcon fontSize="small"/>
+      </IconButton>
+    )
+  }
+];
 
   if (loading) return <Box display="flex" justifyContent="center" mt={4}><CircularProgress /></Box>;
   if (error) return <Alert severity="error">{error}</Alert>;
@@ -278,6 +210,19 @@ const handleDeleteVehiculo = async (id) => {
           sx={{
             tableLayout: 'auto',
             width: '100%',
+            "& .MuiTableCell-root": {
+              padding: "12px 16px",
+              fontSize: "0.875rem",
+              textAlign: "center",
+              fontWeight: 500
+            },
+            "& .MuiTableCell-head": {
+              backgroundColor: "#062B60",
+              color: "white",
+              fontWeight: "bold",
+              textAlign: "center",
+              fontSize: "0.875rem"
+            }
           }}
         />
       </Box>
@@ -293,4 +238,4 @@ const handleDeleteVehiculo = async (id) => {
   );
 };
 
-export {ListadoVehiculos};
+export { ListadoVehiculos };

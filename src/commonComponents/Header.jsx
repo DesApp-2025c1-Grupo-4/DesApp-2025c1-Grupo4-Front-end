@@ -8,26 +8,17 @@ export function Header() {
   const navigate = useNavigate();
   const location = useLocation();
   const isHomePage = location.pathname === '/';
-
-  const currentRoute = useMemo(() => {
-    return ROUTE_CONFIG[location.pathname];
-  }, [location.pathname]);
+  const currentRoute = useMemo(() => ROUTE_CONFIG[location.pathname], [location.pathname]);
 
   return (
     <AppBar position="static">
       <Toolbar>
         <Box sx={{ flex: 1 }} />
-        <Typography variant="topMenu" sx={{ flex: 1, textAlign: 'center' }}>
-          {currentRoute.title}
-        </Typography>
+        <Typography variant="topMenu" sx={{ flex: 1, textAlign: 'center' }}>{currentRoute.title}</Typography>
         <Box sx={{ flex: 1, display: 'flex', justifyContent: 'flex-end' }}>
-          {!isHomePage && (
-            <IconButton variant='header' onClick={() => navigate('/')}>
-              <HomeOutlinedIcon variant='biggerIcons'/>
-            </IconButton>
-          )}
+          {!isHomePage && <IconButton variant='header' onClick={() => navigate('/')}><HomeOutlinedIcon variant='biggerIcons'/></IconButton>}
         </Box>
       </Toolbar>
     </AppBar>
   );
-};
+}
