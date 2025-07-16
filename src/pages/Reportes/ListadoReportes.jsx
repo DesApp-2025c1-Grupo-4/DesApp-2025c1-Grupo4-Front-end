@@ -167,6 +167,64 @@ const ListadoReportes = () => {
             (viaje.chofer_asignado?.nombre + ' ' + viaje.chofer_asignado?.apellido || '').toLowerCase().includes(filtros.busqueda.toLowerCase()))
         );
 
+      case 4: // Tiempos promedio
+        const groupedData = data.viajes
+          .filter(viaje => {
+            if (viaje.estado !== "completado") return false;
+            const inicioViaje = parseFecha(viaje.inicio_viaje);
+            return (
+              (!filtros.fechaDesde || inicioViaje >= new Date(filtros.fechaDesde)) &&
+              (!filtros.fechaHasta || inicioViaje <= new Date(filtros.fechaHasta))
+            );
+          })
+          .map(viaje => {
+            const historial = viaje.historial_estados || [];
+            const fechaInicioTransito = historial.find(e => e.estado === "en transito")?.fecha;
+            const fechaCompletado = historial.find(e => e.estado === "completado")?.fecha;
+
+            let duracion = null;
+            if (fechaInicioTransito && fechaCompletado) {
+              const inicio = parseFecha(fechaInicioTransito);
+              const fin = parseFecha(fechaCompletado);
+              if (inicio && fin) {
+                duracion = (fin - inicio) / (1000 * 60 * 60);
+              }
+            }
+
+            return {
+              ...viaje,
+              idViaje: viaje._id,
+              origen: viaje.deposito_origen?.localizacion?.direccion || "Sin dirección",
+              destino: viaje.deposito_destino?.localizacion?.direccion || "Sin dirección",
+              duracion,
+            };
+          })
+          .filter(viaje => viaje.duracion !== null)
+          .reduce((grupos, viaje) => {
+            const key = `${viaje.origen}-${viaje.destino}`;
+            if (!grupos[key]) {
+              grupos[key] = {
+                origen: viaje.origen,
+                destino: viaje.destino,
+                duraciones: [],
+                idsViajes: [], 
+              };
+            }
+            grupos[key].duraciones.push(viaje.duracion);
+            grupos[key].idsViajes.push(viaje.idViaje); 
+            return grupos;
+          }, {});
+
+        return Object.values(groupedData).map(grupo => ({
+          idsViajes: grupo.idsViajes.join(", "),
+          origen: grupo.origen,
+          destino: grupo.destino,
+          promedio: (grupo.duraciones.reduce((a, b) => a + b, 0) / grupo.duraciones.length).toFixed(2),
+          minimo: Math.min(...grupo.duraciones).toFixed(2),
+          maximo: Math.max(...grupo.duraciones).toFixed(2),
+          viajes: grupo.duraciones.length,
+        }));
+
       case 5: // Incidentes y demoras
         return data.viajes.flatMap(viaje => {
           // Filtramos solo los estados de incidente o demorado del historial
@@ -185,7 +243,6 @@ const ListadoReportes = () => {
           (!filtros.busqueda || 
             (item.descripcion_incidente || '').toLowerCase().includes(filtros.busqueda.toLowerCase()))
         );
-
 
       default:
         return [];
@@ -265,7 +322,8 @@ const ListadoReportes = () => {
 
     return [
       // Tab 0: Viajes programados
-      [baseColumns.idViaje,baseColumns.fechaInicio, baseColumns.vehiculo, baseColumns.chofer, baseColumns.empresa, baseColumns.origen, baseColumns.destino, baseColumns.estado],
+      [baseColumns.idViaje, baseColumns.fechaInicio, baseColumns.vehiculo, baseColumns.chofer, baseColumns.empresa, baseColumns.origen, baseColumns.destino, baseColumns.estado],
+      // Tab 1: Vehículos en tránsito
       [baseColumns.vehiculo, baseColumns.chofer, baseColumns.empresa, baseColumns.origen, baseColumns.destino,
         {id: "fechaEnTransito",label: "Fecha en tránsito",align: 'center',width: 120,render: (fecha) => formatFecha(fecha) || "N/A"},
         { id: "tiempo_transcurrido", label: "Tiempo", width: 80, 
@@ -276,11 +334,12 @@ const ListadoReportes = () => {
         }
       ],
       // Tab 2: Historial por empresa
-      [baseColumns.fechaInicio,baseColumns.empresa, baseColumns.vehiculo, baseColumns.chofer, baseColumns.origen, baseColumns.destino, baseColumns.estado],
+      [baseColumns.fechaInicio, baseColumns.empresa, baseColumns.vehiculo, baseColumns.chofer, baseColumns.origen, baseColumns.destino, baseColumns.estado],
       // Tab 3: Historial por chofer
-      [baseColumns.fechaInicio,baseColumns.chofer, baseColumns.vehiculo, baseColumns.empresa, baseColumns.origen, baseColumns.destino, baseColumns.estado],
+      [baseColumns.fechaInicio, baseColumns.chofer, baseColumns.vehiculo, baseColumns.empresa, baseColumns.origen, baseColumns.destino, baseColumns.estado],
       // Tab 4: Tiempos promedio
       [
+        { id: "idsViajes", label: "IDs Viaje", width: 150,render: (ids) => ids.split(", ").map(id => `#${id.substring(id.length - 6)}`).join(", ") },
         { id: "origen", label: "Origen", width: 150 },
         { id: "destino", label: "Destino", width: 150 },
         { id: "promedio", label: "Tiempo promedio (h)", width: 120 },
@@ -289,7 +348,7 @@ const ListadoReportes = () => {
         { id: "viajes", label: "Viajes", width: 80 }
       ],
       // Tab 5: Incidentes y demoras
-      [baseColumns.idViaje,baseColumns.fechaOcurrencia, baseColumns.vehiculo, baseColumns.chofer, baseColumns.empresa, baseColumns.origen, baseColumns.destino, baseColumns.estado]
+      [baseColumns.idViaje, baseColumns.fechaOcurrencia, baseColumns.vehiculo, baseColumns.chofer, baseColumns.empresa, baseColumns.origen, baseColumns.destino, baseColumns.estado]
     ];
   };
 
@@ -310,14 +369,6 @@ const ListadoReportes = () => {
       depositoOrigenId: "", depositoDestinoId: ""
     });
   };
-
-  const getUltimoIncidente = (historial) => {
-  if (!historial || !Array.isArray(historial)) return null;
-  const incidentes = historial
-    .filter(item => item.estado === "incidente" || item.estado === "demorado")
-    .sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
-  return incidentes.length > 0 ? incidentes[0].fecha : null;
-};
 
   const filteredData = getFilteredData();
   const columns = getColumns();
