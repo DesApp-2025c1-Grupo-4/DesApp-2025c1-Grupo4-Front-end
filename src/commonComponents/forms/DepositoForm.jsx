@@ -1,10 +1,13 @@
 import {
   Grid, InputLabel, TextField, Box, Typography, FormGroup,
-  FormControlLabel, Checkbox, MenuItem, Button
+  FormControlLabel, Checkbox, MenuItem, Button, Dialog,
+  DialogContent, DialogTitle, IconButton
 } from '@mui/material';
-import { LocationOn } from '@mui/icons-material';
+import { LocationOn, Close } from '@mui/icons-material';
 import { grey } from '@mui/material/colors';
 import ErrorText from '../ErrorText';
+import { useState } from 'react';
+import MapPicker from '../MapPicker';
 
 const TIPOS_DEPOSITO = ['Propio', 'Tercerizado'];
 const DIAS_SEMANA = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
@@ -23,7 +26,8 @@ const FormInput = ({ label, name, required = false, value, onChange, onBlur, err
   </Box>
 );
 
-const DepositoForm = ({ formData = {}, handleChange, handleBlur, errors, onOpenMap, selectedLocation }) => {
+const DepositoForm = ({ formData = {}, handleChange, handleBlur, errors }) => {
+  const [mapOpen, setMapOpen] = useState(false);
   const horarios = formData.horarios || { dias: [], desde: '', hasta: '' };
 
   const handleDiaChange = (dia) => {
@@ -35,6 +39,73 @@ const DepositoForm = ({ formData = {}, handleChange, handleBlur, errors, onOpenM
 
   const handleHorarioTimeChange = (field, value) => {
     handleChange({ target: { name: 'horarios', value: { ...horarios, [field]: value } } });
+  };
+
+  const handleOpenMap = () => {
+    setMapOpen(true);
+  };
+
+  const handleCloseMap = () => {
+    setMapOpen(false);
+  };
+
+  const handleMapSelect = (location) => {
+    handleChange({
+      target: {
+        name: 'coordenadas',
+        value: `${location.lat}, ${location.lng}`
+      }
+    });
+    handleChange({
+      target: {
+        name: 'coordenadasRaw',
+        value: {
+          type: 'Point',
+          coordinates: [location.lng, location.lat]
+        }
+      }
+    });
+    handleChange({ target: { name: 'direccion', value: location.address.road } });
+    handleChange({ target: { name: 'ciudad', value: location.address.city } });
+    handleChange({ target: { name: 'provincia', value: location.address.state } });
+    handleChange({ target: { name: 'pais', value: location.address.country } });
+    setMapOpen(false);
+  };
+
+  const getInitialPosition = () => {
+    if (formData.coordenadasRaw) {
+      return {
+        lat: formData.coordenadasRaw.coordinates[1],
+        lng: formData.coordenadasRaw.coordinates[0],
+        label: formData.direccion || 'Ubicación seleccionada',
+        address: {
+          road: formData.direccion || '',
+          city: formData.ciudad || '',
+          state: formData.provincia || '',
+          country: formData.pais || '',
+          postalCode: '',
+          houseNumber: ''
+        }
+      };
+    } else if (formData.coordenadas) {
+      const [lat, lng] = formData.coordenadas.split(',').map(coord => parseFloat(coord.trim()));
+      if (!isNaN(lat) && !isNaN(lng)) {
+        return {
+          lat,
+          lng,
+          label: formData.direccion || `Ubicación seleccionada (${lat.toFixed(6)}, ${lng.toFixed(6)})`,
+          address: {
+            road: formData.direccion || '',
+            city: formData.ciudad || '',
+            state: formData.provincia || '',
+            country: formData.pais || '',
+            postalCode: '',
+            houseNumber: ''
+          }
+        };
+      }
+    }
+    return null;
   };
 
   const contactoFields = [
@@ -135,7 +206,12 @@ const DepositoForm = ({ formData = {}, handleChange, handleBlur, errors, onOpenM
                 error={!!errors.coordenadas} placeholder="Ejemplo: -34.603722, -58.381592"
                 sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, '& fieldset': { borderColor: grey[300] } } }}
               />
-              <Button variant="outlined" onClick={onOpenMap} startIcon={<LocationOn />} sx={{ minWidth: 'auto', height: 40, borderRadius: 2, textTransform: 'none' }}>
+              <Button
+                variant="outlined"
+                onClick={handleOpenMap}
+                startIcon={<LocationOn />}
+                sx={{ minWidth: 'auto', height: 40, borderRadius: 2, textTransform: 'none' }}
+              >
                 Mapa
               </Button>
             </Box>
@@ -143,6 +219,30 @@ const DepositoForm = ({ formData = {}, handleChange, handleBlur, errors, onOpenM
           </Box>
         </Grid>
       </Grid>
+
+      <Dialog open={mapOpen} onClose={handleCloseMap} fullWidth maxWidth="md">
+        <DialogTitle>
+          Seleccionar ubicación en el mapa
+          <IconButton
+            aria-label="close"
+            onClick={handleCloseMap}
+            sx={{
+              position: 'absolute',
+              right: 8,
+              top: 8,
+              color: (theme) => theme.palette.grey[500],
+            }}
+          >
+            <Close />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ height: '70vh' }}>
+          <MapPicker
+            onSelect={handleMapSelect}
+            initialPosition={getInitialPosition()}
+          />
+        </DialogContent>
+      </Dialog>
     </Box>
   );
 };

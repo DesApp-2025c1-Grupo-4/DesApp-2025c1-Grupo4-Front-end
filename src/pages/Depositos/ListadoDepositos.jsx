@@ -55,18 +55,13 @@ const ListadoDepositos = () => {
     fetchDepositos();
   }, []);
 
-  const aplicarFiltros = () => {
-    const searchTerm = filtros.busqueda.toLowerCase();
+const aplicarFiltros = () => {
+    const searchTerm = (filtros.busqueda || '').toLowerCase();
 
     const filtered = depositos.filter(deposito => {
       switch (filtros.criterio) {
         case 'Localización':
-          return [
-            deposito.localizacion?.direccion || '',
-            deposito.localizacion?.ciudad || '',
-            deposito.localizacion?.provincia_estado || '',
-            deposito.localizacion?.pais || ''
-          ].some(field => field.toLowerCase().includes(searchTerm));
+          return (deposito.direccionCompleta || '').toLowerCase().includes(searchTerm);
 
         case 'Tipo':
           return (deposito.tipo || '').toLowerCase().includes(searchTerm);
@@ -75,13 +70,15 @@ const ListadoDepositos = () => {
           return (deposito.contacto || '').toLowerCase().includes(searchTerm);
 
         default:
-          return true;
+          return Object.values(deposito).some(val =>
+            typeof val === 'string' && val.toLowerCase().includes(searchTerm)
+          );
       }
     });
 
     setDepositosFiltrados(filtered);
     setPagina(1);
-  };
+  };
 
   const handleClear = () => {
     setFiltros({ criterio: 'Localización', busqueda: '' });

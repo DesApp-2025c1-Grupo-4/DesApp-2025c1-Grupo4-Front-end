@@ -188,7 +188,17 @@ const MapPicker = ({ onSelect, initialPosition }) => {
     raw: null
   };
 
-  const [position, setPosition] = useState(initialPosition || defaultPosition);
+  const [position, setPosition] = useState(() => {
+    if (initialPosition) {
+      return {
+        ...initialPosition,
+        address: initialPosition.address || defaultPosition.address,
+        raw: initialPosition.raw || null
+      };
+    }
+    return defaultPosition;
+  });
+
   const mapRef = useRef(null);
 
   const handlePositionChange = useCallback(async (newPosition) => {
@@ -237,6 +247,7 @@ const MapPicker = ({ onSelect, initialPosition }) => {
       lng: e.latlng.lng
     });
   }, [handlePositionChange]);
+
   const safeAddress = position?.address || defaultPosition.address;
 
   return (
@@ -257,7 +268,19 @@ const MapPicker = ({ onSelect, initialPosition }) => {
         />
         <SearchBar onSelectLocation={handlePositionChange} />
         <MapUpdater center={[position.lat, position.lng]} />
-        <Marker position={[position.lat, position.lng]}>
+        <Marker 
+          position={[position.lat, position.lng]}
+          draggable={true}
+          eventHandlers={{
+            dragend: (e) => {
+              const newPosition = e.target.getLatLng();
+              handlePositionChange({
+                lat: newPosition.lat,
+                lng: newPosition.lng
+              });
+            }
+          }}
+        >
           <Popup>
             <div>
               <strong>Ubicación seleccionada:</strong>
@@ -290,6 +313,9 @@ const MapPicker = ({ onSelect, initialPosition }) => {
               )}
               <div style={{ marginTop: '5px', fontSize: '0.8em' }}>
                 Coordenadas: {position.lat.toFixed(6)}, {position.lng.toFixed(6)}
+              </div>
+              <div style={{ fontSize: '0.8em', color: '#666', marginTop: '5px' }}>
+                Arrastra el marcador para ajustar la ubicación
               </div>
             </div>
           </Popup>
